@@ -1,3 +1,10 @@
 spring:
   application:
     name: lazyspringboot
+  main:
+    banner-mode: off
+    web-application-type: none
+
+logging:
+  level:
+    root: off
