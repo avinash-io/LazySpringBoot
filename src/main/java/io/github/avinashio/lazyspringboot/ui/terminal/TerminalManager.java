@@ -3,23 +3,14 @@ package io.github.avinashio.lazyspringboot.ui.terminal;
 import java.io.IOException;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-@Component
-public class TerminalManager implements AutoCloseable {
+@Configuration
+public class TerminalManager {
 
-    private final Terminal terminal;
-
-    public TerminalManager() throws IOException {
-        this.terminal = TerminalBuilder.builder().system(true).build();
-    }
-
-    public Terminal terminal() {
-        return terminal;
-    }
-
-    @Override
-    public void close() throws IOException {
-        terminal.close();
+    @Bean(destroyMethod = "close")
+    public Terminal terminal() throws IOException {
+        return TerminalBuilder.builder().system(true).build();
     }
 }
