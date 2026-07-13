@@ -12,6 +12,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyCoordinate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class MavenProjectInspector {
@@ -20,6 +23,13 @@ public class MavenProjectInspector {
 
     private static final String DISALLOW_DOCTYPE_DECLARATION =
             "http://apache.org/xml/features/disallow-doctype-decl";
+
+    private final MavenDependencyParser dependencyParser;
+
+    public MavenProjectInspector(
+            MavenDependencyParser dependencyParser) {
+        this.dependencyParser = dependencyParser;
+    }
 
     public boolean isSpringBootProject(Path pomFile) throws IOException {
         try (InputStream inputStream = Files.newInputStream(pomFile)) {
@@ -108,7 +118,9 @@ public class MavenProjectInspector {
                     findProjectGroupId(document),
                     findDirectChildValue(project, "artifactId"),
                     findSpringBootVersion(document),
-                    findJavaVersion(document));
+                    findJavaVersion(document),
+                    dependencyParser.parse(document));
+
         } catch (SAXException exception) {
             throw new IOException("Invalid Maven POM: " + pomFile, exception);
         } catch (ParserConfigurationException exception) {
@@ -187,4 +199,7 @@ public class MavenProjectInspector {
 
         return null;
     }
+
+
+
 }

@@ -2,14 +2,15 @@ package io.github.avinashio.lazyspringboot.ui.state;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyAvailability;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyItem;
+import io.github.avinashio.lazyspringboot.domain.dependency.SpringDependency;
+import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
+import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-
-import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
-import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
-import io.github.avinashio.lazyspringboot.domain.dependency.SpringDependency;
 
 class UiStateTest {
 
@@ -52,18 +53,6 @@ class UiStateTest {
         assertThat(state.selectedProjectIndex()).isEqualTo(2);
     }
 
-    private UiState createStateWithProjects() {
-        UiState state = new UiState();
-
-        state.setProjects(
-                List.of(
-                        createProject("cv-api"),
-                        createProject("payment-service"),
-                        createProject("demo")));
-
-        return state;
-    }
-
     @Test
     void shouldResetSelectionWhenProjectsAreUpdated() {
         UiState state = createStateWithProjects();
@@ -71,21 +60,10 @@ class UiStateTest {
         state.selectNextProject();
         state.selectNextProject();
 
-        state.setProjects(List.of(createProject("new-project")));
+        state.setProjects(
+                List.of(createProject("new-project")));
 
         assertThat(state.selectedProjectIndex()).isZero();
-    }
-
-    private SpringProject createProject(String name) {
-        return new SpringProject(
-                name,
-                Path.of("/projects/" + name),
-                new ProjectMetadata(
-                        "com.example",
-                        name,
-                        "4.1.0",
-                        "26",
-                        BuildTool.MAVEN));
     }
 
     @Test
@@ -151,7 +129,8 @@ class UiStateTest {
 
         state.selectNextDependency();
 
-        assertThat(state.selectedDependencyIndex()).isEqualTo(1);
+        assertThat(state.selectedDependencyIndex())
+                .isEqualTo(1);
     }
 
     @Test
@@ -172,28 +151,33 @@ class UiStateTest {
         state.selectNextDependency();
         state.selectNextDependency();
 
-        assertThat(state.selectedDependencyIndex()).isEqualTo(2);
+        assertThat(state.selectedDependencyIndex())
+                .isEqualTo(2);
     }
 
     @Test
-    void shouldReturnSelectedDependency() {
+    void shouldReturnSelectedDependencyItem() {
         UiState state = createStateWithDependencies();
 
         state.selectNextDependency();
 
-        assertThat(state.selectedDependency().id())
+        assertThat(
+                state
+                        .selectedDependencyItem()
+                        .dependency()
+                        .id())
                 .isEqualTo("devtools");
     }
 
     @Test
-    void shouldResetDependencySelectionWhenDependenciesAreUpdated() {
+    void shouldResetDependencySelectionWhenItemsAreUpdated() {
         UiState state = createStateWithDependencies();
 
         state.selectNextDependency();
 
-        state.setDependencies(
+        state.setDependencyItems(
                 List.of(
-                        new SpringDependency(
+                        dependencyItem(
                                 "data-jpa",
                                 "Spring Data JPA",
                                 "Persist data",
@@ -202,27 +186,87 @@ class UiStateTest {
         assertThat(state.selectedDependencyIndex()).isZero();
     }
 
+    @Test
+    void shouldReturnNullWhenNoDependencyItemIsAvailable() {
+        UiState state = new UiState();
+
+        assertThat(state.selectedDependencyItem()).isNull();
+    }
+
+    @Test
+    void shouldExposeDependencyItems() {
+        UiState state = createStateWithDependencies();
+
+        assertThat(state.dependencyItems())
+                .extracting(
+                        item -> item.dependency().id())
+                .containsExactly(
+                        "native",
+                        "devtools",
+                        "lombok");
+    }
+
+    private UiState createStateWithProjects() {
+        UiState state = new UiState();
+
+        state.setProjects(
+                List.of(
+                        createProject("cv-api"),
+                        createProject("payment-service"),
+                        createProject("demo")));
+
+        return state;
+    }
+
     private UiState createStateWithDependencies() {
         UiState state = new UiState();
 
-        state.setDependencies(
+        state.setDependencyItems(
                 List.of(
-                        new SpringDependency(
+                        dependencyItem(
                                 "native",
                                 "GraalVM Native Support",
                                 "Native executable support",
                                 "Developer Tools"),
-                        new SpringDependency(
+                        dependencyItem(
                                 "devtools",
                                 "Spring Boot DevTools",
                                 "Development tools",
                                 "Developer Tools"),
-                        new SpringDependency(
+                        dependencyItem(
                                 "lombok",
                                 "Lombok",
                                 "Reduce boilerplate",
                                 "Developer Tools")));
 
         return state;
+    }
+
+    private DependencyItem dependencyItem(
+            String id,
+            String name,
+            String description,
+            String group) {
+        return new DependencyItem(
+                new SpringDependency(
+                        id,
+                        name,
+                        description,
+                        group),
+                DependencyAvailability.AVAILABLE,
+                false);
+    }
+
+    private SpringProject createProject(String name) {
+        return new SpringProject(
+                name,
+                Path.of("/projects/" + name),
+                new ProjectMetadata(
+                        "com.example",
+                        name,
+                        "4.1.0",
+                        "26",
+                        BuildTool.MAVEN,
+                        List.of()));
     }
 }

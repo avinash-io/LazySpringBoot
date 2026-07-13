@@ -5,6 +5,8 @@ import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyAvailability;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyItem;
 
 @Component
 public class DependencyPanel {
@@ -14,7 +16,7 @@ public class DependencyPanel {
             int visibleHeight) {
         List<String> lines = new ArrayList<>();
 
-        if (state.dependencies().isEmpty()) {
+        if (state.dependencyItems().isEmpty()) {
             lines.add(" No dependencies available.");
             return lines;
         }
@@ -23,7 +25,7 @@ public class DependencyPanel {
                 .dependencyViewport()
                 .update(
                         state.selectedDependencyIndex(),
-                        state.dependencies().size(),
+                        state.dependencyItems().size(),
                         visibleHeight);
 
         int start = state.dependencyViewport().offset();
@@ -31,18 +33,29 @@ public class DependencyPanel {
         int end =
                 Math.min(
                         start + visibleHeight,
-                        state.dependencies().size());
+                        state.dependencyItems().size());
 
         for (int index = start; index < end; index++) {
-            SpringDependency dependency =
-                    state.dependencies().get(index);
+            DependencyItem item =
+                    state.dependencyItems().get(index);
 
-            String prefix =
+            String cursor =
                     index == state.selectedDependencyIndex()
-                            ? " > "
-                            : "   ";
+                            ? ">"
+                            : " ";
 
-            lines.add(prefix + dependency.name());
+            String marker =
+                    item.availability()
+                            == DependencyAvailability.ALREADY_PRESENT
+                            ? "*"
+                            : " ";
+
+            lines.add(
+                    " "
+                            + cursor
+                            + marker
+                            + " "
+                            + item.dependency().name());
         }
 
         return lines;

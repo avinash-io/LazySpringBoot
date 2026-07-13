@@ -7,10 +7,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyCoordinate;
 
 class MavenProjectInspectorTest {
 
-    private final MavenProjectInspector inspector = new MavenProjectInspector();
+    private final MavenProjectInspector inspector = new MavenProjectInspector(
+            new MavenDependencyParser());
 
     @TempDir
     Path temporaryDirectory;
@@ -113,6 +115,18 @@ class MavenProjectInspectorTest {
                   <groupId>com.example</groupId>
                   <artifactId>testboot</artifactId>
           
+                <dependencies>
+                  <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                  </dependency>
+                
+                  <dependency>
+                    <groupId>org.projectlombok</groupId>
+                    <artifactId>lombok</artifactId>
+                  </dependency>
+                </dependencies>                    
+          
                   <properties>
                     <java.version>26</java.version>
                   </properties>
@@ -125,5 +139,85 @@ class MavenProjectInspectorTest {
         assertThat(metadata.artifactId()).isEqualTo("testboot");
         assertThat(metadata.springBootVersion()).isEqualTo("4.1.0");
         assertThat(metadata.javaVersion()).isEqualTo("26");
+        assertThat(metadata.dependencies())
+                .containsExactly(
+                        new DependencyCoordinate(
+                                "org.springframework.boot",
+                                "spring-boot-starter-web"),
+                        new DependencyCoordinate(
+                                "org.projectlombok",
+                                "lombok"));
+    }
+
+    @Test
+    void shouldIgnoreDependencyManagementEntries()
+            throws IOException {
+        Path pomFile = temporaryDirectory.resolve("pom.xml");
+
+        Files.writeString(
+                pomFile,
+                """
+                <project>
+                  <parent>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-parent</artifactId>
+                    <version>4.1.0</version>
+                  </parent>
+          
+                  <groupId>com.example</groupId>
+                  <artifactId>testboot</artifactId>
+          
+                  <dependencyManagement>
+                    <dependencies>
+                      <dependency>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-web</artifactId>
+                      </dependency>
+                    </dependencies>
+                  </dependencyManagement>
+          
+                  <dependencies>
+                    <dependency>
+                      <groupId>org.projectlombok</groupId>
+                      <artifactId>lombok</artifactId>
+                    </dependency>
+                  </dependencies>
+                </project>
+                """);
+
+        MavenProjectMetadata metadata =
+                inspector.inspect(pomFile);
+
+        assertThat(metadata.dependencies())
+                .containsExactly(
+                        new DependencyCoordinate(
+                                "org.projectlombok",
+                                "lombok"));
+    }
+
+    @Test
+    void shouldReturnEmptyDependenciesWhenPomHasNoDependencies()
+            throws IOException {
+        Path pomFile = temporaryDirectory.resolve("pom.xml");
+
+        Files.writeString(
+                pomFile,
+                """
+                <project>
+                  <parent>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-parent</artifactId>
+                    <version>4.1.0</version>
+                  </parent>
+          
+                  <groupId>com.example</groupId>
+                  <artifactId>testboot</artifactId>
+                </project>
+                """);
+
+        MavenProjectMetadata metadata =
+                inspector.inspect(pomFile);
+
+        assertThat(metadata.dependencies()).isEmpty();
     }
 }

@@ -3,6 +3,7 @@ package io.github.avinashio.lazyspringboot.infrastructure.filesystem;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenDependencyParser;
 import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenProjectInspector;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,7 +15,7 @@ import org.junit.jupiter.api.io.TempDir;
 class ProjectScannerTest {
 
     private final MavenProjectInspector mavenProjectInspector =
-            new MavenProjectInspector();
+            new MavenProjectInspector(new MavenDependencyParser());
 
     private final ProjectScanner projectScanner =
             new ProjectScanner(mavenProjectInspector);

@@ -1,21 +1,21 @@
 package io.github.avinashio.lazyspringboot.ui.state;
 
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyItem;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
-import io.github.avinashio.lazyspringboot.domain.dependency.SpringDependency;
 
 @Component
 public class UiState {
 
     private List<SpringProject> projects = new ArrayList<>();
-    private PanelFocus panelFocus = PanelFocus.PROJECTS;
-    private List<SpringDependency> dependencies = List.of();
+    private List<DependencyItem> dependencyItems = List.of();
 
-    private int selectedDependencyIndex;
+    private PanelFocus panelFocus = PanelFocus.PROJECTS;
 
     private int selectedProjectIndex;
+    private int selectedDependencyIndex;
 
     private final Viewport dependencyViewport =
             new Viewport();
@@ -75,31 +75,34 @@ public class UiState {
                 };
     }
 
-    public List<SpringDependency> dependencies() {
-        return dependencies;
+    public List<DependencyItem> dependencyItems() {
+        return dependencyItems;
     }
 
     public int selectedDependencyIndex() {
         return selectedDependencyIndex;
     }
 
-    public void setDependencies(
-            List<SpringDependency> dependencies) {
-        this.dependencies = List.copyOf(dependencies);
+    public void setDependencyItems(
+            List<DependencyItem> dependencyItems) {
+        this.dependencyItems =
+                List.copyOf(dependencyItems);
+
         selectedDependencyIndex = 0;
         dependencyViewport.reset();
     }
 
-    public SpringDependency selectedDependency() {
-        if (dependencies.isEmpty()) {
+    public DependencyItem selectedDependencyItem() {
+        if (dependencyItems.isEmpty()) {
             return null;
         }
 
-        return dependencies.get(selectedDependencyIndex);
+        return dependencyItems.get(selectedDependencyIndex);
     }
 
     public void selectNextDependency() {
-        if (selectedDependencyIndex < dependencies.size() - 1) {
+        if (selectedDependencyIndex
+                < dependencyItems.size() - 1) {
             selectedDependencyIndex++;
         }
     }
@@ -113,6 +116,4 @@ public class UiState {
     public Viewport dependencyViewport() {
         return dependencyViewport;
     }
-
-
 }

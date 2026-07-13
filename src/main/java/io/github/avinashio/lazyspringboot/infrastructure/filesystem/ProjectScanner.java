@@ -66,7 +66,8 @@ public class ProjectScanner {
                             metadata.artifactId(),
                             metadata.springBootVersion(),
                             metadata.javaVersion(),
-                            BuildTool.MAVEN);
+                            BuildTool.MAVEN,
+                            metadata.dependencies());
 
             return java.util.Optional.of(
                     new SpringProject(
