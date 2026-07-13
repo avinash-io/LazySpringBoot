@@ -8,10 +8,15 @@ import java.nio.file.Path;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
+import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
+import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
+import java.util.Optional;
+
 @Component
 public class ProjectScanner {
 
     private final MavenProjectInspector mavenProjectInspector;
+
 
     public ProjectScanner(MavenProjectInspector mavenProjectInspector) {
         this.mavenProjectInspector = mavenProjectInspector;
@@ -21,8 +26,8 @@ public class ProjectScanner {
         try (var paths = Files.list(directory)) {
             return paths
                     .filter(Files::isDirectory)
-                    .filter(this::isSpringBootProject)
-                    .map(this::toSpringProject)
+                    .map(this::inspectProject)
+                    .flatMap(Optional::stream)
                     .toList();
         }
     }
@@ -41,8 +46,37 @@ public class ProjectScanner {
         }
     }
 
-    private SpringProject toSpringProject(Path directory) {
-        return new SpringProject(
-                directory.getFileName().toString(), directory.toAbsolutePath());
+    private Optional<SpringProject> inspectProject(Path directory) {
+        Path pomFile = directory.resolve("pom.xml");
+
+        if (!Files.isRegularFile(pomFile)) {
+            return java.util.Optional.empty();
+        }
+
+        try {
+            if (!mavenProjectInspector.isSpringBootProject(pomFile)) {
+                return java.util.Optional.empty();
+            }
+
+            var metadata = mavenProjectInspector.inspect(pomFile);
+
+            ProjectMetadata projectMetadata =
+                    new ProjectMetadata(
+                            metadata.groupId(),
+                            metadata.artifactId(),
+                            metadata.springBootVersion(),
+                            metadata.javaVersion(),
+                            BuildTool.MAVEN);
+
+            return java.util.Optional.of(
+                    new SpringProject(
+                            directory.getFileName().toString(),
+                            directory.toAbsolutePath(),
+                            projectMetadata));
+
+        } catch (IOException exception) {
+            return java.util.Optional.empty();
+        }
     }
+
 }

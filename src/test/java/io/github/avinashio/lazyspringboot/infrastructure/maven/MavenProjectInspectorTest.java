@@ -95,4 +95,35 @@ class MavenProjectInspectorTest {
 
         assertThat(inspector.isSpringBootProject(pomFile)).isFalse();
     }
+
+    @Test
+    void shouldExtractMavenProjectMetadata() throws IOException {
+        Path pomFile = temporaryDirectory.resolve("pom.xml");
+
+        Files.writeString(
+                pomFile,
+                """
+                <project>
+                  <parent>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-parent</artifactId>
+                    <version>4.1.0</version>
+                  </parent>
+          
+                  <groupId>com.example</groupId>
+                  <artifactId>testboot</artifactId>
+          
+                  <properties>
+                    <java.version>26</java.version>
+                  </properties>
+                </project>
+                """);
+
+        MavenProjectMetadata metadata = inspector.inspect(pomFile);
+
+        assertThat(metadata.groupId()).isEqualTo("com.example");
+        assertThat(metadata.artifactId()).isEqualTo("testboot");
+        assertThat(metadata.springBootVersion()).isEqualTo("4.1.0");
+        assertThat(metadata.javaVersion()).isEqualTo("26");
+    }
 }

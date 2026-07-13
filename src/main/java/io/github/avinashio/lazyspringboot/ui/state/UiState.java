@@ -36,4 +36,13 @@ public class UiState {
             selectedProjectIndex--;
         }
     }
+
+    public SpringProject selectedProject() {
+        if (projects.isEmpty()) {
+            return null;
+        }
+
+        return projects.get(selectedProjectIndex);
+    }
+
 }

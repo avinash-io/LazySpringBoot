@@ -7,6 +7,9 @@ import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
+import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
+import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
+
 class UiStateTest {
 
     @Test
@@ -53,10 +56,9 @@ class UiStateTest {
 
         state.setProjects(
                 List.of(
-                        new SpringProject("cv-api", Path.of("/projects/cv-api")),
-                        new SpringProject(
-                                "payment-service", Path.of("/projects/payment-service")),
-                        new SpringProject("demo", Path.of("/projects/demo"))));
+                        createProject("cv-api"),
+                        createProject("payment-service"),
+                        createProject("demo")));
 
         return state;
     }
@@ -68,11 +70,37 @@ class UiStateTest {
         state.selectNextProject();
         state.selectNextProject();
 
-        state.setProjects(
-                List.of(
-                        new SpringProject(
-                                "new-project", Path.of("/projects/new-project"))));
+        state.setProjects(List.of(createProject("new-project")));
 
         assertThat(state.selectedProjectIndex()).isZero();
+    }
+
+    private SpringProject createProject(String name) {
+        return new SpringProject(
+                name,
+                Path.of("/projects/" + name),
+                new ProjectMetadata(
+                        "com.example",
+                        name,
+                        "4.1.0",
+                        "26",
+                        BuildTool.MAVEN));
+    }
+
+    @Test
+    void shouldReturnSelectedProject() {
+        UiState state = createStateWithProjects();
+
+        state.selectNextProject();
+
+        assertThat(state.selectedProject().name())
+                .isEqualTo("payment-service");
+    }
+
+    @Test
+    void shouldReturnNullWhenNoProjectIsAvailable() {
+        UiState state = new UiState();
+
+        assertThat(state.selectedProject()).isNull();
     }
 }

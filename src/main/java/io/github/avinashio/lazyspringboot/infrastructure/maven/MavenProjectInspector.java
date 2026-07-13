@@ -29,13 +29,27 @@ public class MavenProjectInspector {
             Document document =
                     documentBuilderFactory.newDocumentBuilder().parse(inputStream);
 
-            return containsSpringBootGroupId(document);
+            return hasSpringBootParent(document);
         } catch (SAXException exception) {
             return false;
         } catch (ParserConfigurationException exception) {
-            throw new IOException(
-                    "Failed to configure XML parser", exception);
+            throw new IOException("Failed to configure XML parser", exception);
         }
+    }
+
+    private boolean hasSpringBootParent(Document document) {
+        Node project = document.getDocumentElement();
+        Node parent = findDirectChild(project, "parent");
+
+        if (parent == null) {
+            return false;
+        }
+
+        String groupId = findDirectChildValue(parent, "groupId");
+        String artifactId = findDirectChildValue(parent, "artifactId");
+
+        return SPRING_BOOT_GROUP_ID.equals(groupId)
+                && "spring-boot-starter-parent".equals(artifactId);
     }
 
     private DocumentBuilderFactory createSecureDocumentBuilderFactory()
@@ -78,5 +92,99 @@ public class MavenProjectInspector {
         }
 
         return false;
+    }
+
+    public MavenProjectMetadata inspect(Path pomFile) throws IOException {
+        try (InputStream inputStream = Files.newInputStream(pomFile)) {
+            DocumentBuilderFactory documentBuilderFactory =
+                    createSecureDocumentBuilderFactory();
+
+            Document document =
+                    documentBuilderFactory.newDocumentBuilder().parse(inputStream);
+
+            Node project = document.getDocumentElement();
+
+            return new MavenProjectMetadata(
+                    findProjectGroupId(document),
+                    findDirectChildValue(project, "artifactId"),
+                    findSpringBootVersion(document),
+                    findJavaVersion(document));
+        } catch (SAXException exception) {
+            throw new IOException("Invalid Maven POM: " + pomFile, exception);
+        } catch (ParserConfigurationException exception) {
+            throw new IOException("Failed to configure XML parser", exception);
+        }
+    }
+
+    private String findProjectGroupId(Document document) {
+        Node project = document.getDocumentElement();
+
+        String groupId = findDirectChildValue(project, "groupId");
+
+        if (groupId != null) {
+            return groupId;
+        }
+
+        Node parent = findDirectChild(project, "parent");
+
+        if (parent == null) {
+            return null;
+        }
+
+        return findDirectChildValue(parent, "groupId");
+    }
+
+    private String findSpringBootVersion(Document document) {
+        Node project = document.getDocumentElement();
+        Node parent = findDirectChild(project, "parent");
+
+        if (parent == null) {
+            return null;
+        }
+
+        String groupId = findDirectChildValue(parent, "groupId");
+        String artifactId = findDirectChildValue(parent, "artifactId");
+
+        if (SPRING_BOOT_GROUP_ID.equals(groupId)
+                && "spring-boot-starter-parent".equals(artifactId)) {
+            return findDirectChildValue(parent, "version");
+        }
+
+        return null;
+    }
+
+    private String findJavaVersion(Document document) {
+        Node project = document.getDocumentElement();
+        Node properties = findDirectChild(project, "properties");
+
+        if (properties == null) {
+            return null;
+        }
+
+        return findDirectChildValue(properties, "java.version");
+    }
+
+    private String findDirectChildValue(Node parent, String nodeName) {
+        Node child = findDirectChild(parent, nodeName);
+
+        if (child == null) {
+            return null;
+        }
+
+        return child.getTextContent().trim();
+    }
+
+    private Node findDirectChild(Node parent, String nodeName) {
+        NodeList children = parent.getChildNodes();
+
+        for (int index = 0; index < children.getLength(); index++) {
+            Node child = children.item(index);
+
+            if (nodeName.equals(child.getNodeName())) {
+                return child;
+            }
+        }
+
+        return null;
     }
 }
