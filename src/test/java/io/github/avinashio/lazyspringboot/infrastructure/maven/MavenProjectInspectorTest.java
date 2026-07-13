@@ -57,4 +57,42 @@ class MavenProjectInspectorTest {
 
         assertThat(inspector.isSpringBootProject(pomFile)).isFalse();
     }
+
+    @Test
+    void shouldRejectPomContainingDoctypeDeclaration()
+            throws IOException {
+        Path pomFile = temporaryDirectory.resolve("pom.xml");
+
+        Files.writeString(
+                pomFile,
+                """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <!DOCTYPE project [
+                  <!ENTITY external SYSTEM "file:///etc/passwd">
+                ]>
+                <project>
+                  <groupId>&external;</groupId>
+                </project>
+                """);
+
+        assertThat(inspector.isSpringBootProject(pomFile)).isFalse();
+    }
+
+    @Test
+    void shouldIgnoreSpringBootGroupIdInsideComment()
+            throws IOException {
+        Path pomFile = temporaryDirectory.resolve("pom.xml");
+
+        Files.writeString(
+                pomFile,
+                """
+                <project>
+                  <!-- org.springframework.boot -->
+                  <groupId>com.example</groupId>
+                  <artifactId>demo</artifactId>
+                </project>
+                """);
+
+        assertThat(inspector.isSpringBootProject(pomFile)).isFalse();
+    }
 }
