@@ -11,27 +11,32 @@ import org.jline.terminal.Terminal;
 import org.jline.utils.InfoCmp;
 import org.springframework.stereotype.Component;
 import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
+import io.github.avinashio.lazyspringboot.ui.component.DependencyPanel;
 
 @Component
 public class MainScreen {
 
     private static final int MINIMUM_TERMINAL_WIDTH = 80;
-    private static final int LEFT_PANEL_PERCENTAGE = 35;
+    private static final int PROJECT_PANEL_PERCENTAGE = 25;
+    private static final int DEPENDENCY_PANEL_PERCENTAGE = 35;
 
     private final Terminal terminal;
     private final ProjectPanel projectPanel;
     private final ProjectDetailsPanel projectDetailsPanel;
     private final StatusBar statusBar;
     private final TextFormatter textFormatter;
+    private final DependencyPanel dependencyPanel;
 
     public MainScreen(
             Terminal terminal,
             ProjectPanel projectPanel,
+            DependencyPanel dependencyPanel,
             ProjectDetailsPanel projectDetailsPanel,
             StatusBar statusBar,
             TextFormatter textFormatter) {
         this.terminal = terminal;
         this.projectPanel = projectPanel;
+        this.dependencyPanel = dependencyPanel;
         this.projectDetailsPanel = projectDetailsPanel;
         this.statusBar = statusBar;
         this.textFormatter = textFormatter;
@@ -51,25 +56,44 @@ public class MainScreen {
             return;
         }
 
-        int leftPanelWidth = width * LEFT_PANEL_PERCENTAGE / 100;
-        int rightPanelWidth = width - leftPanelWidth - 1;
+        int projectPanelWidth =
+                width * PROJECT_PANEL_PERCENTAGE / 100;
 
-        List<String> projectLines = projectPanel.render(state);
+        int dependencyPanelWidth =
+                width * DEPENDENCY_PANEL_PERCENTAGE / 100;
+
+        int detailPanelWidth =
+                width - projectPanelWidth - dependencyPanelWidth - 2;
+
+        int height = terminal.getHeight();
+
+        int contentHeight = Math.max(1, height - 4);
+
+        List<String> projectLines =
+                projectPanel.render(state);
+
+        List<String> dependencyLines =
+                dependencyPanel.render(state, contentHeight);
+
         List<String> detailLines =
                 projectDetailsPanel.render(state.selectedProject());
 
         renderHeader(
                 writer,
                 state.panelFocus(),
-                leftPanelWidth,
-                rightPanelWidth);
+                projectPanelWidth,
+                dependencyPanelWidth,
+                detailPanelWidth);
 
         renderPanels(
                 writer,
                 projectLines,
+                dependencyLines,
                 detailLines,
-                leftPanelWidth,
-                rightPanelWidth);
+                projectPanelWidth,
+                dependencyPanelWidth,
+                detailPanelWidth,
+                contentHeight);
 
         renderFooter(writer, state, width);
 
@@ -79,57 +103,86 @@ public class MainScreen {
     private void renderHeader(
             PrintWriter writer,
             PanelFocus panelFocus,
-            int leftPanelWidth,
-            int rightPanelWidth) {
+            int projectPanelWidth,
+            int dependencyPanelWidth,
+            int detailPanelWidth) {
         String projectsTitle =
                 panelFocus == PanelFocus.PROJECTS
                         ? "[Projects]"
                         : "Projects";
+
+        String dependenciesTitle =
+                panelFocus == PanelFocus.DEPENDENCIES
+                        ? "[Dependencies]"
+                        : "Dependencies";
 
         String detailsTitle =
                 panelFocus == PanelFocus.PROJECT_DETAILS
                         ? "[Project Details]"
                         : "Project Details";
 
-        writer.print("┌─ ");
-        writer.print(projectsTitle);
-        writer.print(" ");
         writer.print(
-                "─".repeat(
-                        leftPanelWidth - projectsTitle.length() - 4));
+                panelHeader(
+                        "┌",
+                        projectsTitle,
+                        projectPanelWidth));
 
-        writer.print("┬─ ");
-        writer.print(detailsTitle);
-        writer.print(" ");
         writer.print(
-                "─".repeat(
-                        rightPanelWidth - detailsTitle.length() - 4));
+                panelHeader(
+                        "┬",
+                        dependenciesTitle,
+                        dependencyPanelWidth));
+
+        writer.print(
+                panelHeader(
+                        "┬",
+                        detailsTitle,
+                        detailPanelWidth));
 
         writer.print("┐");
+    }
+
+    private String panelHeader(
+            String border,
+            String title,
+            int width) {
+        return border
+                + "─ "
+                + title
+                + " "
+                + "─".repeat(width - title.length() - 4);
     }
 
     private void renderPanels(
             PrintWriter writer,
             List<String> projectLines,
+            List<String> dependencyLines,
             List<String> detailLines,
-            int leftPanelWidth,
-            int rightPanelWidth) {
-        int contentHeight =
-                Math.max(projectLines.size(), detailLines.size());
+            int projectPanelWidth,
+            int dependencyPanelWidth,
+            int detailPanelWidth,
+            int contentHeight) {
 
         for (int row = 0; row < contentHeight; row++) {
             writer.println();
 
-            String projectLine = lineAt(projectLines, row);
-            String detailLine = lineAt(detailLines, row);
+            writer.print("│");
+            writer.print(
+                    textFormatter.fit(
+                            lineAt(projectLines, row),
+                            projectPanelWidth - 1));
 
             writer.print("│");
             writer.print(
-                    textFormatter.fit(projectLine, leftPanelWidth - 1));
+                    textFormatter.fit(
+                            lineAt(dependencyLines, row),
+                            dependencyPanelWidth - 1));
 
             writer.print("│");
             writer.print(
-                    textFormatter.fit(detailLine, rightPanelWidth - 1));
+                    textFormatter.fit(
+                            lineAt(detailLines, row),
+                            detailPanelWidth - 1));
 
             writer.print("│");
         }

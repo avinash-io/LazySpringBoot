@@ -46,6 +46,12 @@
 			<artifactId>jline</artifactId>
 			<version>${jline.version}</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-jackson2</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<build>

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
 import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
+import io.github.avinashio.lazyspringboot.domain.dependency.SpringDependency;
 
 class UiStateTest {
 
@@ -119,7 +120,7 @@ class UiStateTest {
         state.focusNextPanel();
 
         assertThat(state.panelFocus())
-                .isEqualTo(PanelFocus.PROJECT_DETAILS);
+                .isEqualTo(PanelFocus.DEPENDENCIES);
     }
 
     @Test
@@ -138,8 +139,90 @@ class UiStateTest {
 
         state.focusNextPanel();
         state.focusNextPanel();
+        state.focusNextPanel();
 
         assertThat(state.panelFocus())
                 .isEqualTo(PanelFocus.PROJECTS);
+    }
+
+    @Test
+    void shouldSelectNextDependency() {
+        UiState state = createStateWithDependencies();
+
+        state.selectNextDependency();
+
+        assertThat(state.selectedDependencyIndex()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldSelectPreviousDependency() {
+        UiState state = createStateWithDependencies();
+
+        state.selectNextDependency();
+        state.selectPreviousDependency();
+
+        assertThat(state.selectedDependencyIndex()).isZero();
+    }
+
+    @Test
+    void shouldNotMovePastLastDependency() {
+        UiState state = createStateWithDependencies();
+
+        state.selectNextDependency();
+        state.selectNextDependency();
+        state.selectNextDependency();
+
+        assertThat(state.selectedDependencyIndex()).isEqualTo(2);
+    }
+
+    @Test
+    void shouldReturnSelectedDependency() {
+        UiState state = createStateWithDependencies();
+
+        state.selectNextDependency();
+
+        assertThat(state.selectedDependency().id())
+                .isEqualTo("devtools");
+    }
+
+    @Test
+    void shouldResetDependencySelectionWhenDependenciesAreUpdated() {
+        UiState state = createStateWithDependencies();
+
+        state.selectNextDependency();
+
+        state.setDependencies(
+                List.of(
+                        new SpringDependency(
+                                "data-jpa",
+                                "Spring Data JPA",
+                                "Persist data",
+                                "SQL")));
+
+        assertThat(state.selectedDependencyIndex()).isZero();
+    }
+
+    private UiState createStateWithDependencies() {
+        UiState state = new UiState();
+
+        state.setDependencies(
+                List.of(
+                        new SpringDependency(
+                                "native",
+                                "GraalVM Native Support",
+                                "Native executable support",
+                                "Developer Tools"),
+                        new SpringDependency(
+                                "devtools",
+                                "Spring Boot DevTools",
+                                "Development tools",
+                                "Developer Tools"),
+                        new SpringDependency(
+                                "lombok",
+                                "Lombok",
+                                "Reduce boilerplate",
+                                "Developer Tools")));
+
+        return state;
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
+import io.github.avinashio.lazyspringboot.application.dependency.GetDependenciesUseCase;
 
 @Component
 @ConditionalOnProperty(
@@ -26,18 +27,21 @@ public class TuiApplication implements ApplicationRunner {
     private final MainScreen mainScreen;
     private final UiState uiState;
     private final DiscoverProjectsUseCase discoverProjectsUseCase;
+    private final GetDependenciesUseCase getDependenciesUseCase;
 
     public TuiApplication(
             Terminal terminal,
             KeyReader keyReader,
             MainScreen mainScreen,
             UiState uiState,
-            DiscoverProjectsUseCase discoverProjectsUseCase) {
+            DiscoverProjectsUseCase discoverProjectsUseCase,
+            GetDependenciesUseCase getDependenciesUseCase) {
         this.terminal = terminal;
         this.keyReader = keyReader;
         this.mainScreen = mainScreen;
         this.uiState = uiState;
         this.discoverProjectsUseCase = discoverProjectsUseCase;
+        this.getDependenciesUseCase = getDependenciesUseCase;
     }
 
     @Override
@@ -54,6 +58,9 @@ public class TuiApplication implements ApplicationRunner {
 
             uiState.setProjects(
                     discoverProjectsUseCase.discover(currentDirectory));
+
+            uiState.setDependencies(
+                    getDependenciesUseCase.getDependencies());
 
             mainScreen.render(uiState);
 
@@ -92,14 +99,26 @@ public class TuiApplication implements ApplicationRunner {
     }
 
     private void handleUp() {
-        if (uiState.panelFocus() == PanelFocus.PROJECTS) {
-            uiState.selectPreviousProject();
+        switch (uiState.panelFocus()) {
+            case PROJECTS ->
+                    uiState.selectPreviousProject();
+            case DEPENDENCIES ->
+                    uiState.selectPreviousDependency();
+            case PROJECT_DETAILS -> {
+                // No action.
+            }
         }
     }
 
     private void handleDown() {
-        if (uiState.panelFocus() == PanelFocus.PROJECTS) {
-            uiState.selectNextProject();
+        switch (uiState.panelFocus()) {
+            case PROJECTS ->
+                    uiState.selectNextProject();
+            case DEPENDENCIES ->
+                    uiState.selectNextDependency();
+            case PROJECT_DETAILS -> {
+                // No action.
+            }
         }
     }
 }
