@@ -4,6 +4,9 @@ import io.github.avinashio.lazyspringboot.domain.dependency.DependencyItem;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.springframework.stereotype.Component;
 
 @Component
@@ -11,6 +14,8 @@ public class UiState {
 
     private List<SpringProject> projects = new ArrayList<>();
     private List<DependencyItem> dependencyItems = List.of();
+    private Set<String> selectedDependencyIds =
+            Set.of();
 
     private PanelFocus panelFocus = PanelFocus.PROJECTS;
 
@@ -22,6 +27,10 @@ public class UiState {
 
     public List<SpringProject> projects() {
         return projects;
+    }
+
+    public Set<String> selectedDependencyIds() {
+        return selectedDependencyIds;
     }
 
     public int selectedProjectIndex() {
@@ -86,7 +95,16 @@ public class UiState {
     public void setDependencyItems(
             List<DependencyItem> dependencyItems) {
         this.dependencyItems =
-                List.copyOf(dependencyItems);
+                dependencyItems.stream()
+                        .map(
+                                item ->
+                                        new DependencyItem(
+                                                item.dependency(),
+                                                item.availability(),
+                                                selectedDependencyIds.contains(
+                                                        item.dependency().id())
+                                                        && item.selectable()))
+                        .toList();
 
         selectedDependencyIndex = 0;
         dependencyViewport.reset();
@@ -115,5 +133,49 @@ public class UiState {
 
     public Viewport dependencyViewport() {
         return dependencyViewport;
+    }
+
+    public void toggleSelectedDependency() {
+        if (dependencyItems.isEmpty()) {
+            return;
+        }
+
+        DependencyItem current =
+                dependencyItems.get(selectedDependencyIndex);
+
+        if (!current.selectable()) {
+            return;
+        }
+
+        String dependencyId =
+                current.dependency().id();
+
+        Set<String> updatedIds =
+                new HashSet<>(selectedDependencyIds);
+
+        if (updatedIds.contains(dependencyId)) {
+            updatedIds.remove(dependencyId);
+        } else {
+            updatedIds.add(dependencyId);
+        }
+
+        selectedDependencyIds =
+                Set.copyOf(updatedIds);
+
+        updateDependencySelection();
+    }
+
+    private void updateDependencySelection() {
+        dependencyItems =
+                dependencyItems.stream()
+                        .map(
+                                item ->
+                                        new DependencyItem(
+                                                item.dependency(),
+                                                item.availability(),
+                                                selectedDependencyIds.contains(
+                                                        item.dependency().id())
+                                                        && item.selectable()))
+                        .toList();
     }
 }

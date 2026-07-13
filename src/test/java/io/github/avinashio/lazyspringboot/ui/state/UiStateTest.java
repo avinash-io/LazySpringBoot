@@ -206,6 +206,144 @@ class UiStateTest {
                         "lombok");
     }
 
+    @Test
+    void shouldToggleSelectedDependency() {
+        UiState state = createStateWithDependencies();
+
+        state.toggleSelectedDependency();
+
+        assertThat(
+                state.selectedDependencyItem().selected())
+                .isTrue();
+    }
+
+    @Test
+    void shouldUnselectSelectedDependency() {
+        UiState state = createStateWithDependencies();
+
+        state.toggleSelectedDependency();
+        state.toggleSelectedDependency();
+
+        assertThat(
+                state.selectedDependencyItem().selected())
+                .isFalse();
+    }
+
+    @Test
+    void shouldToggleCurrentlyHighlightedDependency() {
+        UiState state = createStateWithDependencies();
+
+        state.selectNextDependency();
+        state.toggleSelectedDependency();
+
+        assertThat(
+                state.dependencyItems()
+                        .get(1)
+                        .selected())
+                .isTrue();
+
+        assertThat(
+                state.dependencyItems()
+                        .getFirst()
+                        .selected())
+                .isFalse();
+    }
+
+    @Test
+    void shouldNotToggleAlreadyPresentDependency() {
+        UiState state = new UiState();
+
+        state.setDependencyItems(
+                List.of(
+                        new DependencyItem(
+                                dependency(
+                                        "web",
+                                        "Spring Web",
+                                        "Web applications",
+                                        "Web"),
+                                DependencyAvailability.ALREADY_PRESENT,
+                                false)));
+
+        state.toggleSelectedDependency();
+
+        assertThat(
+                state.selectedDependencyItem().selected())
+                .isFalse();
+
+        assertThat(state.selectedDependencyIds())
+                .isEmpty();
+    }
+
+    @Test
+    void shouldPreserveDependencySelectionWhenItemsAreRebuilt() {
+        UiState state = createStateWithDependencies();
+
+        state.toggleSelectedDependency();
+
+        state.setDependencyItems(
+                List.of(
+                        dependencyItem("native"),
+                        dependencyItem("devtools"),
+                        dependencyItem("lombok")));
+
+        assertThat(
+                state.dependencyItems()
+                        .getFirst()
+                        .selected())
+                .isTrue();
+    }
+
+    @Test
+    void shouldHideSelectionWhenDependencyAlreadyExists() {
+        UiState state = createStateWithDependencies();
+
+        state.toggleSelectedDependency();
+
+        state.setDependencyItems(
+                List.of(
+                        dependencyItem(
+                                "native",
+                                DependencyAvailability.ALREADY_PRESENT)));
+
+        assertThat(
+                state.selectedDependencyItem().selected())
+                .isFalse();
+
+        assertThat(state.selectedDependencyIds())
+                .containsExactly("native");
+    }
+
+    @Test
+    void shouldRestoreSelectionWhenDependencyBecomesAvailableAgain() {
+        UiState state = createStateWithDependencies();
+
+        state.toggleSelectedDependency();
+
+        state.setDependencyItems(
+                List.of(
+                        dependencyItem(
+                                "native",
+                                DependencyAvailability.ALREADY_PRESENT)));
+
+        state.setDependencyItems(
+                List.of(dependencyItem("native")));
+
+        assertThat(
+                state.selectedDependencyItem().selected())
+                .isTrue();
+    }
+
+    @Test
+    void shouldRemoveDependencyIdWhenUnselected() {
+        UiState state = createStateWithDependencies();
+
+        state.toggleSelectedDependency();
+        state.toggleSelectedDependency();
+
+        assertThat(state.selectedDependencyIds())
+                .doesNotContain("native");
+    }
+
     private UiState createStateWithProjects() {
         UiState state = new UiState();
 
@@ -242,19 +380,52 @@ class UiStateTest {
         return state;
     }
 
+    private DependencyItem dependencyItem(String id) {
+        return dependencyItem(
+                id,
+                id,
+                "Test dependency",
+                "Test");
+    }
+
+    private DependencyItem dependencyItem(
+            String id,
+            DependencyAvailability availability) {
+        return new DependencyItem(
+                dependency(
+                        id,
+                        id,
+                        "Test dependency",
+                        "Test"),
+                availability,
+                false);
+    }
+
     private DependencyItem dependencyItem(
             String id,
             String name,
             String description,
             String group) {
         return new DependencyItem(
-                new SpringDependency(
+                dependency(
                         id,
                         name,
                         description,
                         group),
                 DependencyAvailability.AVAILABLE,
                 false);
+    }
+
+    private SpringDependency dependency(
+            String id,
+            String name,
+            String description,
+            String group) {
+        return new SpringDependency(
+                id,
+                name,
+                description,
+                group);
     }
 
     private SpringProject createProject(String name) {

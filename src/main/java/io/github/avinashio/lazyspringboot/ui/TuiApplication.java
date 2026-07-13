@@ -105,6 +105,7 @@ public class TuiApplication implements ApplicationRunner {
             case RIGHT -> uiState.focusNextPanel();
             case UP -> handleUp();
             case DOWN -> handleDown();
+            case SPACE -> handleSpace();
             default -> {
                 // No action.
             }
@@ -157,6 +158,12 @@ public class TuiApplication implements ApplicationRunner {
         }
     }
 
+    private void handleSpace() {
+        if (uiState.panelFocus()
+                == PanelFocus.DEPENDENCIES) {
+            uiState.toggleSelectedDependency();
+        }
+    }
 
     private void refreshDependencyItems() {
         uiState.setDependencyItems(

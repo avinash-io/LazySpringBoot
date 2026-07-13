@@ -45,19 +45,30 @@ public class DependencyPanel {
                             : " ";
 
             String marker =
-                    item.availability()
-                            == DependencyAvailability.ALREADY_PRESENT
-                            ? "*"
-                            : " ";
+                    marker(item);
 
             lines.add(
                     " "
                             + cursor
-                            + marker
+                            + " "
+                            + marker(item)
                             + " "
                             + item.dependency().name());
         }
 
         return lines;
+    }
+
+    private String marker(DependencyItem item) {
+        if (item.availability()
+                == DependencyAvailability.ALREADY_PRESENT) {
+            return "[*]";
+        }
+
+        if (item.selected()) {
+            return "[x]";
+        }
+
+        return "[ ]";
     }
 }

@@ -73,4 +73,4 @@ class BuildDependencyItemsUseCaseTest {
                         BuildTool.MAVEN,
                         List.of(dependencies)));
     }
-}q
+}

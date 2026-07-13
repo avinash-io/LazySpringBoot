@@ -11,7 +11,7 @@ public class StatusBar {
             case PROJECTS ->
                     " ↑↓ Navigate    ←→ Switch Panel    q Quit";
             case DEPENDENCIES ->
-                    " ↑↓ Navigate    ←→ Switch Panel    q Quit";
+                    " ↑↓ Navigate    Space Toggle    ←→ Switch Panel    q Quit";
             case PROJECT_DETAILS ->
                     " ←→ Switch Panel    q Quit";
         };

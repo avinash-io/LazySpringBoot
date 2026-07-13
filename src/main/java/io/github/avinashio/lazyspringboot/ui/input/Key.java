@@ -7,5 +7,6 @@ public enum Key {
     RIGHT,
     ENTER,
     QUIT,
+    SPACE,
     UNKNOWN
 }

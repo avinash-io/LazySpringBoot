@@ -21,6 +21,7 @@ public class KeyReader {
 
         return switch (input) {
             case 'q' -> Key.QUIT;
+            case ' ' -> Key.SPACE;
             case '\r', '\n' -> Key.ENTER;
             case ESCAPE -> readEscapeSequence();
             default -> Key.UNKNOWN;
