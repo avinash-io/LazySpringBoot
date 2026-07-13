@@ -1,19 +1,29 @@
 package io.github.avinashio.lazyspringboot.ui.component;
 
+import org.jline.utils.AttributedString;
 import org.springframework.stereotype.Component;
 
 @Component
 public class TextFormatter {
 
-    public String fit(String value, int width) {
+    public String fit(String text, int width) {
         if (width <= 0) {
             return "";
         }
 
-        if (value.length() >= width) {
-            return value.substring(0, width);
+        AttributedString attributedString =
+                AttributedString.fromAnsi(text);
+
+        int visibleLength =
+                attributedString.columnLength();
+
+        if (visibleLength > width) {
+            return attributedString
+                    .columnSubSequence(0, width)
+                    .toAnsi();
         }
 
-        return value + " ".repeat(width - value.length());
+        return text
+                + " ".repeat(width - visibleLength);
     }
 }

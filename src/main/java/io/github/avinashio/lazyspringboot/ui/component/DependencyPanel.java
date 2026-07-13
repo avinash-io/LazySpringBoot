@@ -11,6 +11,13 @@ import io.github.avinashio.lazyspringboot.domain.dependency.DependencyItem;
 @Component
 public class DependencyPanel {
 
+    private final TerminalStyle terminalStyle;
+
+    public DependencyPanel(
+            TerminalStyle terminalStyle) {
+        this.terminalStyle = terminalStyle;
+    }
+
     public List<String> render(
             UiState state,
             int visibleHeight) {
@@ -47,16 +54,29 @@ public class DependencyPanel {
             String marker =
                     marker(item);
 
-            lines.add(
+            String line =
                     " "
                             + cursor
                             + " "
                             + marker(item)
                             + " "
-                            + item.dependency().name());
+                            + item.dependency().name();
+
+            lines.add(style(item, line));
         }
 
         return lines;
+    }
+
+    private String style(
+            DependencyItem item,
+            String line) {
+        if (item.availability()
+                == DependencyAvailability.ALREADY_PRESENT) {
+            return terminalStyle.dim(line);
+        }
+
+        return line;
     }
 
     private String marker(DependencyItem item) {
