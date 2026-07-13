@@ -10,6 +10,7 @@ import java.util.List;
 import org.jline.terminal.Terminal;
 import org.jline.utils.InfoCmp;
 import org.springframework.stereotype.Component;
+import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
 
 @Component
 public class MainScreen {
@@ -57,7 +58,11 @@ public class MainScreen {
         List<String> detailLines =
                 projectDetailsPanel.render(state.selectedProject());
 
-        renderHeader(writer, leftPanelWidth, rightPanelWidth);
+        renderHeader(
+                writer,
+                state.panelFocus(),
+                leftPanelWidth,
+                rightPanelWidth);
 
         renderPanels(
                 writer,
@@ -66,21 +71,41 @@ public class MainScreen {
                 leftPanelWidth,
                 rightPanelWidth);
 
-        renderFooter(writer, width);
+        renderFooter(writer, state, width);
 
         writer.flush();
     }
 
     private void renderHeader(
             PrintWriter writer,
+            PanelFocus panelFocus,
             int leftPanelWidth,
             int rightPanelWidth) {
+        String projectsTitle =
+                panelFocus == PanelFocus.PROJECTS
+                        ? "[Projects]"
+                        : "Projects";
+
+        String detailsTitle =
+                panelFocus == PanelFocus.PROJECT_DETAILS
+                        ? "[Project Details]"
+                        : "Project Details";
+
+        writer.print("┌─ ");
+        writer.print(projectsTitle);
+        writer.print(" ");
         writer.print(
-                "┌─ Projects "
-                        + "─".repeat(leftPanelWidth - 12)
-                        + "┬─ Project Details "
-                        + "─".repeat(rightPanelWidth - 20)
-                        + "┐");
+                "─".repeat(
+                        leftPanelWidth - projectsTitle.length() - 4));
+
+        writer.print("┬─ ");
+        writer.print(detailsTitle);
+        writer.print(" ");
+        writer.print(
+                "─".repeat(
+                        rightPanelWidth - detailsTitle.length() - 4));
+
+        writer.print("┐");
     }
 
     private void renderPanels(
@@ -118,7 +143,10 @@ public class MainScreen {
         return lines.get(index);
     }
 
-    private void renderFooter(PrintWriter writer, int width) {
+    private void renderFooter(
+            PrintWriter writer,
+            UiState state,
+            int width) {
         writer.println();
 
         writer.print("├");
@@ -129,7 +157,7 @@ public class MainScreen {
 
         writer.print("│");
         writer.print(
-                textFormatter.fit(statusBar.render(), width - 2));
+                textFormatter.fit(statusBar.render(state), width - 2));
         writer.print("│");
 
         writer.println();

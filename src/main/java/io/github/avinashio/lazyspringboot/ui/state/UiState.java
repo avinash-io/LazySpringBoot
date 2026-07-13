@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 public class UiState {
 
     private List<SpringProject> projects = new ArrayList<>();
+    private PanelFocus panelFocus = PanelFocus.PROJECTS;
 
     private int selectedProjectIndex;
 
@@ -43,6 +44,26 @@ public class UiState {
         }
 
         return projects.get(selectedProjectIndex);
+    }
+
+    public PanelFocus panelFocus() {
+        return panelFocus;
+    }
+
+    public void focusNextPanel() {
+        panelFocus =
+                switch (panelFocus) {
+                    case PROJECTS -> PanelFocus.PROJECT_DETAILS;
+                    case PROJECT_DETAILS -> PanelFocus.PROJECTS;
+                };
+    }
+
+    public void focusPreviousPanel() {
+        panelFocus =
+                switch (panelFocus) {
+                    case PROJECTS -> PanelFocus.PROJECT_DETAILS;
+                    case PROJECT_DETAILS -> PanelFocus.PROJECTS;
+                };
     }
 
 }

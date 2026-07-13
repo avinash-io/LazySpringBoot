@@ -12,6 +12,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
 
 @Component
 @ConditionalOnProperty(
@@ -80,11 +81,25 @@ public class TuiApplication implements ApplicationRunner {
 
     private void handleKey(Key key) {
         switch (key) {
-            case UP -> uiState.selectPreviousProject();
-            case DOWN -> uiState.selectNextProject();
+            case LEFT -> uiState.focusPreviousPanel();
+            case RIGHT -> uiState.focusNextPanel();
+            case UP -> handleUp();
+            case DOWN -> handleDown();
             default -> {
                 // No action.
             }
+        }
+    }
+
+    private void handleUp() {
+        if (uiState.panelFocus() == PanelFocus.PROJECTS) {
+            uiState.selectPreviousProject();
+        }
+    }
+
+    private void handleDown() {
+        if (uiState.panelFocus() == PanelFocus.PROJECTS) {
+            uiState.selectNextProject();
         }
     }
 }

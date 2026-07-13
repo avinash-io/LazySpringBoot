@@ -103,4 +103,43 @@ class UiStateTest {
 
         assertThat(state.selectedProject()).isNull();
     }
+
+    @Test
+    void shouldInitiallyFocusProjectsPanel() {
+        UiState state = new UiState();
+
+        assertThat(state.panelFocus())
+                .isEqualTo(PanelFocus.PROJECTS);
+    }
+
+    @Test
+    void shouldFocusNextPanel() {
+        UiState state = new UiState();
+
+        state.focusNextPanel();
+
+        assertThat(state.panelFocus())
+                .isEqualTo(PanelFocus.PROJECT_DETAILS);
+    }
+
+    @Test
+    void shouldFocusPreviousPanel() {
+        UiState state = new UiState();
+
+        state.focusPreviousPanel();
+
+        assertThat(state.panelFocus())
+                .isEqualTo(PanelFocus.PROJECT_DETAILS);
+    }
+
+    @Test
+    void shouldCycleFocusToProjectsPanel() {
+        UiState state = new UiState();
+
+        state.focusNextPanel();
+        state.focusNextPanel();
+
+        assertThat(state.panelFocus())
+                .isEqualTo(PanelFocus.PROJECTS);
+    }
 }
