@@ -7,13 +7,30 @@ import org.springframework.stereotype.Component;
 public class StatusBar {
 
     public String render(UiState state) {
+        if (state.dependencySearchActive()) {
+            return renderDependencySearch(state);
+        }
+
         return switch (state.panelFocus()) {
             case PROJECTS ->
                     " ↑↓ Navigate    ←→ Switch Panel    q Quit";
+
             case DEPENDENCIES ->
-                    " ↑↓ Navigate    Space Toggle    ←→ Switch Panel    q Quit";
+                    " ↑↓ Navigate    Space Toggle    / Search"
+                            + "    ←→ Switch Panel    q Quit";
+
             case PROJECT_DETAILS ->
                     " ←→ Switch Panel    q Quit";
         };
+    }
+
+    private String renderDependencySearch(
+            UiState state) {
+        return " Search: "
+                + state.dependencySearchQuery()
+                + "_"
+                + "    ↑↓ Navigate"
+                + "    Backspace Delete"
+                + "    Esc Close";
     }
 }

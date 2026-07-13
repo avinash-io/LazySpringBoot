@@ -16,7 +16,8 @@ class KeyReaderTest {
         KeyReader keyReader = createKeyReader('q');
 
         assertThat(keyReader.read())
-                .isEqualTo(Key.QUIT);
+                .isEqualTo(
+                        KeyEvent.of(KeyType.QUIT));
     }
 
     @Test
@@ -24,7 +25,8 @@ class KeyReaderTest {
         KeyReader keyReader = createKeyReader('\n');
 
         assertThat(keyReader.read())
-                .isEqualTo(Key.ENTER);
+                .isEqualTo(
+                        KeyEvent.of(KeyType.ENTER));
     }
 
     @Test
@@ -32,16 +34,84 @@ class KeyReaderTest {
         KeyReader keyReader = createKeyReader(' ');
 
         assertThat(keyReader.read())
-                .isEqualTo(Key.SPACE);
+                .isEqualTo(
+                        KeyEvent.of(KeyType.SPACE));
+    }
+
+    @Test
+    void shouldReadSearchKey() throws IOException {
+        KeyReader keyReader = createKeyReader('/');
+
+        assertThat(keyReader.read())
+                .isEqualTo(
+                        KeyEvent.of(KeyType.SEARCH));
+    }
+
+    @Test
+    void shouldReadBackspaceKey() throws IOException {
+        KeyReader keyReader = createKeyReader(127);
+
+        assertThat(keyReader.read())
+                .isEqualTo(
+                        KeyEvent.of(KeyType.BACKSPACE));
+    }
+
+    @Test
+    void shouldReadCharacterKey() throws IOException {
+        KeyReader keyReader = createKeyReader('w');
+
+        assertThat(keyReader.read())
+                .isEqualTo(
+                        KeyEvent.character('w'));
+    }
+
+    @Test
+    void shouldReadUppercaseCharacterKey()
+            throws IOException {
+        KeyReader keyReader = createKeyReader('W');
+
+        assertThat(keyReader.read())
+                .isEqualTo(
+                        KeyEvent.character('W'));
+    }
+
+    @Test
+    void shouldReadNumericCharacterKey()
+            throws IOException {
+        KeyReader keyReader = createKeyReader('4');
+
+        assertThat(keyReader.read())
+                .isEqualTo(
+                        KeyEvent.character('4'));
+    }
+
+    @Test
+    void shouldReadEscapeKey() throws IOException {
+        Terminal terminal = mock(Terminal.class);
+        NonBlockingReader reader =
+                mock(NonBlockingReader.class);
+
+        when(terminal.reader()).thenReturn(reader);
+        when(reader.read()).thenReturn(27);
+        when(reader.read(50))
+                .thenReturn(NonBlockingReader.READ_EXPIRED);
+
+        KeyReader keyReader =
+                new KeyReader(terminal);
+
+        assertThat(keyReader.read())
+                .isEqualTo(
+                        KeyEvent.of(KeyType.ESCAPE));
     }
 
     @Test
     void shouldReturnUnknownForUnsupportedKey()
             throws IOException {
-        KeyReader keyReader = createKeyReader('z');
+        KeyReader keyReader = createKeyReader(1);
 
         assertThat(keyReader.read())
-                .isEqualTo(Key.UNKNOWN);
+                .isEqualTo(
+                        KeyEvent.of(KeyType.UNKNOWN));
     }
 
     private KeyReader createKeyReader(int input)

@@ -440,4 +440,73 @@ class UiStateTest {
                         BuildTool.MAVEN,
                         List.of()));
     }
+
+    @Test
+    void shouldStartDependencySearch() {
+        UiState state = new UiState();
+
+        state.startDependencySearch();
+
+        assertThat(state.inputMode())
+                .isEqualTo(InputMode.DEPENDENCY_SEARCH);
+
+        assertThat(state.dependencySearchActive())
+                .isTrue();
+    }
+
+    @Test
+    void shouldAppendDependencySearchCharacter() {
+        UiState state = new UiState();
+
+        state.startDependencySearch();
+        state.appendDependencySearchCharacter('w');
+        state.appendDependencySearchCharacter('e');
+        state.appendDependencySearchCharacter('b');
+
+        assertThat(state.dependencySearchQuery())
+                .isEqualTo("web");
+    }
+
+    @Test
+    void shouldRemoveLastDependencySearchCharacter() {
+        UiState state = new UiState();
+
+        state.startDependencySearch();
+        state.appendDependencySearchCharacter('w');
+        state.appendDependencySearchCharacter('e');
+        state.appendDependencySearchCharacter('b');
+
+        state.removeLastDependencySearchCharacter();
+
+        assertThat(state.dependencySearchQuery())
+                .isEqualTo("we");
+    }
+
+    @Test
+    void shouldIgnoreBackspaceForEmptySearch() {
+        UiState state = new UiState();
+
+        state.startDependencySearch();
+
+        state.removeLastDependencySearchCharacter();
+
+        assertThat(state.dependencySearchQuery())
+                .isEmpty();
+    }
+
+    @Test
+    void shouldStopAndClearDependencySearch() {
+        UiState state = new UiState();
+
+        state.startDependencySearch();
+        state.appendDependencySearchCharacter('w');
+
+        state.stopDependencySearch();
+
+        assertThat(state.inputMode())
+                .isEqualTo(InputMode.NAVIGATION);
+
+        assertThat(state.dependencySearchQuery())
+                .isEmpty();
+    }
 }

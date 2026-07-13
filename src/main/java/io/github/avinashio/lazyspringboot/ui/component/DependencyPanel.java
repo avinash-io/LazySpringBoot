@@ -1,25 +1,26 @@
 package io.github.avinashio.lazyspringboot.ui.component;
 
-import io.github.avinashio.lazyspringboot.domain.dependency.SpringDependency;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyAvailability;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyItem;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
-import io.github.avinashio.lazyspringboot.domain.dependency.DependencyAvailability;
-import io.github.avinashio.lazyspringboot.domain.dependency.DependencyItem;
 
 @Component
 public class DependencyPanel {
 
     private final TerminalStyle terminalStyle;
     private final DependencyRowBuilder dependencyRowBuilder;
+    private final DependencyFilter dependencyFilter;
 
     public DependencyPanel(
             TerminalStyle terminalStyle,
-            DependencyRowBuilder dependencyRowBuilder) {
+            DependencyRowBuilder dependencyRowBuilder,
+            DependencyFilter dependencyFilter) {
         this.terminalStyle = terminalStyle;
-        this.dependencyRowBuilder =
-                dependencyRowBuilder;
+        this.dependencyRowBuilder = dependencyRowBuilder;
+        this.dependencyFilter = dependencyFilter;
     }
 
     public List<String> render(
@@ -29,14 +30,31 @@ public class DependencyPanel {
             return List.of(" No dependencies available.");
         }
 
+        List<DependencyItem> visibleItems =
+                dependencyFilter.filter(
+                        state.dependencyItems(),
+                        state.dependencySearchQuery());
+
+        if (visibleItems.isEmpty()) {
+            return List.of(
+                    " No dependencies match \""
+                            + state.dependencySearchQuery()
+                            + "\"");
+        }
+
         List<DependencyRow> rows =
                 dependencyRowBuilder.build(
+                        visibleItems,
                         state.dependencyItems());
 
         int selectedRowIndex =
                 dependencyRowBuilder.findDependencyRowIndex(
                         rows,
                         state.selectedDependencyIndex());
+
+        if (selectedRowIndex < 0) {
+            selectedRowIndex = 0;
+        }
 
         state
                 .dependencyViewport()
@@ -66,30 +84,6 @@ public class DependencyPanel {
         }
 
         return List.copyOf(lines);
-    }
-
-    private String style(
-            DependencyItem item,
-            String line) {
-        if (item.availability()
-                == DependencyAvailability.ALREADY_PRESENT) {
-            return terminalStyle.dim(line);
-        }
-
-        return line;
-    }
-
-    private String marker(DependencyItem item) {
-        if (item.availability()
-                == DependencyAvailability.ALREADY_PRESENT) {
-            return "[*]";
-        }
-
-        if (item.selected()) {
-            return "[x]";
-        }
-
-        return "[ ]";
     }
 
     private String renderRow(
@@ -134,5 +128,30 @@ public class DependencyPanel {
                         + item.dependency().name();
 
         return style(item, line);
+    }
+
+    private String marker(
+            DependencyItem item) {
+        if (item.availability()
+                == DependencyAvailability.ALREADY_PRESENT) {
+            return "[*]";
+        }
+
+        if (item.selected()) {
+            return "[x]";
+        }
+
+        return "[ ]";
+    }
+
+    private String style(
+            DependencyItem item,
+            String line) {
+        if (item.availability()
+                == DependencyAvailability.ALREADY_PRESENT) {
+            return terminalStyle.dim(line);
+        }
+
+        return line;
     }
 }

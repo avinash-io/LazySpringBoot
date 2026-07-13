@@ -2,13 +2,17 @@ package io.github.avinashio.lazyspringboot.ui.input;
 
 import java.io.IOException;
 import org.jline.terminal.Terminal;
+import org.jline.utils.NonBlockingReader;
 import org.springframework.stereotype.Component;
 
 @Component
 public class KeyReader {
 
     private static final int ESCAPE = 27;
+    private static final int BACKSPACE = 127;
+    private static final int CONTROL_BACKSPACE = 8;
     private static final int CONTROL_SEQUENCE_INTRODUCER = '[';
+    private static final long ESCAPE_SEQUENCE_TIMEOUT_MILLIS = 50;
 
     private final Terminal terminal;
 
@@ -16,33 +20,62 @@ public class KeyReader {
         this.terminal = terminal;
     }
 
-    public Key read() throws IOException {
+    public KeyEvent read() throws IOException {
         int input = terminal.reader().read();
 
         return switch (input) {
-            case 'q' -> Key.QUIT;
-            case ' ' -> Key.SPACE;
-            case '\r', '\n' -> Key.ENTER;
+            case 'q' -> KeyEvent.of(KeyType.QUIT);
+            case ' ' -> KeyEvent.of(KeyType.SPACE);
+            case '/' -> KeyEvent.of(KeyType.SEARCH);
+            case '\r', '\n' -> KeyEvent.of(KeyType.ENTER);
+            case BACKSPACE, CONTROL_BACKSPACE ->
+                    KeyEvent.of(KeyType.BACKSPACE);
             case ESCAPE -> readEscapeSequence();
-            default -> Key.UNKNOWN;
+            default -> readCharacter(input);
         };
     }
 
-    private Key readEscapeSequence() throws IOException {
-        int sequenceType = terminal.reader().read();
+    private KeyEvent readEscapeSequence()
+            throws IOException {
+        NonBlockingReader reader =
+                terminal.reader();
 
-        if (sequenceType != CONTROL_SEQUENCE_INTRODUCER) {
-            return Key.UNKNOWN;
+        int sequenceType =
+                reader.read(
+                        ESCAPE_SEQUENCE_TIMEOUT_MILLIS);
+
+        if (sequenceType
+                == NonBlockingReader.READ_EXPIRED) {
+            return KeyEvent.of(KeyType.ESCAPE);
         }
 
-        int direction = terminal.reader().read();
+        if (sequenceType
+                != CONTROL_SEQUENCE_INTRODUCER) {
+            return KeyEvent.of(KeyType.UNKNOWN);
+        }
+
+        int direction =
+                reader.read(
+                        ESCAPE_SEQUENCE_TIMEOUT_MILLIS);
 
         return switch (direction) {
-            case 'A' -> Key.UP;
-            case 'B' -> Key.DOWN;
-            case 'C' -> Key.RIGHT;
-            case 'D' -> Key.LEFT;
-            default -> Key.UNKNOWN;
+            case 'A' -> KeyEvent.of(KeyType.UP);
+            case 'B' -> KeyEvent.of(KeyType.DOWN);
+            case 'C' -> KeyEvent.of(KeyType.RIGHT);
+            case 'D' -> KeyEvent.of(KeyType.LEFT);
+            default -> KeyEvent.of(KeyType.UNKNOWN);
         };
+    }
+
+    private KeyEvent readCharacter(int input) {
+        if (isPrintable(input)) {
+            return KeyEvent.character((char) input);
+        }
+
+        return KeyEvent.of(KeyType.UNKNOWN);
+    }
+
+    private boolean isPrintable(int input) {
+        return input >= 32 && input <= 126;
     }
 }

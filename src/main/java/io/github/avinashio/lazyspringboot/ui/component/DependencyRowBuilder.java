@@ -9,7 +9,8 @@ import org.springframework.stereotype.Component;
 public class DependencyRowBuilder {
 
     public List<DependencyRow> build(
-            List<DependencyItem> items) {
+            List<DependencyItem> items,
+            List<DependencyItem> allItems) {
         List<DependencyRow> rows =
                 new ArrayList<>();
 
@@ -30,7 +31,9 @@ public class DependencyRowBuilder {
 
             rows.add(
                     new DependencyRow.Dependency(
-                            index,
+                            findOriginalIndex(
+                                    allItems,
+                                    item),
                             item));
         }
 
@@ -53,5 +56,28 @@ public class DependencyRowBuilder {
         }
 
         return 0;
+    }
+
+    private int findOriginalIndex(
+            List<DependencyItem> allItems,
+            DependencyItem item) {
+        String dependencyId =
+                item.dependency().id();
+
+        for (int index = 0;
+             index < allItems.size();
+             index++) {
+            if (allItems
+                    .get(index)
+                    .dependency()
+                    .id()
+                    .equals(dependencyId)) {
+                return index;
+            }
+        }
+
+        throw new IllegalArgumentException(
+                "Dependency not found: "
+                        + dependencyId);
     }
 }

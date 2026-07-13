@@ -15,11 +15,13 @@ class DependencyRowBuilderTest {
 
     @Test
     void shouldAddGroupHeaderBeforeDependencies() {
+        List<DependencyItem> items =
+                List.of(
+                        dependency("native", "Developer Tools"),
+                        dependency("lombok", "Developer Tools"));
+
         List<DependencyRow> rows =
-                rowBuilder.build(
-                        List.of(
-                                dependency("native", "Developer Tools"),
-                                dependency("lombok", "Developer Tools")));
+                rowBuilder.build(items, items);
 
         assertThat(rows)
                 .containsExactly(
@@ -27,20 +29,30 @@ class DependencyRowBuilderTest {
                                 "Developer Tools"),
                         new DependencyRow.Dependency(
                                 0,
-                                dependency("native", "Developer Tools")),
+                                dependency(
+                                        "native",
+                                        "Developer Tools")),
                         new DependencyRow.Dependency(
                                 1,
-                                dependency("lombok", "Developer Tools")));
+                                dependency(
+                                        "lombok",
+                                        "Developer Tools")));
     }
 
     @Test
     void shouldAddHeaderWhenGroupChanges() {
+        List<DependencyItem> items =
+                List.of(
+                        dependency(
+                                "lombok",
+                                "Developer Tools"),
+                        dependency("web", "Web"),
+                        dependency(
+                                "web-services",
+                                "Web"));
+
         List<DependencyRow> rows =
-                rowBuilder.build(
-                        List.of(
-                                dependency("lombok", "Developer Tools"),
-                                dependency("web", "Web"),
-                                dependency("web-services", "Web")));
+                rowBuilder.build(items, items);
 
         assertThat(rows)
                 .containsExactly(
@@ -48,20 +60,83 @@ class DependencyRowBuilderTest {
                                 "Developer Tools"),
                         new DependencyRow.Dependency(
                                 0,
-                                dependency("lombok", "Developer Tools")),
+                                dependency(
+                                        "lombok",
+                                        "Developer Tools")),
                         new DependencyRow.GroupHeader("Web"),
                         new DependencyRow.Dependency(
                                 1,
                                 dependency("web", "Web")),
                         new DependencyRow.Dependency(
                                 2,
-                                dependency("web-services", "Web")));
+                                dependency(
+                                        "web-services",
+                                        "Web")));
     }
 
     @Test
     void shouldReturnEmptyRowsForEmptyDependencies() {
-        assertThat(rowBuilder.build(List.of()))
+        List<DependencyItem> items =
+                List.of();
+
+        assertThat(rowBuilder.build(items, items))
                 .isEmpty();
+    }
+
+    @Test
+    void shouldFindRenderedRowForDependencyIndex() {
+        List<DependencyItem> items =
+                List.of(
+                        dependency(
+                                "native",
+                                "Developer Tools"),
+                        dependency("web", "Web"));
+
+        List<DependencyRow> rows =
+                rowBuilder.build(items, items);
+
+        int rowIndex =
+                rowBuilder.findDependencyRowIndex(
+                        rows,
+                        1);
+
+        assertThat(rowIndex).isEqualTo(3);
+    }
+
+    @Test
+    void shouldPreserveOriginalDependencyIndexForFilteredItems() {
+        DependencyItem nativeDependency =
+                dependency(
+                        "native",
+                        "Developer Tools");
+
+        DependencyItem webDependency =
+                dependency(
+                        "web",
+                        "Web");
+
+        DependencyItem postgresqlDependency =
+                dependency(
+                        "postgresql",
+                        "SQL");
+
+        List<DependencyItem> allItems =
+                List.of(
+                        nativeDependency,
+                        webDependency,
+                        postgresqlDependency);
+
+        List<DependencyRow> rows =
+                rowBuilder.build(
+                        List.of(postgresqlDependency),
+                        allItems);
+
+        assertThat(rows)
+                .containsExactly(
+                        new DependencyRow.GroupHeader("SQL"),
+                        new DependencyRow.Dependency(
+                                2,
+                                postgresqlDependency));
     }
 
     private DependencyItem dependency(
@@ -75,21 +150,5 @@ class DependencyRowBuilderTest {
                         group),
                 DependencyAvailability.AVAILABLE,
                 false);
-    }
-
-    @Test
-    void shouldFindRenderedRowForDependencyIndex() {
-        List<DependencyRow> rows =
-                rowBuilder.build(
-                        List.of(
-                                dependency("native", "Developer Tools"),
-                                dependency("web", "Web")));
-
-        int rowIndex =
-                rowBuilder.findDependencyRowIndex(
-                        rows,
-                        1);
-
-        assertThat(rowIndex).isEqualTo(3);
     }
 }
