@@ -1,22 +1,28 @@
 package io.github.avinashio.lazyspringboot.ui.state;
 
+import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UiState {
 
-    private final List<String> projects =
-            List.of("cv-api", "payment-service", "demo");
+    private List<SpringProject> projects = new ArrayList<>();
 
     private int selectedProjectIndex;
 
-    public List<String> projects() {
+    public List<SpringProject> projects() {
         return projects;
     }
 
     public int selectedProjectIndex() {
         return selectedProjectIndex;
+    }
+
+    public void setProjects(List<SpringProject> projects) {
+        this.projects = List.copyOf(projects);
+        selectedProjectIndex = 0;
     }
 
     public void selectNextProject() {
