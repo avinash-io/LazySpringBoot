@@ -509,4 +509,58 @@ class UiStateTest {
         assertThat(state.dependencySearchQuery())
                 .isEmpty();
     }
+
+    @Test
+    void shouldStartDependencyConfirmationWhenDependenciesAreSelected() {
+        UiState state = createStateWithDependencies();
+
+        state.toggleSelectedDependency();
+        state.startDependencyConfirmation();
+
+        assertThat(state.dependencyConfirmationActive())
+                .isTrue();
+
+        assertThat(state.inputMode())
+                .isEqualTo(
+                        InputMode.DEPENDENCY_CONFIRMATION);
+    }
+
+    @Test
+    void shouldNotStartDependencyConfirmationWithoutSelection() {
+        UiState state = createStateWithDependencies();
+
+        state.startDependencyConfirmation();
+
+        assertThat(state.inputMode())
+                .isEqualTo(InputMode.NAVIGATION);
+    }
+
+    @Test
+    void shouldCancelDependencyConfirmationWithoutClearingSelection() {
+        UiState state = createStateWithDependencies();
+
+        state.toggleSelectedDependency();
+        state.startDependencyConfirmation();
+        state.stopDependencyConfirmation();
+
+        assertThat(state.inputMode())
+                .isEqualTo(InputMode.NAVIGATION);
+
+        assertThat(state.selectedDependencyIds())
+                .contains("native");
+    }
+
+    @Test
+    void shouldReturnSelectedAvailableDependencies() {
+        UiState state = createStateWithDependencies();
+
+        state.toggleSelectedDependency();
+
+        assertThat(state.selectedDependencyItems())
+                .extracting(
+                        item -> item.dependency().id())
+                .containsExactly("native");
+    }
+
+
 }

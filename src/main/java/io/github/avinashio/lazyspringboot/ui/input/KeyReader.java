@@ -37,8 +37,7 @@ public class KeyReader {
 
     private KeyEvent readEscapeSequence()
             throws IOException {
-        NonBlockingReader reader =
-                terminal.reader();
+        NonBlockingReader reader = terminal.reader();
 
         int sequenceType =
                 reader.read(
@@ -57,6 +56,11 @@ public class KeyReader {
         int direction =
                 reader.read(
                         ESCAPE_SEQUENCE_TIMEOUT_MILLIS);
+
+        if (direction
+                == NonBlockingReader.READ_EXPIRED) {
+            return KeyEvent.of(KeyType.UNKNOWN);
+        }
 
         return switch (direction) {
             case 'A' -> KeyEvent.of(KeyType.UP);

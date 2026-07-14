@@ -272,4 +272,37 @@ public class UiState {
                         0,
                         dependencySearchQuery.length() - 1);
     }
+
+    public boolean dependencyConfirmationActive() {
+        return inputMode
+                == InputMode.DEPENDENCY_CONFIRMATION;
+    }
+
+    public void startDependencyConfirmation() {
+        if (selectedDependencyIds.isEmpty()) {
+            return;
+        }
+
+        inputMode =
+                InputMode.DEPENDENCY_CONFIRMATION;
+    }
+
+    public void stopDependencyConfirmation() {
+        if (!dependencyConfirmationActive()) {
+            return;
+        }
+
+        inputMode = InputMode.NAVIGATION;
+    }
+
+    public List<DependencyItem> selectedDependencyItems() {
+        return dependencyItems.stream()
+                .filter(
+                        item ->
+                                selectedDependencyIds.contains(
+                                        item.dependency().id()))
+                .filter(DependencyItem::selectable)
+                .toList();
+    }
+
 }

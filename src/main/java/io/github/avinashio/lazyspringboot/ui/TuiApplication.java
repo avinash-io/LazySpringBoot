@@ -8,6 +8,7 @@ import io.github.avinashio.lazyspringboot.ui.component.DependencyFilter;
 import io.github.avinashio.lazyspringboot.ui.input.KeyEvent;
 import io.github.avinashio.lazyspringboot.ui.input.KeyReader;
 import io.github.avinashio.lazyspringboot.ui.input.KeyType;
+import io.github.avinashio.lazyspringboot.ui.screen.ConfirmationScreen;
 import io.github.avinashio.lazyspringboot.ui.screen.MainScreen;
 import io.github.avinashio.lazyspringboot.ui.state.InputMode;
 import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
@@ -37,6 +38,7 @@ public class TuiApplication implements ApplicationRunner {
     private final BuildDependencyItemsUseCase
             buildDependencyItemsUseCase;
     private final DependencyFilter dependencyFilter;
+    private final ConfirmationScreen confirmationScreen;
 
     private List<SpringDependency> dependencyCatalog =
             List.of();
@@ -49,6 +51,7 @@ public class TuiApplication implements ApplicationRunner {
             DiscoverProjectsUseCase discoverProjectsUseCase,
             GetDependenciesUseCase getDependenciesUseCase,
             BuildDependencyItemsUseCase buildDependencyItemsUseCase,
+            ConfirmationScreen confirmationScreen,
             DependencyFilter dependencyFilter) {
         this.terminal = terminal;
         this.keyReader = keyReader;
@@ -61,6 +64,7 @@ public class TuiApplication implements ApplicationRunner {
         this.buildDependencyItemsUseCase =
                 buildDependencyItemsUseCase;
         this.dependencyFilter = dependencyFilter;
+        this.confirmationScreen = confirmationScreen;
     }
 
     @Override
@@ -89,7 +93,7 @@ public class TuiApplication implements ApplicationRunner {
 
             refreshDependencyItems();
 
-            mainScreen.render(uiState);
+            render();
 
             runEventLoop();
         } finally {
@@ -100,6 +104,15 @@ public class TuiApplication implements ApplicationRunner {
             terminal.setAttributes(originalAttributes);
             terminal.flush();
         }
+    }
+
+    private void render() {
+        if (uiState.dependencyConfirmationActive()) {
+            confirmationScreen.render(uiState);
+            return;
+        }
+
+        mainScreen.render(uiState);
     }
 
     private void runEventLoop()
@@ -113,7 +126,7 @@ public class TuiApplication implements ApplicationRunner {
             }
 
             handleKey(keyEvent);
-            mainScreen.render(uiState);
+            render();
         }
     }
 
@@ -127,6 +140,12 @@ public class TuiApplication implements ApplicationRunner {
 
     private void handleKey(
             KeyEvent keyEvent) {
+        if (uiState.dependencyConfirmationActive()) {
+            handleDependencyConfirmationKey(
+                    keyEvent);
+            return;
+        }
+
         if (uiState.dependencySearchActive()) {
             handleDependencySearchKey(
                     keyEvent);
@@ -134,6 +153,34 @@ public class TuiApplication implements ApplicationRunner {
         }
 
         handleNavigationKey(keyEvent);
+    }
+
+    private void handleDependencyConfirmationKey(
+            KeyEvent keyEvent) {
+        switch (keyEvent.type()) {
+            case ESCAPE ->
+                    uiState.stopDependencyConfirmation();
+
+            case ENTER ->
+                    handleDependencyApply();
+
+            default -> {
+                // No action.
+            }
+        }
+    }
+
+    private void handleDependencyApply() {
+        uiState.stopDependencyConfirmation();
+    }
+
+    private void handleEnter() {
+        if (uiState.panelFocus()
+                != PanelFocus.DEPENDENCIES) {
+            return;
+        }
+
+        uiState.startDependencyConfirmation();
     }
 
     private void handleNavigationKey(
@@ -156,6 +203,9 @@ public class TuiApplication implements ApplicationRunner {
 
             case SEARCH ->
                     handleSearch();
+
+            case ENTER ->
+                    handleEnter();
 
             default -> {
                 // No action.
