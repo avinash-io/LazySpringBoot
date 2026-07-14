@@ -631,5 +631,59 @@ class UiStateTest {
                 .isFalse();
     }
 
+    @Test
+    void shouldShowSuccessMessage() {
+        UiState state = new UiState();
+
+        state.showSuccessMessage(
+                "Dependencies added");
+
+        assertThat(state.hasMessage())
+                .isTrue();
+
+        assertThat(state.message().type())
+                .isEqualTo(
+                        UiMessageType.SUCCESS);
+
+        assertThat(state.message().text())
+                .isEqualTo(
+                        "Dependencies added");
+    }
+
+    @Test
+    void shouldShowErrorMessage() {
+        UiState state = new UiState();
+
+        state.showErrorMessage(
+                "Failed to update pom.xml");
+
+        assertThat(state.hasMessage())
+                .isTrue();
+
+        assertThat(state.message().type())
+                .isEqualTo(
+                        UiMessageType.ERROR);
+
+        assertThat(state.message().text())
+                .isEqualTo(
+                        "Failed to update pom.xml");
+    }
+
+    @Test
+    void shouldClearMessage() {
+        UiState state = new UiState();
+
+        state.showSuccessMessage(
+                "Dependencies added");
+
+        state.clearMessage();
+
+        assertThat(state.hasMessage())
+                .isFalse();
+
+        assertThat(state.message())
+                .isNull();
+    }
+
 
 }

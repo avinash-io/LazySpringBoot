@@ -12,5 +12,6 @@ public enum KeyType {
     BACKSPACE,
     CHARACTER,
     QUIT,
+    UNDO,
     UNKNOWN
 }

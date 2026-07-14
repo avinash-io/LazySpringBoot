@@ -25,6 +25,7 @@ public class KeyReader {
 
         return switch (input) {
             case 'q' -> KeyEvent.of(KeyType.QUIT);
+            case 'u' -> KeyEvent.of(KeyType.UNDO);
             case ' ' -> KeyEvent.of(KeyType.SPACE);
             case '/' -> KeyEvent.of(KeyType.SEARCH);
             case '\r', '\n' -> KeyEvent.of(KeyType.ENTER);
@@ -73,13 +74,15 @@ public class KeyReader {
 
     private KeyEvent readCharacter(int input) {
         if (isPrintable(input)) {
-            return KeyEvent.character((char) input);
+            return KeyEvent.character(
+                    (char) input);
         }
 
         return KeyEvent.of(KeyType.UNKNOWN);
     }
 
     private boolean isPrintable(int input) {
-        return input >= 32 && input <= 126;
+        return input >= 32
+                && input <= 126;
     }
 }

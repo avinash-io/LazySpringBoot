@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class UiState {
 
+    private UiMessage message;
+
     private List<SpringProject> projects =
             new ArrayList<>();
 
@@ -325,6 +327,34 @@ public class UiState {
 
         projects =
                 List.copyOf(updatedProjects);
+    }
+
+    public UiMessage message() {
+        return message;
+    }
+
+    public void showSuccessMessage(
+            String text) {
+        message =
+                new UiMessage(
+                        UiMessageType.SUCCESS,
+                        text);
+    }
+
+    public void showErrorMessage(
+            String text) {
+        message =
+                new UiMessage(
+                        UiMessageType.ERROR,
+                        text);
+    }
+
+    public void clearMessage() {
+        message = null;
+    }
+
+    public boolean hasMessage() {
+        return message != null;
     }
 
 }

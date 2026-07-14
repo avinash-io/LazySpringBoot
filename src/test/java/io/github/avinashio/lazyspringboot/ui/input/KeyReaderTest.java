@@ -253,4 +253,14 @@ class KeyReaderTest {
 
         return new KeyReader(terminal);
     }
+
+    @Test
+    void shouldReadUndoKey() throws IOException {
+        KeyReader keyReader = createKeyReader('u');
+
+        assertThat(keyReader.read())
+                .isEqualTo(
+                        KeyEvent.of(KeyType.UNDO));
+    }
+
 }

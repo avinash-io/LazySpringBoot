@@ -25,6 +25,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import io.github.avinashio.lazyspringboot.application.dependency.UndoDependenciesUseCase;
 
 @Component
 @ConditionalOnProperty(
@@ -47,6 +48,8 @@ public class TuiApplication implements ApplicationRunner {
             applyDependenciesUseCase;
     private final RefreshSelectedProjectUseCase
             refreshSelectedProjectUseCase;
+    private final UndoDependenciesUseCase
+            undoDependenciesUseCase;
 
     private List<SpringDependency> dependencyCatalog =
             List.of();
@@ -62,7 +65,8 @@ public class TuiApplication implements ApplicationRunner {
             ConfirmationScreen confirmationScreen,
             DependencyFilter dependencyFilter,
             ApplyDependenciesUseCase applyDependenciesUseCase,
-            RefreshSelectedProjectUseCase refreshSelectedProjectUseCase) {
+            RefreshSelectedProjectUseCase refreshSelectedProjectUseCase,
+            UndoDependenciesUseCase undoDependenciesUseCase) {
         this.terminal = terminal;
         this.keyReader = keyReader;
         this.mainScreen = mainScreen;
@@ -79,6 +83,8 @@ public class TuiApplication implements ApplicationRunner {
                 applyDependenciesUseCase;
         this.refreshSelectedProjectUseCase =
                 refreshSelectedProjectUseCase;
+        this.undoDependenciesUseCase =
+                undoDependenciesUseCase;
     }
 
     @Override
@@ -195,9 +201,17 @@ public class TuiApplication implements ApplicationRunner {
     }
 
     private void handleDependencyApply() {
+        SpringProject project =
+                uiState.selectedProject();
+
+        int dependencyCount =
+                uiState
+                        .selectedDependencyItems()
+                        .size();
+
         try {
             applyDependenciesUseCase.apply(
-                    uiState.selectedProject(),
+                    project,
                     uiState.selectedDependencyItems());
 
             refreshSelectedProject();
@@ -205,10 +219,31 @@ public class TuiApplication implements ApplicationRunner {
             uiState.clearDependencySelections();
 
             uiState.stopDependencyConfirmation();
+
+            uiState.showSuccessMessage(
+                    buildDependencyApplySuccessMessage(
+                            dependencyCount,
+                            project.name()));
         } catch (IOException exception) {
             handleDependencyApplyFailure(
                     exception);
         }
+    }
+
+    private String buildDependencyApplySuccessMessage(
+            int dependencyCount,
+            String projectName) {
+        String dependencyLabel =
+                dependencyCount == 1
+                        ? "dependency"
+                        : "dependencies";
+
+        return "Added "
+                + dependencyCount
+                + " "
+                + dependencyLabel
+                + " to "
+                + projectName;
     }
 
     private void refreshSelectedProject()
@@ -227,9 +262,23 @@ public class TuiApplication implements ApplicationRunner {
             IOException exception) {
         uiState.stopDependencyConfirmation();
 
-        throw new IllegalStateException(
-                "Failed to apply dependencies",
-                exception);
+        uiState.showErrorMessage(
+                buildDependencyApplyErrorMessage(
+                        exception));
+    }
+
+    private String buildDependencyApplyErrorMessage(
+            IOException exception) {
+        String message =
+                exception.getMessage();
+
+        if (message == null
+                || message.isBlank()) {
+            return "Failed to apply dependencies";
+        }
+
+        return "Failed to apply dependencies: "
+                + message;
     }
 
     private void handleEnter() {
@@ -243,6 +292,8 @@ public class TuiApplication implements ApplicationRunner {
 
     private void handleNavigationKey(
             KeyEvent keyEvent) {
+        uiState.clearMessage();
+
         switch (keyEvent.type()) {
             case LEFT ->
                     uiState.focusPreviousPanel();
@@ -265,10 +316,57 @@ public class TuiApplication implements ApplicationRunner {
             case ENTER ->
                     handleEnter();
 
+            case UNDO ->
+                    handleUndo();
+
             default -> {
                 // No action.
             }
         }
+    }
+
+    private void handleUndo() {
+        SpringProject project =
+                uiState.selectedProject();
+
+        if (!undoDependenciesUseCase.canUndo(
+                project)) {
+            uiState.showErrorMessage(
+                    "No dependency changes to undo");
+
+            return;
+        }
+
+        try {
+            undoDependenciesUseCase.undo(
+                    project);
+
+            refreshSelectedProject();
+
+            uiState.clearDependencySelections();
+
+            uiState.showSuccessMessage(
+                    "Restored pom.xml for "
+                            + project.name());
+        } catch (IOException exception) {
+            uiState.showErrorMessage(
+                    buildDependencyUndoErrorMessage(
+                            exception));
+        }
+    }
+
+    private String buildDependencyUndoErrorMessage(
+            IOException exception) {
+        String message =
+                exception.getMessage();
+
+        if (message == null
+                || message.isBlank()) {
+            return "Failed to restore pom.xml";
+        }
+
+        return "Failed to restore pom.xml: "
+                + message;
     }
 
     private void handleDependencySearchKey(
@@ -320,6 +418,13 @@ public class TuiApplication implements ApplicationRunner {
 
             case DOWN ->
                     selectNextVisibleDependency();
+
+            case UNDO -> {
+                uiState
+                        .appendDependencySearchCharacter('u');
+
+                selectFirstVisibleDependency();
+            }
 
             default -> {
                 // No action.
