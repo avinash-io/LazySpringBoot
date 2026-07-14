@@ -1,9 +1,12 @@
 package io.github.avinashio.lazyspringboot.ui;
 
+import io.github.avinashio.lazyspringboot.application.dependency.ApplyDependenciesUseCase;
 import io.github.avinashio.lazyspringboot.application.dependency.BuildDependencyItemsUseCase;
 import io.github.avinashio.lazyspringboot.application.dependency.GetDependenciesUseCase;
 import io.github.avinashio.lazyspringboot.application.project.DiscoverProjectsUseCase;
+import io.github.avinashio.lazyspringboot.application.project.RefreshSelectedProjectUseCase;
 import io.github.avinashio.lazyspringboot.domain.dependency.SpringDependency;
+import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.ui.component.DependencyFilter;
 import io.github.avinashio.lazyspringboot.ui.input.KeyEvent;
 import io.github.avinashio.lazyspringboot.ui.input.KeyReader;
@@ -13,6 +16,7 @@ import io.github.avinashio.lazyspringboot.ui.screen.MainScreen;
 import io.github.avinashio.lazyspringboot.ui.state.InputMode;
 import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import org.jline.terminal.Terminal;
@@ -39,6 +43,10 @@ public class TuiApplication implements ApplicationRunner {
             buildDependencyItemsUseCase;
     private final DependencyFilter dependencyFilter;
     private final ConfirmationScreen confirmationScreen;
+    private final ApplyDependenciesUseCase
+            applyDependenciesUseCase;
+    private final RefreshSelectedProjectUseCase
+            refreshSelectedProjectUseCase;
 
     private List<SpringDependency> dependencyCatalog =
             List.of();
@@ -52,7 +60,9 @@ public class TuiApplication implements ApplicationRunner {
             GetDependenciesUseCase getDependenciesUseCase,
             BuildDependencyItemsUseCase buildDependencyItemsUseCase,
             ConfirmationScreen confirmationScreen,
-            DependencyFilter dependencyFilter) {
+            DependencyFilter dependencyFilter,
+            ApplyDependenciesUseCase applyDependenciesUseCase,
+            RefreshSelectedProjectUseCase refreshSelectedProjectUseCase) {
         this.terminal = terminal;
         this.keyReader = keyReader;
         this.mainScreen = mainScreen;
@@ -63,8 +73,12 @@ public class TuiApplication implements ApplicationRunner {
                 getDependenciesUseCase;
         this.buildDependencyItemsUseCase =
                 buildDependencyItemsUseCase;
-        this.dependencyFilter = dependencyFilter;
         this.confirmationScreen = confirmationScreen;
+        this.dependencyFilter = dependencyFilter;
+        this.applyDependenciesUseCase =
+                applyDependenciesUseCase;
+        this.refreshSelectedProjectUseCase =
+                refreshSelectedProjectUseCase;
     }
 
     @Override
@@ -75,10 +89,13 @@ public class TuiApplication implements ApplicationRunner {
 
         try {
             terminal.enterRawMode();
+
             terminal.puts(
                     InfoCmp.Capability.enter_ca_mode);
+
             terminal.puts(
                     InfoCmp.Capability.cursor_invisible);
+
             terminal.flush();
 
             Path currentDirectory =
@@ -99,9 +116,13 @@ public class TuiApplication implements ApplicationRunner {
         } finally {
             terminal.puts(
                     InfoCmp.Capability.cursor_visible);
+
             terminal.puts(
                     InfoCmp.Capability.exit_ca_mode);
-            terminal.setAttributes(originalAttributes);
+
+            terminal.setAttributes(
+                    originalAttributes);
+
             terminal.flush();
         }
     }
@@ -126,6 +147,7 @@ public class TuiApplication implements ApplicationRunner {
             }
 
             handleKey(keyEvent);
+
             render();
         }
     }
@@ -143,12 +165,14 @@ public class TuiApplication implements ApplicationRunner {
         if (uiState.dependencyConfirmationActive()) {
             handleDependencyConfirmationKey(
                     keyEvent);
+
             return;
         }
 
         if (uiState.dependencySearchActive()) {
             handleDependencySearchKey(
                     keyEvent);
+
             return;
         }
 
@@ -171,7 +195,41 @@ public class TuiApplication implements ApplicationRunner {
     }
 
     private void handleDependencyApply() {
+        try {
+            applyDependenciesUseCase.apply(
+                    uiState.selectedProject(),
+                    uiState.selectedDependencyItems());
+
+            refreshSelectedProject();
+
+            uiState.clearDependencySelections();
+
+            uiState.stopDependencyConfirmation();
+        } catch (IOException exception) {
+            handleDependencyApplyFailure(
+                    exception);
+        }
+    }
+
+    private void refreshSelectedProject()
+            throws IOException {
+        SpringProject refreshedProject =
+                refreshSelectedProjectUseCase.refresh(
+                        uiState.selectedProject());
+
+        uiState.replaceSelectedProject(
+                refreshedProject);
+
+        refreshDependencyItems();
+    }
+
+    private void handleDependencyApplyFailure(
+            IOException exception) {
         uiState.stopDependencyConfirmation();
+
+        throw new IllegalStateException(
+                "Failed to apply dependencies",
+                exception);
     }
 
     private void handleEnter() {
@@ -346,14 +404,17 @@ public class TuiApplication implements ApplicationRunner {
                         uiState.selectedDependencyIndex());
 
         if (currentPosition < 0) {
-            selectFirstVisibleDependency(indexes);
+            selectFirstVisibleDependency(
+                    indexes);
+
             return;
         }
 
         if (currentPosition
                 < indexes.size() - 1) {
             uiState.selectDependency(
-                    indexes.get(currentPosition + 1));
+                    indexes.get(
+                            currentPosition + 1));
         }
     }
 
@@ -366,13 +427,16 @@ public class TuiApplication implements ApplicationRunner {
                         uiState.selectedDependencyIndex());
 
         if (currentPosition < 0) {
-            selectFirstVisibleDependency(indexes);
+            selectFirstVisibleDependency(
+                    indexes);
+
             return;
         }
 
         if (currentPosition > 0) {
             uiState.selectDependency(
-                    indexes.get(currentPosition - 1));
+                    indexes.get(
+                            currentPosition - 1));
         }
     }
 

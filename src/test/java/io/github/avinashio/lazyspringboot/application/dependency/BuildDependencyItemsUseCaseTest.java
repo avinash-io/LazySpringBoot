@@ -17,7 +17,8 @@ class BuildDependencyItemsUseCaseTest {
 
     private final BuildDependencyItemsUseCase useCase =
             new BuildDependencyItemsUseCase(
-                    new DependencyMatcher());
+                    new DependencyMatcher(
+                            new DependencyCoordinateResolver()));
 
     @Test
     void shouldMarkExistingDependencyAsAlreadyPresent() {

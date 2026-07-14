@@ -562,5 +562,74 @@ class UiStateTest {
                 .containsExactly("native");
     }
 
+    @Test
+    void shouldClearDependencySelections() {
+        UiState state = createStateWithDependencies();
+
+        state.toggleSelectedDependency();
+
+        state.clearDependencySelections();
+
+        assertThat(state.selectedDependencyIds())
+                .isEmpty();
+
+        assertThat(
+                state.selectedDependencyItem().selected())
+                .isFalse();
+    }
+
+    @Test
+    void shouldReplaceSelectedProject() {
+        UiState state = createStateWithProjects();
+
+        state.selectNextProject();
+
+        SpringProject refreshed =
+                createProject("payment-service-refreshed");
+
+        state.replaceSelectedProject(refreshed);
+
+        assertThat(state.selectedProject())
+                .isEqualTo(refreshed);
+
+        assertThat(state.selectedProjectIndex())
+                .isEqualTo(1);
+    }
+
+    @Test
+    void shouldIgnoreReplacingProjectWhenNoProjectExists() {
+        UiState state = new UiState();
+
+        state.replaceSelectedProject(
+                createProject("demo"));
+
+        assertThat(state.projects())
+                .isEmpty();
+    }
+
+    @Test
+    void shouldClearHiddenSelectionAfterDependencyBecomesPresent() {
+        UiState state = createStateWithDependencies();
+
+        state.toggleSelectedDependency();
+
+        state.setDependencyItems(
+                List.of(
+                        dependencyItem(
+                                "native",
+                                DependencyAvailability.ALREADY_PRESENT)));
+
+        assertThat(state.selectedDependencyIds())
+                .contains("native");
+
+        state.clearDependencySelections();
+
+        assertThat(state.selectedDependencyIds())
+                .isEmpty();
+
+        assertThat(state.selectedDependencyItem().selected())
+                .isFalse();
+    }
+
 
 }

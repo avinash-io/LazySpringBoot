@@ -10,7 +10,8 @@ import org.junit.jupiter.api.Test;
 class DependencyMatcherTest {
 
     private final DependencyMatcher matcher =
-            new DependencyMatcher();
+            new DependencyMatcher(
+                    new DependencyCoordinateResolver());
 
     @Test
     void shouldMatchSpringBootStarterDependency() {

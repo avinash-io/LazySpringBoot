@@ -305,4 +305,26 @@ public class UiState {
                 .toList();
     }
 
+    public void clearDependencySelections() {
+        selectedDependencyIds = Set.of();
+        updateDependencySelection();
+    }
+
+    public void replaceSelectedProject(
+            SpringProject project) {
+        if (project == null || projects.isEmpty()) {
+            return;
+        }
+
+        List<SpringProject> updatedProjects =
+                new ArrayList<>(projects);
+
+        updatedProjects.set(
+                selectedProjectIndex,
+                project);
+
+        projects =
+                List.copyOf(updatedProjects);
+    }
+
 }
