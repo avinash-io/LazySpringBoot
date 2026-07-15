@@ -5,6 +5,10 @@ public enum KeyType {
     DOWN,
     LEFT,
     RIGHT,
+    PAGE_UP,
+    PAGE_DOWN,
+    GO_TO_TOP,
+    GO_TO_BOTTOM,
     SPACE,
     ENTER,
     SEARCH,
@@ -13,5 +17,7 @@ public enum KeyType {
     CHARACTER,
     QUIT,
     UNDO,
+    ACTIONS,
+    TIMEOUT,
     UNKNOWN
 }

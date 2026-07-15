@@ -1,11 +1,23 @@
 package io.github.avinashio.lazyspringboot.ui;
 
+import io.github.avinashio.lazyspringboot.application.action.ExecuteProjectActionUseCase;
+import io.github.avinashio.lazyspringboot.application.action.ProjectActionCatalog;
 import io.github.avinashio.lazyspringboot.application.dependency.ApplyDependenciesUseCase;
 import io.github.avinashio.lazyspringboot.application.dependency.BuildDependencyItemsUseCase;
 import io.github.avinashio.lazyspringboot.application.dependency.GetDependenciesUseCase;
+import io.github.avinashio.lazyspringboot.application.dependency.UndoDependenciesUseCase;
+import io.github.avinashio.lazyspringboot.application.process.GetProjectProcessUseCase;
+import io.github.avinashio.lazyspringboot.application.process.StartProjectProcessUseCase;
+import io.github.avinashio.lazyspringboot.application.process.StopProjectProcessUseCase;
 import io.github.avinashio.lazyspringboot.application.project.DiscoverProjectsUseCase;
 import io.github.avinashio.lazyspringboot.application.project.RefreshSelectedProjectUseCase;
+import io.github.avinashio.lazyspringboot.domain.action.ActionItem;
+import io.github.avinashio.lazyspringboot.domain.action.CommandResult;
+import io.github.avinashio.lazyspringboot.domain.action.ProjectAction;
+import io.github.avinashio.lazyspringboot.domain.action.ProjectActionOutput;
 import io.github.avinashio.lazyspringboot.domain.dependency.SpringDependency;
+import io.github.avinashio.lazyspringboot.domain.process.ProjectProcess;
+import io.github.avinashio.lazyspringboot.domain.process.ProjectProcessStatus;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.ui.component.DependencyFilter;
 import io.github.avinashio.lazyspringboot.ui.input.KeyEvent;
@@ -13,43 +25,81 @@ import io.github.avinashio.lazyspringboot.ui.input.KeyReader;
 import io.github.avinashio.lazyspringboot.ui.input.KeyType;
 import io.github.avinashio.lazyspringboot.ui.screen.ConfirmationScreen;
 import io.github.avinashio.lazyspringboot.ui.screen.MainScreen;
+import io.github.avinashio.lazyspringboot.ui.screen.ProjectActionOutputScreen;
+import io.github.avinashio.lazyspringboot.ui.screen.ProjectActionsScreen;
 import io.github.avinashio.lazyspringboot.ui.state.InputMode;
 import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import org.jline.terminal.Terminal;
 import org.jline.utils.InfoCmp;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-import io.github.avinashio.lazyspringboot.application.dependency.UndoDependenciesUseCase;
 
 @Component
 @ConditionalOnProperty(
         name = "lazyspringboot.tui.enabled",
         havingValue = "true",
         matchIfMissing = true)
-public class TuiApplication implements ApplicationRunner {
+public class TuiApplication
+        implements ApplicationRunner {
+
+    private static final long
+            UI_REFRESH_INTERVAL_MILLIS = 150;
 
     private final Terminal terminal;
     private final KeyReader keyReader;
     private final MainScreen mainScreen;
     private final UiState uiState;
-    private final DiscoverProjectsUseCase discoverProjectsUseCase;
-    private final GetDependenciesUseCase getDependenciesUseCase;
+
+    private final DiscoverProjectsUseCase
+            discoverProjectsUseCase;
+
+    private final GetDependenciesUseCase
+            getDependenciesUseCase;
+
     private final BuildDependencyItemsUseCase
             buildDependencyItemsUseCase;
+
     private final DependencyFilter dependencyFilter;
-    private final ConfirmationScreen confirmationScreen;
+
+    private final ConfirmationScreen
+            confirmationScreen;
+
     private final ApplyDependenciesUseCase
             applyDependenciesUseCase;
+
     private final RefreshSelectedProjectUseCase
             refreshSelectedProjectUseCase;
+
     private final UndoDependenciesUseCase
             undoDependenciesUseCase;
+
+    private final ProjectActionCatalog
+            projectActionCatalog;
+
+    private final ProjectActionsScreen
+            projectActionsScreen;
+
+    private final ProjectActionOutputScreen
+            projectActionOutputScreen;
+
+    private final ExecuteProjectActionUseCase
+            executeProjectActionUseCase;
+
+    private final StartProjectProcessUseCase
+            startProjectProcessUseCase;
+
+    private final GetProjectProcessUseCase
+            getProjectProcessUseCase;
+
+    private final StopProjectProcessUseCase
+            stopProjectProcessUseCase;
 
     private List<SpringDependency> dependencyCatalog =
             List.of();
@@ -66,7 +116,14 @@ public class TuiApplication implements ApplicationRunner {
             DependencyFilter dependencyFilter,
             ApplyDependenciesUseCase applyDependenciesUseCase,
             RefreshSelectedProjectUseCase refreshSelectedProjectUseCase,
-            UndoDependenciesUseCase undoDependenciesUseCase) {
+            UndoDependenciesUseCase undoDependenciesUseCase,
+            ProjectActionCatalog projectActionCatalog,
+            ProjectActionsScreen projectActionsScreen,
+            ProjectActionOutputScreen projectActionOutputScreen,
+            ExecuteProjectActionUseCase executeProjectActionUseCase,
+            StartProjectProcessUseCase startProjectProcessUseCase,
+            GetProjectProcessUseCase getProjectProcessUseCase,
+            StopProjectProcessUseCase stopProjectProcessUseCase) {
         this.terminal = terminal;
         this.keyReader = keyReader;
         this.mainScreen = mainScreen;
@@ -77,18 +134,35 @@ public class TuiApplication implements ApplicationRunner {
                 getDependenciesUseCase;
         this.buildDependencyItemsUseCase =
                 buildDependencyItemsUseCase;
-        this.confirmationScreen = confirmationScreen;
-        this.dependencyFilter = dependencyFilter;
+        this.confirmationScreen =
+                confirmationScreen;
+        this.dependencyFilter =
+                dependencyFilter;
         this.applyDependenciesUseCase =
                 applyDependenciesUseCase;
         this.refreshSelectedProjectUseCase =
                 refreshSelectedProjectUseCase;
         this.undoDependenciesUseCase =
                 undoDependenciesUseCase;
+        this.projectActionCatalog =
+                projectActionCatalog;
+        this.projectActionsScreen =
+                projectActionsScreen;
+        this.projectActionOutputScreen =
+                projectActionOutputScreen;
+        this.executeProjectActionUseCase =
+                executeProjectActionUseCase;
+        this.startProjectProcessUseCase =
+                startProjectProcessUseCase;
+        this.getProjectProcessUseCase =
+                getProjectProcessUseCase;
+        this.stopProjectProcessUseCase =
+                stopProjectProcessUseCase;
     }
 
     @Override
-    public void run(ApplicationArguments args)
+    public void run(
+            ApplicationArguments args)
             throws Exception {
         var originalAttributes =
                 terminal.getAttributes();
@@ -105,14 +179,16 @@ public class TuiApplication implements ApplicationRunner {
             terminal.flush();
 
             Path currentDirectory =
-                    Path.of("").toAbsolutePath();
+                    Path.of("")
+                            .toAbsolutePath();
 
             uiState.setProjects(
                     discoverProjectsUseCase.discover(
                             currentDirectory));
 
             dependencyCatalog =
-                    getDependenciesUseCase.getDependencies();
+                    getDependenciesUseCase
+                            .getDependencies();
 
             refreshDependencyItems();
 
@@ -134,8 +210,23 @@ public class TuiApplication implements ApplicationRunner {
     }
 
     private void render() {
-        if (uiState.dependencyConfirmationActive()) {
+        if (uiState
+                .dependencyConfirmationActive()) {
             confirmationScreen.render(uiState);
+            return;
+        }
+
+        if (uiState.projectActionOutputActive()) {
+            refreshProcessOutput();
+
+            projectActionOutputScreen.render(uiState);
+            return;
+        }
+
+        if (uiState.projectActionsActive()) {
+            projectActionsScreen.render(
+                    uiState,
+                    currentProjectActions());
             return;
         }
 
@@ -146,43 +237,175 @@ public class TuiApplication implements ApplicationRunner {
             throws Exception {
         while (true) {
             KeyEvent keyEvent =
-                    keyReader.read();
+                    readNextKeyEvent();
+
+            if (keyEvent.type()
+                    == KeyType.TIMEOUT) {
+                handleTimeout();
+                continue;
+            }
 
             if (shouldQuit(keyEvent)) {
                 return;
             }
 
             handleKey(keyEvent);
-
             render();
         }
+    }
+
+    private KeyEvent readNextKeyEvent()
+            throws IOException {
+
+        if (shouldUseRefreshTimeout()) {
+            return keyReader.read(
+                    UI_REFRESH_INTERVAL_MILLIS);
+        }
+
+        return keyReader.read();
+    }
+
+    private boolean shouldUseRefreshTimeout() {
+
+        return isLiveProcessOutputVisible()
+                || isProjectStarting();
+    }
+
+    private boolean isProjectStarting() {
+
+        SpringProject project =
+                uiState.selectedProject();
+
+        if (project == null) {
+            return false;
+        }
+
+        return getProjectProcessUseCase
+                .get(project)
+                .map(ProjectProcess::status)
+                .filter(status ->
+                        status
+                                == ProjectProcessStatus.STARTING)
+                .isPresent();
+    }
+
+    private boolean isLiveProcessOutputVisible() {
+        ProjectActionOutput output =
+                uiState.projectActionOutput();
+
+        return uiState.projectActionOutputActive()
+                && output != null
+                && output.action()
+                == ProjectAction.VIEW_LOGS;
+    }
+
+    private void handleTimeout() {
+
+        if (!shouldUseRefreshTimeout()) {
+            return;
+        }
+
+        render();
     }
 
     private boolean shouldQuit(
             KeyEvent keyEvent) {
         return uiState.inputMode()
                 == InputMode.NAVIGATION
+                && !uiState.projectActionsActive()
+                && !uiState.projectActionOutputActive()
                 && keyEvent.type()
                 == KeyType.QUIT;
     }
 
     private void handleKey(
             KeyEvent keyEvent) {
-        if (uiState.dependencyConfirmationActive()) {
+        if (uiState
+                .dependencyConfirmationActive()) {
             handleDependencyConfirmationKey(
                     keyEvent);
+            return;
+        }
 
+        if (uiState.projectActionOutputActive()) {
+            handleProjectActionOutputKey(
+                    keyEvent);
+            return;
+        }
+
+        if (uiState.projectActionsActive()) {
+            handleProjectActionsKey(
+                    keyEvent);
             return;
         }
 
         if (uiState.dependencySearchActive()) {
             handleDependencySearchKey(
                     keyEvent);
-
             return;
         }
 
         handleNavigationKey(keyEvent);
+    }
+
+    private void handleProjectActionOutputKey(
+            KeyEvent keyEvent) {
+        ProjectActionOutput output =
+                uiState.projectActionOutput();
+
+        if (output == null) {
+            return;
+        }
+
+        int visibleHeight =
+                projectActionOutputScreen
+                        .visibleHeight();
+
+        switch (keyEvent.type()) {
+            case ESCAPE ->
+                    uiState.closeProjectActionOutput();
+
+            case UP ->
+                    uiState
+                            .outputViewport()
+                            .scrollUp();
+
+            case DOWN ->
+                    uiState
+                            .outputViewport()
+                            .scrollDown(
+                                    output.lines().size(),
+                                    visibleHeight);
+
+            case PAGE_UP ->
+                    uiState
+                            .outputViewport()
+                            .pageUp(
+                                    visibleHeight);
+
+            case PAGE_DOWN ->
+                    uiState
+                            .outputViewport()
+                            .pageDown(
+                                    output.lines().size(),
+                                    visibleHeight);
+
+            case GO_TO_TOP ->
+                    uiState
+                            .outputViewport()
+                            .moveToTop();
+
+            case GO_TO_BOTTOM ->
+                    uiState
+                            .outputViewport()
+                            .moveToBottom(
+                                    output.lines().size(),
+                                    visibleHeight);
+
+            default -> {
+                // No action.
+            }
+        }
     }
 
     private void handleDependencyConfirmationKey(
@@ -225,12 +448,21 @@ public class TuiApplication implements ApplicationRunner {
                             dependencyCount,
                             project.name()));
         } catch (IOException exception) {
-            handleDependencyApplyFailure(
-                    exception);
+            handleDependencyApplyFailure(exception);
         }
     }
 
-    private String buildDependencyApplySuccessMessage(
+    private void handleDependencyApplyFailure(
+            IOException exception) {
+        uiState.stopDependencyConfirmation();
+
+        uiState.showErrorMessage(
+                buildDependencyApplyErrorMessage(
+                        exception));
+    }
+
+    private String
+    buildDependencyApplySuccessMessage(
             int dependencyCount,
             String projectName) {
         String dependencyLabel =
@@ -246,27 +478,6 @@ public class TuiApplication implements ApplicationRunner {
                 + projectName;
     }
 
-    private void refreshSelectedProject()
-            throws IOException {
-        SpringProject refreshedProject =
-                refreshSelectedProjectUseCase.refresh(
-                        uiState.selectedProject());
-
-        uiState.replaceSelectedProject(
-                refreshedProject);
-
-        refreshDependencyItems();
-    }
-
-    private void handleDependencyApplyFailure(
-            IOException exception) {
-        uiState.stopDependencyConfirmation();
-
-        uiState.showErrorMessage(
-                buildDependencyApplyErrorMessage(
-                        exception));
-    }
-
     private String buildDependencyApplyErrorMessage(
             IOException exception) {
         String message =
@@ -278,6 +489,326 @@ public class TuiApplication implements ApplicationRunner {
         }
 
         return "Failed to apply dependencies: "
+                + message;
+    }
+
+    private void handleProjectActionsKey(
+            KeyEvent keyEvent) {
+        List<ActionItem> actions =
+                currentProjectActions();
+
+        switch (keyEvent.type()) {
+            case ESCAPE ->
+                    uiState.stopProjectActions();
+
+            case UP ->
+                    uiState.selectPreviousProjectAction();
+
+            case DOWN ->
+                    uiState.selectNextProjectAction(
+                            actions.size());
+
+            case ENTER ->
+                    executeSelectedProjectAction(actions);
+
+            default -> {
+                // No action.
+            }
+        }
+    }
+
+    private List<ActionItem> currentProjectActions() {
+        SpringProject project =
+                uiState.selectedProject();
+
+        if (project == null) {
+            return List.of();
+        }
+
+        return projectActionCatalog.actions(
+                getProjectProcessUseCase.get(project));
+    }
+
+    private void executeSelectedProjectAction(
+            List<ActionItem> actions) {
+        if (actions.isEmpty()) {
+            return;
+        }
+
+        int selectedIndex =
+                uiState.selectedProjectActionIndex();
+
+        if (selectedIndex < 0
+                || selectedIndex >= actions.size()) {
+            return;
+        }
+
+        ActionItem selectedAction =
+                actions.get(selectedIndex);
+
+        if (!selectedAction.enabled()) {
+            return;
+        }
+
+        SpringProject project =
+                uiState.selectedProject();
+
+        if (project == null) {
+            uiState.stopProjectActions();
+
+            uiState.showErrorMessage(
+                    "No project selected");
+
+            return;
+        }
+
+        switch (selectedAction.action()) {
+            case BUILD, TEST ->
+                    executeBlockingProjectAction(
+                            project,
+                            selectedAction);
+
+            case RUN ->
+                    startProjectProcess(project);
+
+            case VIEW_LOGS ->
+                    showProjectProcessOutput(project);
+
+            case STOP ->
+                    stopProjectProcess(project);
+        }
+    }
+
+    private void executeBlockingProjectAction(
+            SpringProject project,
+            ActionItem selectedAction) {
+        try {
+            CommandResult result =
+                    executeProjectActionUseCase.execute(
+                            project,
+                            selectedAction.action());
+
+            uiState.stopProjectActions();
+
+            ProjectActionOutput output =
+                    new ProjectActionOutput(
+                            project.name(),
+                            selectedAction.action(),
+                            result.exitCode(),
+                            result.output());
+
+            uiState.showProjectActionOutput(
+                    output,
+                    projectActionOutputScreen
+                            .visibleHeight());
+        } catch (IOException exception) {
+            uiState.stopProjectActions();
+
+            uiState.showErrorMessage(
+                    buildProjectActionErrorMessage(
+                            selectedAction,
+                            exception));
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+
+            uiState.stopProjectActions();
+
+            uiState.showErrorMessage(
+                    selectedAction
+                            .action()
+                            .displayName()
+                            + " interrupted for "
+                            + project.name());
+        }
+    }
+
+    private void startProjectProcess(
+            SpringProject project) {
+        try {
+            startProjectProcessUseCase.start(
+                    project);
+
+            uiState.stopProjectActions();
+
+            uiState.showSuccessMessage(
+                    "Started "
+                            + project.name());
+        } catch (IOException exception) {
+            uiState.stopProjectActions();
+
+            uiState.showErrorMessage(
+                    buildProcessErrorMessage(
+                            "Failed to start "
+                                    + project.name(),
+                            exception));
+        }
+    }
+
+    private void showProjectProcessOutput(
+            SpringProject project) {
+        Optional<ProjectProcess> process =
+                getProjectProcessUseCase.get(
+                        project);
+
+        if (process.isEmpty()) {
+            uiState.stopProjectActions();
+
+            uiState.showErrorMessage(
+                    "No process found for "
+                            + project.name());
+
+            return;
+        }
+
+        uiState.stopProjectActions();
+
+        showProcessOutput(
+                process.get());
+    }
+
+    private void showProcessOutput(
+            ProjectProcess process) {
+        int exitCode =
+                process.exitCode() == null
+                        ? -1
+                        : process.exitCode();
+
+        ProjectActionOutput output =
+                new ProjectActionOutput(
+                        process.projectName(),
+                        ProjectAction.VIEW_LOGS,
+                        exitCode,
+                        process.output());
+
+        uiState.showProjectActionOutput(
+                output,
+                projectActionOutputScreen
+                        .visibleHeight());
+    }
+
+    private void refreshProcessOutput() {
+        ProjectActionOutput output =
+                uiState.projectActionOutput();
+
+        SpringProject project =
+                uiState.selectedProject();
+
+        if (output == null
+                || project == null
+                || output.action()
+                != ProjectAction.VIEW_LOGS) {
+            return;
+        }
+
+        getProjectProcessUseCase
+                .get(project)
+                .ifPresent(
+                        this::replaceProcessOutput);
+    }
+
+    private void replaceProcessOutput(
+            ProjectProcess process) {
+        int visibleHeight =
+                projectActionOutputScreen
+                        .visibleHeight();
+
+        int previousContentSize =
+                uiState
+                        .projectActionOutput()
+                        .lines()
+                        .size();
+
+        int maximumPreviousOffset =
+                Math.max(
+                        0,
+                        previousContentSize
+                                - visibleHeight);
+
+        boolean followingOutput =
+                uiState
+                        .outputViewport()
+                        .offset()
+                        >= maximumPreviousOffset;
+
+        int exitCode =
+                process.exitCode() == null
+                        ? -1
+                        : process.exitCode();
+
+        ProjectActionOutput output =
+                new ProjectActionOutput(
+                        process.projectName(),
+                        ProjectAction.VIEW_LOGS,
+                        exitCode,
+                        process.output());
+
+        uiState.replaceProjectActionOutput(
+                output);
+
+        if (followingOutput) {
+            uiState
+                    .outputViewport()
+                    .moveToBottom(
+                            output.lines().size(),
+                            visibleHeight);
+        }
+    }
+
+    private void stopProjectProcess(
+            SpringProject project) {
+        boolean stopped =
+                stopProjectProcessUseCase.stop(
+                        project);
+
+        uiState.stopProjectActions();
+
+        if (stopped) {
+            uiState.showSuccessMessage(
+                    "Stopping "
+                            + project.name());
+
+            return;
+        }
+
+        uiState.showErrorMessage(
+                "Project is not running: "
+                        + project.name());
+    }
+
+    private String buildProcessErrorMessage(
+            String prefix,
+            IOException exception) {
+        String message =
+                exception.getMessage();
+
+        if (message == null
+                || message.isBlank()) {
+            return prefix;
+        }
+
+        return prefix
+                + ": "
+                + message;
+    }
+
+    private String buildProjectActionErrorMessage(
+            ActionItem actionItem,
+            IOException exception) {
+        String actionName =
+                actionItem
+                        .action()
+                        .displayName();
+
+        String message =
+                exception.getMessage();
+
+        if (message == null
+                || message.isBlank()) {
+            return actionName + " failed";
+        }
+
+        return actionName
+                + " failed: "
                 + message;
     }
 
@@ -319,10 +850,24 @@ public class TuiApplication implements ApplicationRunner {
             case UNDO ->
                     handleUndo();
 
+            case ACTIONS ->
+                    handleProjectActions();
+
             default -> {
                 // No action.
             }
         }
+    }
+
+    private void handleProjectActions() {
+        if (uiState.selectedProject() == null) {
+            uiState.showErrorMessage(
+                    "No project selected");
+
+            return;
+        }
+
+        uiState.startProjectActions();
     }
 
     private void handleUndo() {
@@ -338,8 +883,7 @@ public class TuiApplication implements ApplicationRunner {
         }
 
         try {
-            undoDependenciesUseCase.undo(
-                    project);
+            undoDependenciesUseCase.undo(project);
 
             refreshSelectedProject();
 
@@ -392,26 +936,26 @@ public class TuiApplication implements ApplicationRunner {
                 }
             }
 
-            case QUIT -> {
-                uiState
-                        .appendDependencySearchCharacter('q');
+            case QUIT ->
+                    appendDependencySearchCharacter('q');
 
-                selectFirstVisibleDependency();
-            }
+            case UNDO ->
+                    appendDependencySearchCharacter('u');
 
-            case SEARCH -> {
-                uiState
-                        .appendDependencySearchCharacter('/');
+            case ACTIONS ->
+                    appendDependencySearchCharacter('a');
 
-                selectFirstVisibleDependency();
-            }
+            case GO_TO_TOP ->
+                    appendDependencySearchCharacter('g');
 
-            case SPACE -> {
-                uiState
-                        .appendDependencySearchCharacter(' ');
+            case GO_TO_BOTTOM ->
+                    appendDependencySearchCharacter('G');
 
-                selectFirstVisibleDependency();
-            }
+            case SEARCH ->
+                    appendDependencySearchCharacter('/');
+
+            case SPACE ->
+                    appendDependencySearchCharacter(' ');
 
             case UP ->
                     selectPreviousVisibleDependency();
@@ -419,17 +963,18 @@ public class TuiApplication implements ApplicationRunner {
             case DOWN ->
                     selectNextVisibleDependency();
 
-            case UNDO -> {
-                uiState
-                        .appendDependencySearchCharacter('u');
-
-                selectFirstVisibleDependency();
-            }
-
             default -> {
                 // No action.
             }
         }
+    }
+
+    private void appendDependencySearchCharacter(
+            char character) {
+        uiState.appendDependencySearchCharacter(
+                character);
+
+        selectFirstVisibleDependency();
     }
 
     private void handleSearch() {
@@ -509,17 +1054,14 @@ public class TuiApplication implements ApplicationRunner {
                         uiState.selectedDependencyIndex());
 
         if (currentPosition < 0) {
-            selectFirstVisibleDependency(
-                    indexes);
-
+            selectFirstVisibleDependency(indexes);
             return;
         }
 
         if (currentPosition
                 < indexes.size() - 1) {
             uiState.selectDependency(
-                    indexes.get(
-                            currentPosition + 1));
+                    indexes.get(currentPosition + 1));
         }
     }
 
@@ -532,16 +1074,13 @@ public class TuiApplication implements ApplicationRunner {
                         uiState.selectedDependencyIndex());
 
         if (currentPosition < 0) {
-            selectFirstVisibleDependency(
-                    indexes);
-
+            selectFirstVisibleDependency(indexes);
             return;
         }
 
         if (currentPosition > 0) {
             uiState.selectDependency(
-                    indexes.get(
-                            currentPosition - 1));
+                    indexes.get(currentPosition - 1));
         }
     }
 
@@ -565,6 +1104,18 @@ public class TuiApplication implements ApplicationRunner {
         return dependencyFilter.matchingIndexes(
                 uiState.dependencyItems(),
                 uiState.dependencySearchQuery());
+    }
+
+    private void refreshSelectedProject()
+            throws IOException {
+        SpringProject refreshedProject =
+                refreshSelectedProjectUseCase.refresh(
+                        uiState.selectedProject());
+
+        uiState.replaceSelectedProject(
+                refreshedProject);
+
+        refreshDependencyItems();
     }
 
     private void refreshDependencyItems() {

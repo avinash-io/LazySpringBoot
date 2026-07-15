@@ -21,6 +21,7 @@ public class StatusBar {
         return switch (state.panelFocus()) {
             case PROJECTS ->
                     " ↑↓ Navigate"
+                            + "    a Project Actions"
                             + "    u Undo"
                             + "    ←→ Switch Panel"
                             + "    q Quit";
@@ -30,12 +31,15 @@ public class StatusBar {
                             + "    Space Toggle"
                             + "    / Search"
                             + "    Enter Apply"
+                            + "    a Project Actions"
                             + "    u Undo"
                             + "    ←→ Switch Panel"
                             + "    q Quit";
 
             case PROJECT_DETAILS ->
-                    " ←→ Switch Panel    q Quit";
+                    " a Project Actions"
+                            + "    ←→ Switch Panel"
+                            + "    q Quit";
         };
     }
 

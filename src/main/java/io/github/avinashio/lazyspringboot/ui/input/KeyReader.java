@@ -9,36 +9,106 @@ import org.springframework.stereotype.Component;
 public class KeyReader {
 
     private static final int ESCAPE = 27;
+
     private static final int BACKSPACE = 127;
+
     private static final int CONTROL_BACKSPACE = 8;
-    private static final int CONTROL_SEQUENCE_INTRODUCER = '[';
-    private static final long ESCAPE_SEQUENCE_TIMEOUT_MILLIS = 50;
+
+    private static final int CONTROL_SEQUENCE_INTRODUCER =
+            '[';
+
+    private static final int SEQUENCE_TERMINATOR =
+            '~';
+
+    private static final long
+            ESCAPE_SEQUENCE_TIMEOUT_MILLIS = 50;
 
     private final Terminal terminal;
 
-    public KeyReader(Terminal terminal) {
+    public KeyReader(
+            Terminal terminal) {
         this.terminal = terminal;
     }
 
-    public KeyEvent read() throws IOException {
-        int input = terminal.reader().read();
+    public KeyEvent read()
+            throws IOException {
+        int input =
+                terminal
+                        .reader()
+                        .read();
 
+        return mapInput(input);
+    }
+
+    public KeyEvent read(
+            long timeoutMillis)
+            throws IOException {
+        int input =
+                terminal
+                        .reader()
+                        .read(timeoutMillis);
+
+        if (input
+                == NonBlockingReader.READ_EXPIRED) {
+            return KeyEvent.of(
+                    KeyType.TIMEOUT);
+        }
+
+        return mapInput(input);
+    }
+
+    private KeyEvent mapInput(
+            int input)
+            throws IOException {
         return switch (input) {
-            case 'q' -> KeyEvent.of(KeyType.QUIT);
-            case 'u' -> KeyEvent.of(KeyType.UNDO);
-            case ' ' -> KeyEvent.of(KeyType.SPACE);
-            case '/' -> KeyEvent.of(KeyType.SEARCH);
-            case '\r', '\n' -> KeyEvent.of(KeyType.ENTER);
+            case 'q' ->
+                    KeyEvent.of(
+                            KeyType.QUIT);
+
+            case 'u' ->
+                    KeyEvent.of(
+                            KeyType.UNDO);
+
+            case 'a' ->
+                    KeyEvent.of(
+                            KeyType.ACTIONS);
+
+            case 'g' ->
+                    KeyEvent.of(
+                            KeyType.GO_TO_TOP);
+
+            case 'G' ->
+                    KeyEvent.of(
+                            KeyType.GO_TO_BOTTOM);
+
+            case ' ' ->
+                    KeyEvent.of(
+                            KeyType.SPACE);
+
+            case '/' ->
+                    KeyEvent.of(
+                            KeyType.SEARCH);
+
+            case '\r', '\n' ->
+                    KeyEvent.of(
+                            KeyType.ENTER);
+
             case BACKSPACE, CONTROL_BACKSPACE ->
-                    KeyEvent.of(KeyType.BACKSPACE);
-            case ESCAPE -> readEscapeSequence();
-            default -> readCharacter(input);
+                    KeyEvent.of(
+                            KeyType.BACKSPACE);
+
+            case ESCAPE ->
+                    readEscapeSequence();
+
+            default ->
+                    readCharacter(input);
         };
     }
 
     private KeyEvent readEscapeSequence()
             throws IOException {
-        NonBlockingReader reader = terminal.reader();
+        NonBlockingReader reader =
+                terminal.reader();
 
         int sequenceType =
                 reader.read(
@@ -46,42 +116,90 @@ public class KeyReader {
 
         if (sequenceType
                 == NonBlockingReader.READ_EXPIRED) {
-            return KeyEvent.of(KeyType.ESCAPE);
+            return KeyEvent.of(
+                    KeyType.ESCAPE);
         }
 
         if (sequenceType
                 != CONTROL_SEQUENCE_INTRODUCER) {
-            return KeyEvent.of(KeyType.UNKNOWN);
+            return KeyEvent.of(
+                    KeyType.UNKNOWN);
         }
 
-        int direction =
+        int sequenceValue =
                 reader.read(
                         ESCAPE_SEQUENCE_TIMEOUT_MILLIS);
 
-        if (direction
+        if (sequenceValue
                 == NonBlockingReader.READ_EXPIRED) {
-            return KeyEvent.of(KeyType.UNKNOWN);
+            return KeyEvent.of(
+                    KeyType.UNKNOWN);
         }
 
-        return switch (direction) {
-            case 'A' -> KeyEvent.of(KeyType.UP);
-            case 'B' -> KeyEvent.of(KeyType.DOWN);
-            case 'C' -> KeyEvent.of(KeyType.RIGHT);
-            case 'D' -> KeyEvent.of(KeyType.LEFT);
-            default -> KeyEvent.of(KeyType.UNKNOWN);
+        return switch (sequenceValue) {
+            case 'A' ->
+                    KeyEvent.of(
+                            KeyType.UP);
+
+            case 'B' ->
+                    KeyEvent.of(
+                            KeyType.DOWN);
+
+            case 'C' ->
+                    KeyEvent.of(
+                            KeyType.RIGHT);
+
+            case 'D' ->
+                    KeyEvent.of(
+                            KeyType.LEFT);
+
+            case '5', '6' ->
+                    readPageSequence(
+                            reader,
+                            sequenceValue);
+
+            default ->
+                    KeyEvent.of(
+                            KeyType.UNKNOWN);
         };
     }
 
-    private KeyEvent readCharacter(int input) {
+    private KeyEvent readPageSequence(
+            NonBlockingReader reader,
+            int sequenceValue)
+            throws IOException {
+        int terminator =
+                reader.read(
+                        ESCAPE_SEQUENCE_TIMEOUT_MILLIS);
+
+        if (terminator
+                != SEQUENCE_TERMINATOR) {
+            return KeyEvent.of(
+                    KeyType.UNKNOWN);
+        }
+
+        if (sequenceValue == '5') {
+            return KeyEvent.of(
+                    KeyType.PAGE_UP);
+        }
+
+        return KeyEvent.of(
+                KeyType.PAGE_DOWN);
+    }
+
+    private KeyEvent readCharacter(
+            int input) {
         if (isPrintable(input)) {
             return KeyEvent.character(
                     (char) input);
         }
 
-        return KeyEvent.of(KeyType.UNKNOWN);
+        return KeyEvent.of(
+                KeyType.UNKNOWN);
     }
 
-    private boolean isPrintable(int input) {
+    private boolean isPrintable(
+            int input) {
         return input >= 32
                 && input <= 126;
     }

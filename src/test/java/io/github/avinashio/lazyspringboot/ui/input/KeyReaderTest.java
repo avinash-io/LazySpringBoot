@@ -11,80 +11,149 @@ import org.junit.jupiter.api.Test;
 
 class KeyReaderTest {
 
-    private static final long ESCAPE_SEQUENCE_TIMEOUT_MILLIS =
-            50;
+    private static final long
+            ESCAPE_SEQUENCE_TIMEOUT_MILLIS = 50;
+
+    private static final long
+            POLL_TIMEOUT_MILLIS = 150;
 
     @Test
-    void shouldReadQuitKey() throws IOException {
-        KeyReader keyReader = createKeyReader('q');
+    void shouldReadQuitKey()
+            throws IOException {
+        KeyReader keyReader =
+                createKeyReader('q');
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.QUIT));
+                        KeyEvent.of(
+                                KeyType.QUIT));
+    }
+
+    @Test
+    void shouldReadUndoKey()
+            throws IOException {
+        KeyReader keyReader =
+                createKeyReader('u');
+
+        assertThat(keyReader.read())
+                .isEqualTo(
+                        KeyEvent.of(
+                                KeyType.UNDO));
+    }
+
+    @Test
+    void shouldReadActionsKey()
+            throws IOException {
+        KeyReader keyReader =
+                createKeyReader('a');
+
+        assertThat(keyReader.read())
+                .isEqualTo(
+                        KeyEvent.of(
+                                KeyType.ACTIONS));
+    }
+
+    @Test
+    void shouldReadGoToTopKey()
+            throws IOException {
+        KeyReader keyReader =
+                createKeyReader('g');
+
+        assertThat(keyReader.read())
+                .isEqualTo(
+                        KeyEvent.of(
+                                KeyType.GO_TO_TOP));
+    }
+
+    @Test
+    void shouldReadGoToBottomKey()
+            throws IOException {
+        KeyReader keyReader =
+                createKeyReader('G');
+
+        assertThat(keyReader.read())
+                .isEqualTo(
+                        KeyEvent.of(
+                                KeyType.GO_TO_BOTTOM));
     }
 
     @Test
     void shouldReadCarriageReturnAsEnter()
             throws IOException {
-        KeyReader keyReader = createKeyReader('\r');
+        KeyReader keyReader =
+                createKeyReader('\r');
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.ENTER));
+                        KeyEvent.of(
+                                KeyType.ENTER));
     }
 
     @Test
     void shouldReadNewlineAsEnter()
             throws IOException {
-        KeyReader keyReader = createKeyReader('\n');
+        KeyReader keyReader =
+                createKeyReader('\n');
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.ENTER));
+                        KeyEvent.of(
+                                KeyType.ENTER));
     }
 
     @Test
-    void shouldReadSpaceKey() throws IOException {
-        KeyReader keyReader = createKeyReader(' ');
+    void shouldReadSpaceKey()
+            throws IOException {
+        KeyReader keyReader =
+                createKeyReader(' ');
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.SPACE));
+                        KeyEvent.of(
+                                KeyType.SPACE));
     }
 
     @Test
-    void shouldReadSearchKey() throws IOException {
-        KeyReader keyReader = createKeyReader('/');
+    void shouldReadSearchKey()
+            throws IOException {
+        KeyReader keyReader =
+                createKeyReader('/');
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.SEARCH));
+                        KeyEvent.of(
+                                KeyType.SEARCH));
     }
 
     @Test
     void shouldReadBackspaceKey()
             throws IOException {
-        KeyReader keyReader = createKeyReader(127);
+        KeyReader keyReader =
+                createKeyReader(127);
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.BACKSPACE));
+                        KeyEvent.of(
+                                KeyType.BACKSPACE));
     }
 
     @Test
     void shouldReadControlHAsBackspace()
             throws IOException {
-        KeyReader keyReader = createKeyReader(8);
+        KeyReader keyReader =
+                createKeyReader(8);
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.BACKSPACE));
+                        KeyEvent.of(
+                                KeyType.BACKSPACE));
     }
 
     @Test
     void shouldReadCharacterKey()
             throws IOException {
-        KeyReader keyReader = createKeyReader('w');
+        KeyReader keyReader =
+                createKeyReader('w');
 
         assertThat(keyReader.read())
                 .isEqualTo(
@@ -94,7 +163,8 @@ class KeyReaderTest {
     @Test
     void shouldReadUppercaseCharacterKey()
             throws IOException {
-        KeyReader keyReader = createKeyReader('W');
+        KeyReader keyReader =
+                createKeyReader('W');
 
         assertThat(keyReader.read())
                 .isEqualTo(
@@ -104,7 +174,8 @@ class KeyReaderTest {
     @Test
     void shouldReadNumericCharacterKey()
             throws IOException {
-        KeyReader keyReader = createKeyReader('4');
+        KeyReader keyReader =
+                createKeyReader('4');
 
         assertThat(keyReader.read())
                 .isEqualTo(
@@ -112,9 +183,67 @@ class KeyReaderTest {
     }
 
     @Test
+    void shouldReturnTimeoutWhenTimedReadExpires()
+            throws IOException {
+        Terminal terminal =
+                mock(Terminal.class);
+
+        NonBlockingReader reader =
+                mock(NonBlockingReader.class);
+
+        when(terminal.reader())
+                .thenReturn(reader);
+
+        when(reader.read(
+                POLL_TIMEOUT_MILLIS))
+                .thenReturn(
+                        NonBlockingReader.READ_EXPIRED);
+
+        KeyReader keyReader =
+                new KeyReader(terminal);
+
+        assertThat(
+                keyReader.read(
+                        POLL_TIMEOUT_MILLIS))
+                .isEqualTo(
+                        KeyEvent.of(
+                                KeyType.TIMEOUT));
+    }
+
+    @Test
+    void shouldReadKeyDuringTimedRead()
+            throws IOException {
+        Terminal terminal =
+                mock(Terminal.class);
+
+        NonBlockingReader reader =
+                mock(NonBlockingReader.class);
+
+        when(terminal.reader())
+                .thenReturn(reader);
+
+        when(reader.read(
+                POLL_TIMEOUT_MILLIS))
+                .thenReturn(
+                        (int) 'q');
+
+        KeyReader keyReader =
+                new KeyReader(terminal);
+
+        assertThat(
+                keyReader.read(
+                        POLL_TIMEOUT_MILLIS))
+                .isEqualTo(
+                        KeyEvent.of(
+                                KeyType.QUIT));
+    }
+
+    @Test
     void shouldReadEscapeKey()
             throws IOException {
-        Terminal terminal = mock(Terminal.class);
+        Terminal terminal =
+                mock(Terminal.class);
+
         NonBlockingReader reader =
                 mock(NonBlockingReader.class);
 
@@ -124,9 +253,8 @@ class KeyReaderTest {
         when(reader.read())
                 .thenReturn(27);
 
-        when(
-                reader.read(
-                        ESCAPE_SEQUENCE_TIMEOUT_MILLIS))
+        when(reader.read(
+                ESCAPE_SEQUENCE_TIMEOUT_MILLIS))
                 .thenReturn(
                         NonBlockingReader.READ_EXPIRED);
 
@@ -135,7 +263,8 @@ class KeyReaderTest {
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.ESCAPE));
+                        KeyEvent.of(
+                                KeyType.ESCAPE));
     }
 
     @Test
@@ -148,7 +277,8 @@ class KeyReaderTest {
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.UP));
+                        KeyEvent.of(
+                                KeyType.UP));
     }
 
     @Test
@@ -161,7 +291,8 @@ class KeyReaderTest {
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.DOWN));
+                        KeyEvent.of(
+                                KeyType.DOWN));
     }
 
     @Test
@@ -174,7 +305,8 @@ class KeyReaderTest {
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.RIGHT));
+                        KeyEvent.of(
+                                KeyType.RIGHT));
     }
 
     @Test
@@ -187,7 +319,34 @@ class KeyReaderTest {
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.LEFT));
+                        KeyEvent.of(
+                                KeyType.LEFT));
+    }
+
+    @Test
+    void shouldReadPageUpKey()
+            throws IOException {
+        KeyReader keyReader =
+                createPageSequenceKeyReader(
+                        '5');
+
+        assertThat(keyReader.read())
+                .isEqualTo(
+                        KeyEvent.of(
+                                KeyType.PAGE_UP));
+    }
+
+    @Test
+    void shouldReadPageDownKey()
+            throws IOException {
+        KeyReader keyReader =
+                createPageSequenceKeyReader(
+                        '6');
+
+        assertThat(keyReader.read())
+                .isEqualTo(
+                        KeyEvent.of(
+                                KeyType.PAGE_DOWN));
     }
 
     @Test
@@ -200,22 +359,27 @@ class KeyReaderTest {
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.UNKNOWN));
+                        KeyEvent.of(
+                                KeyType.UNKNOWN));
     }
 
     @Test
     void shouldReturnUnknownForUnsupportedKey()
             throws IOException {
-        KeyReader keyReader = createKeyReader(1);
+        KeyReader keyReader =
+                createKeyReader(1);
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(KeyType.UNKNOWN));
+                        KeyEvent.of(
+                                KeyType.UNKNOWN));
     }
 
-    private KeyReader createKeyReader(int input)
+    private KeyReader createKeyReader(
+            int input)
             throws IOException {
-        Terminal terminal = mock(Terminal.class);
+        Terminal terminal =
+                mock(Terminal.class);
 
         NonBlockingReader reader =
                 mock(NonBlockingReader.class);
@@ -229,11 +393,13 @@ class KeyReaderTest {
         return new KeyReader(terminal);
     }
 
-    private KeyReader createEscapeSequenceKeyReader(
+    private KeyReader
+    createEscapeSequenceKeyReader(
             int secondCharacter,
             int thirdCharacter)
             throws IOException {
-        Terminal terminal = mock(Terminal.class);
+        Terminal terminal =
+                mock(Terminal.class);
 
         NonBlockingReader reader =
                 mock(NonBlockingReader.class);
@@ -244,9 +410,8 @@ class KeyReaderTest {
         when(reader.read())
                 .thenReturn(27);
 
-        when(
-                reader.read(
-                        ESCAPE_SEQUENCE_TIMEOUT_MILLIS))
+        when(reader.read(
+                ESCAPE_SEQUENCE_TIMEOUT_MILLIS))
                 .thenReturn(
                         secondCharacter,
                         thirdCharacter);
@@ -254,13 +419,29 @@ class KeyReaderTest {
         return new KeyReader(terminal);
     }
 
-    @Test
-    void shouldReadUndoKey() throws IOException {
-        KeyReader keyReader = createKeyReader('u');
+    private KeyReader
+    createPageSequenceKeyReader(
+            int sequenceValue)
+            throws IOException {
+        Terminal terminal =
+                mock(Terminal.class);
 
-        assertThat(keyReader.read())
-                .isEqualTo(
-                        KeyEvent.of(KeyType.UNDO));
+        NonBlockingReader reader =
+                mock(NonBlockingReader.class);
+
+        when(terminal.reader())
+                .thenReturn(reader);
+
+        when(reader.read())
+                .thenReturn(27);
+
+        when(reader.read(
+                ESCAPE_SEQUENCE_TIMEOUT_MILLIS))
+                .thenReturn(
+                        (int) '[',
+                        sequenceValue,
+                        (int) '~');
+
+        return new KeyReader(terminal);
     }
-
 }

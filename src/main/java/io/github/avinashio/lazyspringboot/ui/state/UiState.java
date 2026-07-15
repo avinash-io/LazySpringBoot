@@ -1,5 +1,6 @@
 package io.github.avinashio.lazyspringboot.ui.state;
 
+import io.github.avinashio.lazyspringboot.domain.action.ProjectActionOutput;
 import io.github.avinashio.lazyspringboot.domain.dependency.DependencyItem;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import java.util.ArrayList;
@@ -31,10 +32,20 @@ public class UiState {
     private String dependencySearchQuery = "";
 
     private int selectedProjectIndex;
+
     private int selectedDependencyIndex;
+
+    private boolean projectActionsActive;
+
+    private int selectedProjectActionIndex;
+
+    private ProjectActionOutput projectActionOutput;
 
     private final Viewport dependencyViewport =
             new Viewport();
+
+    private final OutputViewport outputViewport =
+            new OutputViewport();
 
     public List<SpringProject> projects() {
         return projects;
@@ -72,6 +83,24 @@ public class UiState {
 
         return projects.get(
                 selectedProjectIndex);
+    }
+
+    public void replaceSelectedProject(
+            SpringProject project) {
+        if (project == null
+                || projects.isEmpty()) {
+            return;
+        }
+
+        List<SpringProject> updatedProjects =
+                new ArrayList<>(projects);
+
+        updatedProjects.set(
+                selectedProjectIndex,
+                project);
+
+        projects =
+                List.copyOf(updatedProjects);
     }
 
     public PanelFocus panelFocus() {
@@ -198,10 +227,13 @@ public class UiState {
                 new HashSet<>(
                         selectedDependencyIds);
 
-        if (updatedIds.contains(dependencyId)) {
-            updatedIds.remove(dependencyId);
+        if (updatedIds.contains(
+                dependencyId)) {
+            updatedIds.remove(
+                    dependencyId);
         } else {
-            updatedIds.add(dependencyId);
+            updatedIds.add(
+                    dependencyId);
         }
 
         selectedDependencyIds =
@@ -294,39 +326,28 @@ public class UiState {
             return;
         }
 
-        inputMode = InputMode.NAVIGATION;
+        inputMode =
+                InputMode.NAVIGATION;
     }
 
-    public List<DependencyItem> selectedDependencyItems() {
+    public List<DependencyItem>
+    selectedDependencyItems() {
         return dependencyItems.stream()
                 .filter(
                         item ->
                                 selectedDependencyIds.contains(
-                                        item.dependency().id()))
-                .filter(DependencyItem::selectable)
+                                        item
+                                                .dependency()
+                                                .id()))
+                .filter(
+                        DependencyItem::selectable)
                 .toList();
     }
 
     public void clearDependencySelections() {
         selectedDependencyIds = Set.of();
+
         updateDependencySelection();
-    }
-
-    public void replaceSelectedProject(
-            SpringProject project) {
-        if (project == null || projects.isEmpty()) {
-            return;
-        }
-
-        List<SpringProject> updatedProjects =
-                new ArrayList<>(projects);
-
-        updatedProjects.set(
-                selectedProjectIndex,
-                project);
-
-        projects =
-                List.copyOf(updatedProjects);
     }
 
     public UiMessage message() {
@@ -357,4 +378,72 @@ public class UiState {
         return message != null;
     }
 
+    public boolean projectActionsActive() {
+        return projectActionsActive;
+    }
+
+    public void startProjectActions() {
+        projectActionsActive = true;
+
+        selectedProjectActionIndex = 0;
+    }
+
+    public void stopProjectActions() {
+        projectActionsActive = false;
+    }
+
+    public int selectedProjectActionIndex() {
+        return selectedProjectActionIndex;
+    }
+
+    public void selectNextProjectAction(
+            int actionCount) {
+        if (actionCount <= 0) {
+            return;
+        }
+
+        if (selectedProjectActionIndex
+                < actionCount - 1) {
+            selectedProjectActionIndex++;
+        }
+    }
+
+    public void selectPreviousProjectAction() {
+        if (selectedProjectActionIndex > 0) {
+            selectedProjectActionIndex--;
+        }
+    }
+
+    public boolean projectActionOutputActive() {
+        return projectActionOutput != null;
+    }
+
+    public ProjectActionOutput projectActionOutput() {
+        return projectActionOutput;
+    }
+
+    public void showProjectActionOutput(
+            ProjectActionOutput output,
+            int visibleHeight) {
+        projectActionOutput = output;
+
+        outputViewport.moveToBottom(
+                output.lines().size(),
+                visibleHeight);
+    }
+
+    public void replaceProjectActionOutput(
+            ProjectActionOutput output) {
+        projectActionOutput = output;
+    }
+
+    public void closeProjectActionOutput() {
+        projectActionOutput = null;
+
+        outputViewport.reset();
+    }
+
+    public OutputViewport outputViewport() {
+        return outputViewport;
+    }
 }
