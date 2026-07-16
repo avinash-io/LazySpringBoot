@@ -20,6 +20,7 @@ import io.github.avinashio.lazyspringboot.domain.process.ProjectProcess;
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcessStatus;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.ui.component.DependencyFilter;
+import io.github.avinashio.lazyspringboot.ui.controller.ProjectActionExecutor;
 import io.github.avinashio.lazyspringboot.ui.input.KeyEvent;
 import io.github.avinashio.lazyspringboot.ui.input.KeyReader;
 import io.github.avinashio.lazyspringboot.ui.input.KeyType;
@@ -40,6 +41,8 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import io.github.avinashio.lazyspringboot.ui.controller.ProcessController;
+import io.github.avinashio.lazyspringboot.ui.controller.ProjectActionController;
 
 @Component
 @ConditionalOnProperty(
@@ -101,6 +104,15 @@ public class TuiApplication
     private final StopProjectProcessUseCase
             stopProjectProcessUseCase;
 
+    private final ProcessController
+            processController;
+
+    private final ProjectActionController
+            projectActionController;
+
+    private final ProjectActionExecutor
+            projectActionExecutor;
+
     private List<SpringDependency> dependencyCatalog =
             List.of();
 
@@ -120,6 +132,9 @@ public class TuiApplication
             ProjectActionCatalog projectActionCatalog,
             ProjectActionsScreen projectActionsScreen,
             ProjectActionOutputScreen projectActionOutputScreen,
+            ProcessController processController,
+            ProjectActionController projectActionController,
+            ProjectActionExecutor projectActionExecutor,
             ExecuteProjectActionUseCase executeProjectActionUseCase,
             StartProjectProcessUseCase startProjectProcessUseCase,
             GetProjectProcessUseCase getProjectProcessUseCase,
@@ -158,6 +173,12 @@ public class TuiApplication
                 getProjectProcessUseCase;
         this.stopProjectProcessUseCase =
                 stopProjectProcessUseCase;
+        this.processController =
+                processController;
+        this.projectActionController =
+                projectActionController;
+        this.projectActionExecutor =
+                projectActionExecutor;
     }
 
     @Override
@@ -217,16 +238,25 @@ public class TuiApplication
         }
 
         if (uiState.projectActionOutputActive()) {
-            refreshProcessOutput();
 
-            projectActionOutputScreen.render(uiState);
+            SpringProject project =
+                    uiState.selectedProject();
+
+            if (project != null) {
+                processController.refreshLogs(
+                        project);
+            }
+
+            projectActionOutputScreen.render(
+                    uiState);
             return;
         }
 
         if (uiState.projectActionsActive()) {
             projectActionsScreen.render(
                     uiState,
-                    currentProjectActions());
+                    projectActionController.actions(
+                            uiState.selectedProject()));
             return;
         }
 
@@ -494,43 +524,26 @@ public class TuiApplication
 
     private void handleProjectActionsKey(
             KeyEvent keyEvent) {
+
         List<ActionItem> actions =
-                currentProjectActions();
+                projectActionController.actions(
+                        uiState.selectedProject());
 
-        switch (keyEvent.type()) {
-            case ESCAPE ->
-                    uiState.stopProjectActions();
-
-            case UP ->
-                    uiState.selectPreviousProjectAction();
-
-            case DOWN ->
-                    uiState.selectNextProjectAction(
-                            actions.size());
-
-            case ENTER ->
-                    executeSelectedProjectAction(actions);
-
-            default -> {
-                // No action.
-            }
-        }
-    }
-
-    private List<ActionItem> currentProjectActions() {
-        SpringProject project =
-                uiState.selectedProject();
-
-        if (project == null) {
-            return List.of();
+        if (projectActionController.handleKey(
+                keyEvent,
+                actions)) {
+            return;
         }
 
-        return projectActionCatalog.actions(
-                getProjectProcessUseCase.get(project));
+        if (keyEvent.type()
+                == KeyType.ENTER) {
+            executeSelectedProjectAction(actions);
+        }
     }
 
     private void executeSelectedProjectAction(
             List<ActionItem> actions) {
+
         if (actions.isEmpty()) {
             return;
         }
@@ -546,7 +559,8 @@ public class TuiApplication
         ActionItem selectedAction =
                 actions.get(selectedIndex);
 
-        if (!selectedAction.enabled()) {
+        if (!projectActionExecutor.canExecute(
+                selectedAction)) {
             return;
         }
 
@@ -555,28 +569,14 @@ public class TuiApplication
 
         if (project == null) {
             uiState.stopProjectActions();
-
             uiState.showErrorMessage(
                     "No project selected");
-
             return;
         }
 
-        switch (selectedAction.action()) {
-            case BUILD, TEST ->
-                    executeBlockingProjectAction(
-                            project,
-                            selectedAction);
-
-            case RUN ->
-                    startProjectProcess(project);
-
-            case VIEW_LOGS ->
-                    showProjectProcessOutput(project);
-
-            case STOP ->
-                    stopProjectProcess(project);
-        }
+        projectActionExecutor.execute(
+                project,
+                selectedAction);
     }
 
     private void executeBlockingProjectAction(
@@ -619,28 +619,6 @@ public class TuiApplication
                             .displayName()
                             + " interrupted for "
                             + project.name());
-        }
-    }
-
-    private void startProjectProcess(
-            SpringProject project) {
-        try {
-            startProjectProcessUseCase.start(
-                    project);
-
-            uiState.stopProjectActions();
-
-            uiState.showSuccessMessage(
-                    "Started "
-                            + project.name());
-        } catch (IOException exception) {
-            uiState.stopProjectActions();
-
-            uiState.showErrorMessage(
-                    buildProcessErrorMessage(
-                            "Failed to start "
-                                    + project.name(),
-                            exception));
         }
     }
 
@@ -754,27 +732,6 @@ public class TuiApplication
         }
     }
 
-    private void stopProjectProcess(
-            SpringProject project) {
-        boolean stopped =
-                stopProjectProcessUseCase.stop(
-                        project);
-
-        uiState.stopProjectActions();
-
-        if (stopped) {
-            uiState.showSuccessMessage(
-                    "Stopping "
-                            + project.name());
-
-            return;
-        }
-
-        uiState.showErrorMessage(
-                "Project is not running: "
-                        + project.name());
-    }
-
     private String buildProcessErrorMessage(
             String prefix,
             IOException exception) {
@@ -851,23 +808,13 @@ public class TuiApplication
                     handleUndo();
 
             case ACTIONS ->
-                    handleProjectActions();
+                    projectActionController.openActions(
+                            uiState.selectedProject());
 
             default -> {
                 // No action.
             }
         }
-    }
-
-    private void handleProjectActions() {
-        if (uiState.selectedProject() == null) {
-            uiState.showErrorMessage(
-                    "No project selected");
-
-            return;
-        }
-
-        uiState.startProjectActions();
     }
 
     private void handleUndo() {
