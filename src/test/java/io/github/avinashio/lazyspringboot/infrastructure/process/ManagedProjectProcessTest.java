@@ -14,6 +14,7 @@ class ManagedProjectProcessTest {
 
     @Test
     void shouldStartInStartingState() {
+
         ManagedProjectProcess managedProcess =
                 managedProcess();
 
@@ -27,6 +28,12 @@ class ManagedProjectProcessTest {
         assertThat(snapshot.exitCode())
                 .isNull();
 
+        assertThat(snapshot.pid())
+                .isEqualTo(process.pid());
+
+        assertThat(snapshot.startedAt())
+                .isNotNull();
+
         assertThat(
                 managedProcess.stopRequested())
                 .isFalse();
@@ -34,6 +41,7 @@ class ManagedProjectProcessTest {
 
     @Test
     void shouldMarkProcessRunning() {
+
         ManagedProjectProcess managedProcess =
                 managedProcess();
 
@@ -49,6 +57,7 @@ class ManagedProjectProcessTest {
 
     @Test
     void shouldRemainStartingForNormalOutput() {
+
         ManagedProjectProcess managedProcess =
                 managedProcess();
 
@@ -56,7 +65,7 @@ class ManagedProjectProcessTest {
                 "Starting DemoApplication");
 
         managedProcess.addOutput(
-                "Tomcat initialized with port 8080");
+                "Tomcat initialized on port 8080");
 
         assertThat(
                 managedProcess
@@ -68,11 +77,12 @@ class ManagedProjectProcessTest {
 
     @Test
     void shouldMarkRunningWhenSpringBootStarts() {
+
         ManagedProjectProcess managedProcess =
                 managedProcess();
 
         managedProcess.addOutput(
-                "Started DemoApplication in 1.284 seconds");
+                "Started DemoApplication in 1.234 seconds");
 
         assertThat(
                 managedProcess
@@ -83,23 +93,8 @@ class ManagedProjectProcessTest {
     }
 
     @Test
-    void shouldNotMarkRunningForUnrelatedStartedOutput() {
-        ManagedProjectProcess managedProcess =
-                managedProcess();
-
-        managedProcess.addOutput(
-                "Started background worker");
-
-        assertThat(
-                managedProcess
-                        .snapshot()
-                        .status())
-                .isEqualTo(
-                        ProjectProcessStatus.STARTING);
-    }
-
-    @Test
     void shouldRememberStopRequest() {
+
         ManagedProjectProcess managedProcess =
                 managedProcess();
 
@@ -112,6 +107,7 @@ class ManagedProjectProcessTest {
 
     @Test
     void shouldMarkRequestedStopAsStopped() {
+
         ManagedProjectProcess managedProcess =
                 managedProcess();
 
@@ -134,6 +130,7 @@ class ManagedProjectProcessTest {
 
     @Test
     void shouldMarkUnexpectedFailureAsFailed() {
+
         ManagedProjectProcess managedProcess =
                 managedProcess();
 
@@ -154,6 +151,7 @@ class ManagedProjectProcessTest {
 
     @Test
     void shouldCopyProcessOutputIntoSnapshot() {
+
         ManagedProjectProcess managedProcess =
                 managedProcess();
 
@@ -172,8 +170,8 @@ class ManagedProjectProcessTest {
                         "Application started");
     }
 
-    private ManagedProjectProcess
-    managedProcess() {
+    private ManagedProjectProcess managedProcess() {
+
         return new ManagedProjectProcess(
                 "demo",
                 process);

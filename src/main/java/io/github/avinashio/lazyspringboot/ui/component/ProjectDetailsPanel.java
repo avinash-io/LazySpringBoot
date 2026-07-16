@@ -4,6 +4,10 @@ import io.github.avinashio.lazyspringboot.application.process.GetProjectProcessU
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcess;
 import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -14,9 +18,15 @@ public class ProjectDetailsPanel {
 
     private static final int LABEL_WIDTH = 14;
 
+    private static final DateTimeFormatter TIME_FORMATTER =
+            DateTimeFormatter.ofPattern(
+                    "HH:mm:ss");
+
     private final TextFormatter textFormatter;
 
     private final StatusFormatter statusFormatter;
+
+    private final DurationFormatter durationFormatter;
 
     private final GetProjectProcessUseCase
             getProjectProcessUseCase;
@@ -24,10 +34,13 @@ public class ProjectDetailsPanel {
     public ProjectDetailsPanel(
             TextFormatter textFormatter,
             StatusFormatter statusFormatter,
+            DurationFormatter durationFormatter,
             GetProjectProcessUseCase getProjectProcessUseCase) {
 
         this.textFormatter = textFormatter;
         this.statusFormatter = statusFormatter;
+        this.durationFormatter =
+                durationFormatter;
         this.getProjectProcessUseCase =
                 getProjectProcessUseCase;
     }
@@ -103,6 +116,33 @@ public class ProjectDetailsPanel {
                 statusFormatter.format(
                         projectProcess.status())));
 
+        if (projectProcess.hasProcessId()) {
+
+            lines.add(detail(
+                    "PID",
+                    Long.toString(
+                            projectProcess.pid())));
+        }
+
+        if (projectProcess.hasStartTime()) {
+
+            Instant startedAt =
+                    projectProcess.startedAt();
+
+            lines.add(detail(
+                    "Started",
+                    TIME_FORMATTER.format(
+                            startedAt.atZone(
+                                    ZoneId.systemDefault()))));
+
+            lines.add(detail(
+                    "Uptime",
+                    durationFormatter.format(
+                            Duration.between(
+                                    startedAt,
+                                    Instant.now()))));
+        }
+
         if (projectProcess.exitCode() != null) {
 
             lines.add(detail(
@@ -128,7 +168,6 @@ public class ProjectDetailsPanel {
 
         if (value == null
                 || value.isBlank()) {
-
             return "Unknown";
         }
 

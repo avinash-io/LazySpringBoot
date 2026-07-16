@@ -1,12 +1,15 @@
 package io.github.avinashio.lazyspringboot.domain.process;
 
+import java.time.Instant;
 import java.util.List;
 
 public record ProjectProcess(
         String projectName,
         ProjectProcessStatus status,
         List<String> output,
-        Integer exitCode) {
+        Integer exitCode,
+        Long pid,
+        Instant startedAt) {
 
     public ProjectProcess {
         output = List.copyOf(output);
@@ -15,5 +18,13 @@ public record ProjectProcess(
     public boolean running() {
         return status == ProjectProcessStatus.STARTING
                 || status == ProjectProcessStatus.RUNNING;
+    }
+
+    public boolean hasProcessId() {
+        return pid != null;
+    }
+
+    public boolean hasStartTime() {
+        return startedAt != null;
     }
 }

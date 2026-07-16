@@ -117,16 +117,16 @@ public class ProjectProcessManager {
 
     private void monitorProcess(
             ManagedProjectProcess managedProcess) {
+
         Process process =
                 managedProcess.process();
-
-        managedProcess.markRunning();
 
         try (BufferedReader reader =
                      new BufferedReader(
                              new InputStreamReader(
                                      process.getInputStream(),
                                      StandardCharsets.UTF_8))) {
+
             readProcessOutput(
                     reader,
                     managedProcess);
@@ -137,13 +137,17 @@ public class ProjectProcessManager {
             updateProcessStatus(
                     managedProcess,
                     exitCode);
+
         } catch (IOException exception) {
+
             managedProcess.addOutput(
                     "Process output error: "
                             + exception.getMessage());
 
             managedProcess.markFailed(-1);
+
         } catch (InterruptedException exception) {
+
             Thread.currentThread().interrupt();
 
             managedProcess.addOutput(

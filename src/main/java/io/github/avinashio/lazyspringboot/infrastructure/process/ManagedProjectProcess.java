@@ -2,6 +2,7 @@ package io.github.avinashio.lazyspringboot.infrastructure.process;
 
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcess;
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcessStatus;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +14,10 @@ final class ManagedProjectProcess {
     private final String projectName;
 
     private final Process process;
+
+    private final long pid;
+
+    private final Instant startedAt;
 
     private final List<String> output =
             new ArrayList<>();
@@ -29,6 +34,8 @@ final class ManagedProjectProcess {
             Process process) {
         this.projectName = projectName;
         this.process = process;
+        this.pid = process.pid();
+        this.startedAt = Instant.now();
     }
 
     synchronized void addOutput(
@@ -78,7 +85,9 @@ final class ManagedProjectProcess {
                 projectName,
                 status,
                 List.copyOf(output),
-                exitCode);
+                exitCode,
+                pid,
+                startedAt);
     }
 
     Process process() {
@@ -87,6 +96,7 @@ final class ManagedProjectProcess {
 
     private void inspectOutput(
             String line) {
+
         if (status
                 != ProjectProcessStatus.STARTING) {
             return;
@@ -100,9 +110,9 @@ final class ManagedProjectProcess {
 
     private boolean isSpringBootStarted(
             String line) {
+
         return line.contains(
                 STARTED_APPLICATION_MARKER)
-                && line.contains(
-                " in ");
+                && line.contains(" in ");
     }
 }
