@@ -43,6 +43,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import io.github.avinashio.lazyspringboot.ui.controller.ProcessController;
 import io.github.avinashio.lazyspringboot.ui.controller.ProjectActionController;
+import io.github.avinashio.lazyspringboot.ui.controller.CreateProjectController;
+import io.github.avinashio.lazyspringboot.ui.screen.CreateProjectScreen;
+import io.github.avinashio.lazyspringboot.ui.state.CreateProjectState;
 
 @Component
 @ConditionalOnProperty(
@@ -113,6 +116,12 @@ public class TuiApplication
     private final ProjectActionExecutor
             projectActionExecutor;
 
+    private final CreateProjectController
+            createProjectController;
+
+    private final CreateProjectScreen
+            createProjectScreen;
+
     private List<SpringDependency> dependencyCatalog =
             List.of();
 
@@ -135,6 +144,8 @@ public class TuiApplication
             ProcessController processController,
             ProjectActionController projectActionController,
             ProjectActionExecutor projectActionExecutor,
+            CreateProjectScreen createProjectScreen,
+            CreateProjectController createProjectController,
             ExecuteProjectActionUseCase executeProjectActionUseCase,
             StartProjectProcessUseCase startProjectProcessUseCase,
             GetProjectProcessUseCase getProjectProcessUseCase,
@@ -179,6 +190,10 @@ public class TuiApplication
                 projectActionController;
         this.projectActionExecutor =
                 projectActionExecutor;
+        this.createProjectScreen =
+                createProjectScreen;
+        this.createProjectController =
+                createProjectController;
     }
 
     @Override
@@ -234,6 +249,17 @@ public class TuiApplication
         if (uiState
                 .dependencyConfirmationActive()) {
             confirmationScreen.render(uiState);
+            return;
+        }
+
+
+        if (createProjectController
+                .state()
+                .active()) {
+
+            createProjectScreen.render(
+                    createProjectController.state());
+
             return;
         }
 
@@ -357,6 +383,16 @@ public class TuiApplication
             return;
         }
 
+        if (createProjectController
+                .state()
+                .active()) {
+
+            handleCreateProjectKey(
+                    keyEvent);
+
+            return;
+        }
+
         if (uiState.projectActionOutputActive()) {
             handleProjectActionOutputKey(
                     keyEvent);
@@ -376,6 +412,74 @@ public class TuiApplication
         }
 
         handleNavigationKey(keyEvent);
+    }
+
+    private void handleCreateProjectKey(
+            KeyEvent keyEvent) {
+
+        CreateProjectState state =
+                createProjectController.state();
+
+        if (state.editing()) {
+
+            switch (keyEvent.type()) {
+
+                case ENTER -> {
+
+                    if (state.selectedField() == 5) {
+
+                        createProjectController.generate(
+                                Path.of("")
+                                        .toAbsolutePath());
+
+                    } else {
+
+                        state.startEditing();
+                    }
+                }
+
+                case BACKSPACE ->
+                        state.backspace();
+
+                case CHARACTER -> {
+
+                    if (keyEvent.hasCharacter()) {
+                        state.append(
+                                keyEvent.character());
+                    }
+                }
+
+                case ESCAPE -> {
+
+                    state.stopEditing();
+
+                    createProjectController.close();
+                }
+
+                default -> {
+                }
+            }
+
+            return;
+        }
+
+        switch (keyEvent.type()) {
+
+            case ESCAPE ->
+                    createProjectController.close();
+
+            case DOWN ->
+                    state.nextField();
+
+            case UP ->
+                    state.previousField();
+
+            case ENTER ->
+                    state.startEditing();
+
+            default -> {
+            }
+        }
     }
 
     private void handleProjectActionOutputKey(
@@ -811,6 +915,23 @@ public class TuiApplication
                     projectActionController.openActions(
                             uiState.selectedProject());
 
+            case CHARACTER -> {
+
+                if (!keyEvent.hasCharacter()) {
+                    break;
+                }
+
+                switch (keyEvent.character()) {
+
+                    case 'n' ->
+                            createProjectController.open();
+
+                    default -> {
+                        // No action.
+                    }
+                }
+            }
+
             default -> {
                 // No action.
             }
@@ -871,16 +992,6 @@ public class TuiApplication
                         .removeLastDependencySearchCharacter();
 
                 selectFirstVisibleDependency();
-            }
-
-            case CHARACTER -> {
-                if (keyEvent.hasCharacter()) {
-                    uiState
-                            .appendDependencySearchCharacter(
-                                    keyEvent.character());
-
-                    selectFirstVisibleDependency();
-                }
             }
 
             case QUIT ->
