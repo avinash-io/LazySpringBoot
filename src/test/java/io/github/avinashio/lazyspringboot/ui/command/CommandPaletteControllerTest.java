@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.avinashio.lazyspringboot.ui.input.KeyEvent;
 import io.github.avinashio.lazyspringboot.ui.input.KeyType;
+import io.github.avinashio.lazyspringboot.ui.state.CommandPaletteState;
 import org.junit.jupiter.api.Test;
 
 class CommandPaletteControllerTest {
@@ -24,7 +25,7 @@ class CommandPaletteControllerTest {
 
         assertThat(
                 controller.state()
-                        .selectedIndex())
+                        .selectedCommandIndex())
                 .isEqualTo(1);
     }
 

@@ -1,39 +1,35 @@
 package io.github.avinashio.lazyspringboot.ui.command;
 
 import io.github.avinashio.lazyspringboot.ui.input.KeyEvent;
-import io.github.avinashio.lazyspringboot.ui.input.KeyType;
+import io.github.avinashio.lazyspringboot.ui.state.CommandPaletteState;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CommandPaletteController {
 
-    private final CommandCatalog
-            commandCatalog;
+    private final CommandCatalog commandCatalog;
 
-    private final CommandPaletteState
-            state;
+    private final CommandPaletteState state;
 
     public CommandPaletteController(
             CommandCatalog commandCatalog,
             CommandPaletteState state) {
 
-        this.commandCatalog =
-                commandCatalog;
-        this.state =
-                state;
+        this.commandCatalog = commandCatalog;
+        this.state = state;
     }
 
     public void open() {
-        state.open();
+        state.openPalette();
     }
 
     public void close() {
-        state.close();
+        state.closePalette();
     }
 
     public boolean active() {
-        return state.active();
+        return state.open();
     }
 
     public CommandPaletteState state() {
@@ -47,7 +43,7 @@ public class CommandPaletteController {
     public Command selectedCommand() {
 
         return commands().get(
-                state.selectedIndex());
+                state.selectedCommandIndex());
     }
 
     public boolean handleKey(
@@ -56,10 +52,10 @@ public class CommandPaletteController {
         switch (keyEvent.type()) {
 
             case UP ->
-                    state.previous();
+                    state.selectPrevious();
 
             case DOWN ->
-                    state.next(
+                    state.selectNext(
                             commands().size());
 
             case ESCAPE -> {

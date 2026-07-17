@@ -2,6 +2,7 @@ package io.github.avinashio.lazyspringboot.ui.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.github.avinashio.lazyspringboot.ui.state.CommandPaletteState;
 import org.junit.jupiter.api.Test;
 
 class CommandPaletteStateTest {
@@ -12,16 +13,18 @@ class CommandPaletteStateTest {
         CommandPaletteState state =
                 new CommandPaletteState();
 
-        state.open();
+        state.openPalette();
 
-        state.next(5);
+        state.selectNext(5);
 
-        assertThat(state.selectedIndex())
+        assertThat(
+                state.selectedCommandIndex())
                 .isEqualTo(1);
 
-        state.previous();
+        state.selectPrevious();
 
-        assertThat(state.selectedIndex())
+        assertThat(
+                state.selectedCommandIndex())
                 .isZero();
     }
 }
