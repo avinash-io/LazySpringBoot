@@ -107,6 +107,13 @@ public class UiState {
         return panelFocus;
     }
 
+    public void focusPanel(
+            PanelFocus panelFocus) {
+
+        this.panelFocus =
+                panelFocus;
+    }
+
     public void focusNextPanel() {
         panelFocus =
                 switch (panelFocus) {
@@ -446,4 +453,6 @@ public class UiState {
     public OutputViewport outputViewport() {
         return outputViewport;
     }
+
+
 }

@@ -12,12 +12,21 @@ public class CommandPaletteController {
 
     private final CommandPaletteState state;
 
+    private final CommandPaletteExecutor commandPaletteExecutor;
+
     public CommandPaletteController(
             CommandCatalog commandCatalog,
-            CommandPaletteState state) {
+            CommandPaletteState state,
+            CommandPaletteExecutor commandPaletteExecutor) {
 
-        this.commandCatalog = commandCatalog;
-        this.state = state;
+        this.commandCatalog =
+                commandCatalog;
+
+        this.state =
+                state;
+
+        this.commandPaletteExecutor =
+                commandPaletteExecutor;
     }
 
     public void open() {
@@ -37,12 +46,37 @@ public class CommandPaletteController {
     }
 
     public List<Command> commands() {
-        return commandCatalog.commands();
+
+        String query =
+                state.searchQuery()
+                        .trim()
+                        .toLowerCase();
+
+        if (query.isEmpty()) {
+            return commandCatalog.commands();
+        }
+
+        return commandCatalog
+                .commands()
+                .stream()
+                .filter(
+                        command ->
+                                command.title()
+                                        .toLowerCase()
+                                        .contains(query))
+                .toList();
     }
 
     public Command selectedCommand() {
 
-        return commands().get(
+        List<Command> commands =
+                commands();
+
+        if (commands.isEmpty()) {
+            return null;
+        }
+
+        return commands.get(
                 state.selectedCommandIndex());
     }
 
@@ -58,6 +92,35 @@ public class CommandPaletteController {
                     state.selectNext(
                             commands().size());
 
+            case CHARACTER -> {
+
+                if (keyEvent.hasCharacter()) {
+
+                    state.appendSearchCharacter(
+                            keyEvent.character());
+                }
+            }
+
+            case BACKSPACE ->
+                    state.removeLastSearchCharacter();
+
+            case ENTER -> {
+
+                Command command =
+                        selectedCommand();
+
+                if (command == null) {
+                    return true;
+                }
+
+                close();
+
+                commandPaletteExecutor.execute(
+                        command);
+
+                return true;
+            }
+
             case ESCAPE -> {
 
                 close();
@@ -70,5 +133,9 @@ public class CommandPaletteController {
         }
 
         return false;
+    }
+
+    public String searchQuery() {
+        return state.searchQuery();
     }
 }

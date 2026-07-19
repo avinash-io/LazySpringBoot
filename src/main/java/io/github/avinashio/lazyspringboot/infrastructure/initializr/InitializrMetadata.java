@@ -4,4 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record InitializrMetadata(
-        InitializrDependencyMetadata dependencies) {}
+        InitializrDependencyMetadata dependencies,
+        InitializrOptionMetadata javaVersion,
+        InitializrOptionMetadata bootVersion) {}

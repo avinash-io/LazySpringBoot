@@ -1,6 +1,6 @@
 package io.github.avinashio.lazyspringboot.ui.screen;
 
-import io.github.avinashio.lazyspringboot.domain.command.CommandPaletteItem;
+import io.github.avinashio.lazyspringboot.ui.command.Command;
 import java.io.PrintWriter;
 import java.util.List;
 import org.jline.terminal.Terminal;
@@ -14,12 +14,14 @@ public class CommandPaletteScreen {
 
     public CommandPaletteScreen(
             Terminal terminal) {
+
         this.terminal = terminal;
     }
 
     public void render(
-            List<CommandPaletteItem> commands,
-            int selectedIndex) {
+            List<Command> commands,
+            int selectedIndex,
+            String searchQuery) {
 
         PrintWriter writer =
                 terminal.writer();
@@ -34,9 +36,19 @@ public class CommandPaletteScreen {
 
         writer.println(
                 "LazySpringBoot");
+
         writer.println();
+
         writer.println(
                 "Command Palette");
+
+        writer.println();
+
+        writer.println(
+                "Search: "
+                        + searchQuery
+                        + "_");
+
         writer.println();
 
         for (int index = 0;
@@ -50,13 +62,18 @@ public class CommandPaletteScreen {
 
             writer.println(
                     prefix
-                            + commands.get(index)
+                            + commands
+                            .get(index)
                             .title());
         }
 
         writer.println();
+
         writer.println(
-                "↑↓ Navigate    Enter Execute    Esc Close");
+                "Type to Search    ↑↓ Navigate"
+                        + "    Enter Execute"
+                        + "    Backspace Delete"
+                        + "    Esc Close");
 
         writer.flush();
     }

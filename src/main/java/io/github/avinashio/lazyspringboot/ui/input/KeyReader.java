@@ -25,6 +25,10 @@ public class KeyReader {
 
     private final Terminal terminal;
 
+    private static final int CONTROL_P = 16;
+
+    private static final int TAB = 9;
+
     public KeyReader(
             Terminal terminal) {
         this.terminal = terminal;
@@ -60,26 +64,16 @@ public class KeyReader {
     private KeyEvent mapInput(
             int input)
             throws IOException {
+
         return switch (input) {
-            case 'q' ->
-                    KeyEvent.of(
-                            KeyType.QUIT);
 
-            case 'u' ->
+            case CONTROL_P ->
                     KeyEvent.of(
-                            KeyType.UNDO);
+                            KeyType.COMMAND_PALETTE);
 
-            case 'a' ->
+            case TAB ->
                     KeyEvent.of(
-                            KeyType.ACTIONS);
-
-            case 'g' ->
-                    KeyEvent.of(
-                            KeyType.GO_TO_TOP);
-
-            case 'G' ->
-                    KeyEvent.of(
-                            KeyType.GO_TO_BOTTOM);
+                            KeyType.TAB);
 
             case ' ' ->
                     KeyEvent.of(
@@ -101,7 +95,8 @@ public class KeyReader {
                     readEscapeSequence();
 
             default ->
-                    readCharacter(input);
+                    readCharacter(
+                            input);
         };
     }
 

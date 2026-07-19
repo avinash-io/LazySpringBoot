@@ -8,21 +8,26 @@ import org.springframework.stereotype.Component;
 @Component
 public class StatusBar {
 
-    public String render(UiState state) {
+    public String render(
+            UiState state) {
+
         if (state.hasMessage()) {
             return renderMessage(
                     state.message());
         }
 
         if (state.dependencySearchActive()) {
-            return renderDependencySearch(state);
+            return renderDependencySearch(
+                    state);
         }
 
         return switch (state.panelFocus()) {
+
             case PROJECTS ->
                     " ↑↓ Navigate"
                             + "    a Project Actions"
                             + "    u Undo"
+                            + "    Ctrl+P Commands"
                             + "    ←→ Switch Panel"
                             + "    q Quit";
 
@@ -33,11 +38,13 @@ public class StatusBar {
                             + "    Enter Apply"
                             + "    a Project Actions"
                             + "    u Undo"
+                            + "    Ctrl+P Commands"
                             + "    ←→ Switch Panel"
                             + "    q Quit";
 
             case PROJECT_DETAILS ->
                     " a Project Actions"
+                            + "    Ctrl+P Commands"
                             + "    ←→ Switch Panel"
                             + "    q Quit";
         };
@@ -45,6 +52,7 @@ public class StatusBar {
 
     private String renderMessage(
             UiMessage message) {
+
         String marker =
                 message.type()
                         == UiMessageType.SUCCESS
@@ -59,6 +67,7 @@ public class StatusBar {
 
     private String renderDependencySearch(
             UiState state) {
+
         return " Search: "
                 + state.dependencySearchQuery()
                 + "_"

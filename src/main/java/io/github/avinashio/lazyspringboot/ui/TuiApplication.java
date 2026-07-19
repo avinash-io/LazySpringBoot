@@ -7,6 +7,7 @@ import io.github.avinashio.lazyspringboot.domain.action.ProjectActionOutput;
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcess;
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcessStatus;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+import io.github.avinashio.lazyspringboot.ui.command.CommandPaletteController;
 import io.github.avinashio.lazyspringboot.ui.controller.CreateProjectController;
 import io.github.avinashio.lazyspringboot.ui.controller.ProcessController;
 import io.github.avinashio.lazyspringboot.ui.controller.ProjectActionController;
@@ -75,6 +76,12 @@ public class TuiApplication
 
     private final StartupController startupController;
 
+    private final CommandPaletteController
+            commandPaletteController;
+
+    private final CommandPaletteScreen
+            commandPaletteScreen;
+
 
     public TuiApplication(
             Terminal terminal,
@@ -94,6 +101,8 @@ public class TuiApplication
             InputDispatcher inputDispatcher,
             GetProjectProcessUseCase
                     getProjectProcessUseCase,
+            CommandPaletteController commandPaletteController,
+            CommandPaletteScreen commandPaletteScreen,
             StartupController startupController) {
 
         this.terminal = terminal;
@@ -126,6 +135,12 @@ public class TuiApplication
                 inputDispatcher;
 
         this.startupController = startupController;
+
+        this.commandPaletteController =
+                commandPaletteController;
+
+        this.commandPaletteScreen =
+                commandPaletteScreen;
     }
 
     @Override
@@ -167,6 +182,20 @@ public class TuiApplication
     }
 
     private void render() {
+
+        if (commandPaletteController.active()) {
+
+            commandPaletteScreen.render(
+                    commandPaletteController.commands(),
+                    commandPaletteController
+                            .state()
+                            .selectedCommandIndex(),
+                    commandPaletteController
+                            .searchQuery());
+
+            return;
+        }
+
         if (uiState
                 .dependencyConfirmationActive()) {
             confirmationScreen.render(uiState);
@@ -287,12 +316,22 @@ public class TuiApplication
 
     private boolean shouldQuit(
             KeyEvent keyEvent) {
+
+        if (createProjectController
+                .state()
+                .active()) {
+
+            return false;
+        }
+
         return uiState.inputMode()
                 == InputMode.NAVIGATION
                 && !uiState.projectActionsActive()
                 && !uiState.projectActionOutputActive()
                 && keyEvent.type()
-                == KeyType.QUIT;
+                == KeyType.CHARACTER
+                && keyEvent.hasCharacter()
+                && keyEvent.character() == 'q';
     }
 
     private void handleKey(

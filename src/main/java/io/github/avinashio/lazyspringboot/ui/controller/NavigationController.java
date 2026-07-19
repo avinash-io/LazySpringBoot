@@ -1,13 +1,12 @@
 package io.github.avinashio.lazyspringboot.ui.controller;
 
-import io.github.avinashio.lazyspringboot.application.dependency.UndoDependenciesUseCase;
-import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+import io.github.avinashio.lazyspringboot.ui.command.CommandPaletteController;
 import io.github.avinashio.lazyspringboot.ui.dependency.DependencyNavigation;
 import io.github.avinashio.lazyspringboot.ui.input.KeyEvent;
 import io.github.avinashio.lazyspringboot.ui.service.DependencyItemsService;
+import io.github.avinashio.lazyspringboot.ui.service.DependencyUndoService;
 import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
-import java.io.IOException;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -19,34 +18,34 @@ public class NavigationController {
 
     private final DependencyItemsService dependencyItemsService;
 
-    private final UndoDependenciesUseCase undoDependenciesUseCase;
-
-    private final ProjectRefreshService projectRefreshService;
-
     private final ProjectActionController projectActionController;
 
     private final CreateProjectController createProjectController;
+
+    private final CommandPaletteController commandPaletteController;
+
+    private final DependencyUndoService dependencyUndoService;
 
     public NavigationController(
             UiState uiState,
             DependencyNavigation dependencyNavigation,
             DependencyItemsService dependencyItemsService,
-            UndoDependenciesUseCase undoDependenciesUseCase,
-            ProjectRefreshService projectRefreshService,
             ProjectActionController projectActionController,
-            CreateProjectController createProjectController) {
+            CreateProjectController createProjectController,
+            DependencyUndoService dependencyUndoService,
+            CommandPaletteController commandPaletteController) {
 
         this.uiState = uiState;
         this.dependencyNavigation = dependencyNavigation;
         this.dependencyItemsService = dependencyItemsService;
-        this.undoDependenciesUseCase =
-                undoDependenciesUseCase;
-        this.projectRefreshService =
-                projectRefreshService;
         this.projectActionController =
                 projectActionController;
         this.createProjectController =
                 createProjectController;
+        this.commandPaletteController =
+                commandPaletteController;
+        this.dependencyUndoService =
+                dependencyUndoService;
     }
 
     public boolean handle(
@@ -55,6 +54,9 @@ public class NavigationController {
         uiState.clearMessage();
 
         switch (keyEvent.type()) {
+
+            case COMMAND_PALETTE ->
+                    commandPaletteController.open();
 
             case LEFT ->
                     uiState.focusPreviousPanel();
@@ -78,7 +80,7 @@ public class NavigationController {
                     handleEnter();
 
             case UNDO ->
-                    handleUndo();
+                    dependencyUndoService.undo();
 
             case ACTIONS ->
                     projectActionController.openActions(
@@ -90,9 +92,8 @@ public class NavigationController {
                     break;
                 }
 
-                if (keyEvent.character() == 'n') {
-                    createProjectController.open();
-                }
+                handleCharacter(
+                        keyEvent.character());
             }
 
             default -> {
@@ -101,6 +102,27 @@ public class NavigationController {
         }
 
         return true;
+    }
+
+    private void handleCharacter(
+            char character) {
+
+        switch (character) {
+
+            case 'a' ->
+                    projectActionController.openActions(
+                            uiState.selectedProject());
+
+            case 'u' ->
+                    dependencyUndoService.undo();
+
+            case 'n' ->
+                    createProjectController.open();
+
+            default -> {
+                // No action.
+            }
+        }
     }
 
     private void handleUp() {
@@ -192,53 +214,4 @@ public class NavigationController {
         uiState.startDependencyConfirmation();
     }
 
-    private void handleUndo() {
-
-        SpringProject project =
-                uiState.selectedProject();
-
-        if (!undoDependenciesUseCase.canUndo(
-                project)) {
-
-            uiState.showErrorMessage(
-                    "No dependency changes to undo");
-
-            return;
-        }
-
-        try {
-
-            undoDependenciesUseCase.undo(project);
-
-            projectRefreshService.refreshEverything();
-
-            uiState.clearDependencySelections();
-
-            uiState.showSuccessMessage(
-                    "Restored pom.xml for "
-                            + project.name());
-
-        } catch (IOException exception) {
-
-            uiState.showErrorMessage(
-                    buildUndoErrorMessage(
-                            exception));
-        }
-    }
-
-    private String buildUndoErrorMessage(
-            IOException exception) {
-
-        String message =
-                exception.getMessage();
-
-        if (message == null
-                || message.isBlank()) {
-
-            return "Failed to restore pom.xml";
-        }
-
-        return "Failed to restore pom.xml: "
-                + message;
-    }
 }

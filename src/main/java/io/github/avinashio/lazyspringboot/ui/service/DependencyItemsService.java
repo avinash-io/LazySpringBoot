@@ -21,7 +21,9 @@ public class DependencyItemsService {
             UiState uiState,
             BuildDependencyItemsUseCase buildDependencyItemsUseCase) {
 
-        this.uiState = uiState;
+        this.uiState =
+                uiState;
+
         this.buildDependencyItemsUseCase =
                 buildDependencyItemsUseCase;
     }
@@ -30,7 +32,13 @@ public class DependencyItemsService {
             List<SpringDependency> dependencyCatalog) {
 
         this.dependencyCatalog =
-                List.copyOf(dependencyCatalog);
+                List.copyOf(
+                        dependencyCatalog);
+    }
+
+    public List<SpringDependency> catalog() {
+
+        return dependencyCatalog;
     }
 
     public void refresh() {

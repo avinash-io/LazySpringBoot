@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class CommandExecutorTest {
+class CommandPaletteExecutorTest {
 
     private final CommandExecutor commandExecutor =
             new CommandExecutor();

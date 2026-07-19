@@ -29,8 +29,10 @@ public class SpringInitializrProjectCreator
 
         this.requestBuilder =
                 requestBuilder;
+
         this.zipExtractor =
                 zipExtractor;
+
         this.httpClient =
                 HttpClient.newHttpClient();
     }
@@ -42,20 +44,36 @@ public class SpringInitializrProjectCreator
             throws IOException,
             InterruptedException {
 
-        Files.createDirectories(destination);
+        Path projectDirectory =
+                destination.resolve(
+                        request.name());
+
+        if (Files.exists(
+                projectDirectory)) {
+
+            throw new IOException(
+                    "Project directory already exists: "
+                            + projectDirectory);
+        }
+
+        Files.createDirectories(
+                projectDirectory);
 
         HttpRequest httpRequest =
                 HttpRequest.newBuilder(
-                                requestBuilder.build(request))
+                                requestBuilder.build(
+                                        request))
                         .GET()
                         .build();
 
         HttpResponse<InputStream> response =
                 httpClient.send(
                         httpRequest,
-                        HttpResponse.BodyHandlers.ofInputStream());
+                        HttpResponse.BodyHandlers
+                                .ofInputStream());
 
         if (response.statusCode() != 200) {
+
             throw new IOException(
                     "Spring Initializr returned HTTP "
                             + response.statusCode());
@@ -66,10 +84,9 @@ public class SpringInitializrProjectCreator
 
             zipExtractor.extract(
                     inputStream,
-                    destination);
+                    projectDirectory);
         }
 
-        return destination.resolve(
-                request.name());
+        return projectDirectory;
     }
 }

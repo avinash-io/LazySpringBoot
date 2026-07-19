@@ -12,12 +12,14 @@ public enum KeyType {
     SPACE,
     ENTER,
     SEARCH,
+    TAB,
     ESCAPE,
     BACKSPACE,
     CHARACTER,
     QUIT,
     UNDO,
     ACTIONS,
+    COMMAND_PALETTE,
     TIMEOUT,
     UNKNOWN
 }

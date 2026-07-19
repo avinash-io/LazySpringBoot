@@ -1,12 +1,15 @@
 package io.github.avinashio.lazyspringboot.ui.controller;
 
-import io.github.avinashio.lazyspringboot.application.dependency.GetDependenciesUseCase;
+import io.github.avinashio.lazyspringboot.application.initializr.GetInitializrConfigurationUseCase;
 import io.github.avinashio.lazyspringboot.application.project.DiscoverProjectsUseCase;
+import io.github.avinashio.lazyspringboot.domain.initializr.InitializrConfiguration;
 import io.github.avinashio.lazyspringboot.ui.service.DependencyItemsService;
+import io.github.avinashio.lazyspringboot.ui.state.CreateProjectState;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
+import org.springframework.stereotype.Component;
+
 import java.io.IOException;
 import java.nio.file.Path;
-import org.springframework.stereotype.Component;
 
 @Component
 public class StartupController {
@@ -16,8 +19,11 @@ public class StartupController {
     private final DiscoverProjectsUseCase
             discoverProjectsUseCase;
 
-    private final GetDependenciesUseCase
-            getDependenciesUseCase;
+    private final GetInitializrConfigurationUseCase
+            getInitializrConfigurationUseCase;
+
+    private final CreateProjectState
+            createProjectState;
 
     private final DependencyItemsService
             dependencyItemsService;
@@ -25,16 +31,19 @@ public class StartupController {
     public StartupController(
             UiState uiState,
             DiscoverProjectsUseCase discoverProjectsUseCase,
-            GetDependenciesUseCase getDependenciesUseCase,
+            GetInitializrConfigurationUseCase getInitializrConfigurationUseCase,
+            CreateProjectState createProjectState,
             DependencyItemsService dependencyItemsService) {
 
         this.uiState = uiState;
         this.discoverProjectsUseCase =
                 discoverProjectsUseCase;
-        this.getDependenciesUseCase =
-                getDependenciesUseCase;
         this.dependencyItemsService =
                 dependencyItemsService;
+        this.getInitializrConfigurationUseCase =
+                getInitializrConfigurationUseCase;
+        this.createProjectState =
+                createProjectState;
     }
 
     public void initialize()
@@ -49,8 +58,27 @@ public class StartupController {
                 discoverProjectsUseCase.discover(
                         currentDirectory));
 
+        InitializrConfiguration configuration =
+                getInitializrConfigurationUseCase
+                        .getConfiguration();
+
         dependencyItemsService.initialize(
-                getDependenciesUseCase.getDependencies());
+                configuration.dependencies());
+
+        createProjectState.setAvailableJavaVersions(
+                configuration.javaVersions());
+
+        createProjectState.setJavaVersion(
+                configuration.defaultJavaVersion());
+
+        createProjectState
+                .setAvailableSpringBootVersions(
+                        configuration
+                                .springBootVersions());
+
+        createProjectState.setSpringBootVersion(
+                configuration
+                        .defaultSpringBootVersion());
 
         dependencyItemsService.refresh();
     }

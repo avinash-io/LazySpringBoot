@@ -1,9 +1,11 @@
 package io.github.avinashio.lazyspringboot.ui.screen;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import io.github.avinashio.lazyspringboot.domain.command.CommandPaletteItem;
+import io.github.avinashio.lazyspringboot.ui.command.Command;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
@@ -24,8 +26,7 @@ class CommandPaletteScreenTest {
         PrintWriter writer =
                 new PrintWriter(output);
 
-        org.mockito.Mockito.when(
-                        terminal.writer())
+        when(terminal.writer())
                 .thenReturn(writer);
 
         CommandPaletteScreen screen =
@@ -34,13 +35,37 @@ class CommandPaletteScreenTest {
 
         screen.render(
                 List.of(
-                        CommandPaletteItem.BUILD,
-                        CommandPaletteItem.RUN),
-                0);
+                        new Command(
+                                "build-project",
+                                "Build Project"),
+                        new Command(
+                                "run-project",
+                                "Run Project")),
+                0,
+                "build");
 
         writer.flush();
 
         verify(terminal)
                 .writer();
+
+        assertThat(
+                output.toString())
+                .contains(
+                        "LazySpringBoot")
+                .contains(
+                        "Command Palette")
+                .contains(
+                        "Search: build_")
+                .contains(
+                        "> Build Project")
+                .contains(
+                        "  Run Project")
+                .contains(
+                        "Type to Search")
+                .contains(
+                        "Enter Execute")
+                .contains(
+                        "Esc Close");
     }
 }

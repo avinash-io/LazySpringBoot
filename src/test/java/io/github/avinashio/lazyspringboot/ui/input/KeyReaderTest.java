@@ -18,68 +18,69 @@ class KeyReaderTest {
             POLL_TIMEOUT_MILLIS = 150;
 
     @Test
-    void shouldReadQuitKey()
+    void shouldReadQuitLetterAsCharacter()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader('q');
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(
-                                KeyType.QUIT));
+                        KeyEvent.character('q'));
     }
 
     @Test
-    void shouldReadUndoKey()
+    void shouldReadUndoLetterAsCharacter()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader('u');
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(
-                                KeyType.UNDO));
+                        KeyEvent.character('u'));
     }
 
     @Test
-    void shouldReadActionsKey()
+    void shouldReadActionsLetterAsCharacter()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader('a');
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(
-                                KeyType.ACTIONS));
+                        KeyEvent.character('a'));
     }
 
     @Test
-    void shouldReadGoToTopKey()
+    void shouldReadLowercaseGLetterAsCharacter()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader('g');
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(
-                                KeyType.GO_TO_TOP));
+                        KeyEvent.character('g'));
     }
 
     @Test
-    void shouldReadGoToBottomKey()
+    void shouldReadUppercaseGLetterAsCharacter()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader('G');
 
         assertThat(keyReader.read())
                 .isEqualTo(
-                        KeyEvent.of(
-                                KeyType.GO_TO_BOTTOM));
+                        KeyEvent.character('G'));
     }
 
     @Test
     void shouldReadCarriageReturnAsEnter()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader('\r');
 
@@ -92,6 +93,7 @@ class KeyReaderTest {
     @Test
     void shouldReadNewlineAsEnter()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader('\n');
 
@@ -104,6 +106,7 @@ class KeyReaderTest {
     @Test
     void shouldReadSpaceKey()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader(' ');
 
@@ -116,6 +119,7 @@ class KeyReaderTest {
     @Test
     void shouldReadSearchKey()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader('/');
 
@@ -128,6 +132,7 @@ class KeyReaderTest {
     @Test
     void shouldReadBackspaceKey()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader(127);
 
@@ -140,6 +145,7 @@ class KeyReaderTest {
     @Test
     void shouldReadControlHAsBackspace()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader(8);
 
@@ -152,6 +158,7 @@ class KeyReaderTest {
     @Test
     void shouldReadCharacterKey()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader('w');
 
@@ -163,6 +170,7 @@ class KeyReaderTest {
     @Test
     void shouldReadUppercaseCharacterKey()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader('W');
 
@@ -174,6 +182,7 @@ class KeyReaderTest {
     @Test
     void shouldReadNumericCharacterKey()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader('4');
 
@@ -185,6 +194,7 @@ class KeyReaderTest {
     @Test
     void shouldReturnTimeoutWhenTimedReadExpires()
             throws IOException {
+
         Terminal terminal =
                 mock(Terminal.class);
 
@@ -211,8 +221,9 @@ class KeyReaderTest {
     }
 
     @Test
-    void shouldReadKeyDuringTimedRead()
+    void shouldReadCharacterDuringTimedRead()
             throws IOException {
+
         Terminal terminal =
                 mock(Terminal.class);
 
@@ -234,13 +245,13 @@ class KeyReaderTest {
                 keyReader.read(
                         POLL_TIMEOUT_MILLIS))
                 .isEqualTo(
-                        KeyEvent.of(
-                                KeyType.QUIT));
+                        KeyEvent.character('q'));
     }
 
     @Test
     void shouldReadEscapeKey()
             throws IOException {
+
         Terminal terminal =
                 mock(Terminal.class);
 
@@ -270,6 +281,7 @@ class KeyReaderTest {
     @Test
     void shouldReadUpArrowKey()
             throws IOException {
+
         KeyReader keyReader =
                 createEscapeSequenceKeyReader(
                         '[',
@@ -284,6 +296,7 @@ class KeyReaderTest {
     @Test
     void shouldReadDownArrowKey()
             throws IOException {
+
         KeyReader keyReader =
                 createEscapeSequenceKeyReader(
                         '[',
@@ -298,6 +311,7 @@ class KeyReaderTest {
     @Test
     void shouldReadRightArrowKey()
             throws IOException {
+
         KeyReader keyReader =
                 createEscapeSequenceKeyReader(
                         '[',
@@ -312,6 +326,7 @@ class KeyReaderTest {
     @Test
     void shouldReadLeftArrowKey()
             throws IOException {
+
         KeyReader keyReader =
                 createEscapeSequenceKeyReader(
                         '[',
@@ -326,6 +341,7 @@ class KeyReaderTest {
     @Test
     void shouldReadPageUpKey()
             throws IOException {
+
         KeyReader keyReader =
                 createPageSequenceKeyReader(
                         '5');
@@ -339,6 +355,7 @@ class KeyReaderTest {
     @Test
     void shouldReadPageDownKey()
             throws IOException {
+
         KeyReader keyReader =
                 createPageSequenceKeyReader(
                         '6');
@@ -352,6 +369,7 @@ class KeyReaderTest {
     @Test
     void shouldReturnUnknownForUnsupportedEscapeSequence()
             throws IOException {
+
         KeyReader keyReader =
                 createEscapeSequenceKeyReader(
                         '[',
@@ -366,6 +384,7 @@ class KeyReaderTest {
     @Test
     void shouldReturnUnknownForUnsupportedKey()
             throws IOException {
+
         KeyReader keyReader =
                 createKeyReader(1);
 
@@ -378,6 +397,7 @@ class KeyReaderTest {
     private KeyReader createKeyReader(
             int input)
             throws IOException {
+
         Terminal terminal =
                 mock(Terminal.class);
 
@@ -398,6 +418,7 @@ class KeyReaderTest {
             int secondCharacter,
             int thirdCharacter)
             throws IOException {
+
         Terminal terminal =
                 mock(Terminal.class);
 
@@ -423,6 +444,7 @@ class KeyReaderTest {
     createPageSequenceKeyReader(
             int sequenceValue)
             throws IOException {
+
         Terminal terminal =
                 mock(Terminal.class);
 

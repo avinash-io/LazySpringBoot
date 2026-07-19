@@ -1,5 +1,6 @@
 package io.github.avinashio.lazyspringboot.ui.input;
 
+import io.github.avinashio.lazyspringboot.ui.command.CommandPaletteController;
 import io.github.avinashio.lazyspringboot.ui.controller.NavigationController;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +25,9 @@ public class InputDispatcher {
     private final NavigationController
             navigationController;
 
+    private final CommandPaletteController
+            commandPaletteController;
+
     public InputDispatcher(
             DependencyConfirmationInputHandler
                     dependencyConfirmationInputHandler,
@@ -35,6 +39,7 @@ public class InputDispatcher {
                     projectActionsInputHandler,
             DependencySearchInputHandler
                     dependencySearchInputHandler,
+            CommandPaletteController commandPaletteController,
             NavigationController
                     navigationController) {
 
@@ -55,10 +60,23 @@ public class InputDispatcher {
 
         this.navigationController =
                 navigationController;
+
+        this.commandPaletteController =
+                commandPaletteController;
     }
 
     public void handle(
             KeyEvent keyEvent) {
+
+
+        if (commandPaletteController.active()) {
+
+            commandPaletteController.handleKey(
+                    keyEvent);
+
+            return;
+        }
+
 
         if (dependencyConfirmationInputHandler.handle(
                 keyEvent)) {

@@ -11,7 +11,7 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 import io.github.avinashio.lazyspringboot.application.project.DiscoverProjectsUseCase;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
-
+import io.github.avinashio.lazyspringboot.ui.service.DependencyItemsService;
 
 @Component
 public class CreateProjectController {
@@ -33,13 +33,17 @@ public class CreateProjectController {
     private final DiscoverProjectsUseCase
             discoverProjectsUseCase;
 
+    private final DependencyItemsService
+            dependencyItemsService;
+
     public CreateProjectController(
             CreateProjectState createProjectState,
             CreateProjectRequestMapper requestMapper,
             CreateSpringProjectUseCase createSpringProjectUseCase,
             DiscoverProjectsUseCase discoverProjectsUseCase,
             UiState uiState,
-            CreateProjectValidator validator) {
+            CreateProjectValidator validator,
+            DependencyItemsService dependencyItemsService) {
 
         this.createProjectState =
                 createProjectState;
@@ -53,9 +57,15 @@ public class CreateProjectController {
                 uiState;
         this.validator =
                 validator;
+        this.dependencyItemsService =
+                dependencyItemsService;
     }
 
     public void open() {
+
+        createProjectState.setDependencies(
+                dependencyItemsService.catalog());
+
         createProjectState.open();
     }
 
@@ -72,13 +82,15 @@ public class CreateProjectController {
     public boolean generate(
             Path destination) {
 
+        createProjectState.clearErrorMessage();
+
         List<String> errors =
                 validator.validate(
                         createProjectState);
 
         if (!errors.isEmpty()) {
 
-            uiState.showErrorMessage(
+            createProjectState.showErrorMessage(
                     errors.getFirst());
 
             return false;
@@ -116,11 +128,32 @@ public class CreateProjectController {
                 Thread.currentThread().interrupt();
             }
 
-            uiState.showErrorMessage(
+            createProjectState.showErrorMessage(
                     "Failed to create project: "
                             + exception.getMessage());
 
             return false;
         }
+    }
+
+    public boolean continueToDependencies() {
+
+        createProjectState.clearErrorMessage();
+
+        List<String> errors =
+                validator.validate(
+                        createProjectState);
+
+        if (!errors.isEmpty()) {
+
+            createProjectState.showErrorMessage(
+                    errors.getFirst());
+
+            return false;
+        }
+
+        createProjectState.showDependencyStage();
+
+        return true;
     }
 }

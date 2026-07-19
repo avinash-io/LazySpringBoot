@@ -17,7 +17,9 @@ public class DependencySearchInputHandler
             UiState uiState,
             DependencyNavigation dependencyNavigation) {
 
-        this.uiState = uiState;
+        this.uiState =
+                uiState;
+
         this.dependencyNavigation =
                 dependencyNavigation;
     }
@@ -63,11 +65,20 @@ public class DependencySearchInputHandler
                     appendCharacter('/');
 
             case SPACE ->
-                    appendCharacter(' ');
+                    uiState.toggleSelectedDependency();
 
             case CHARACTER -> {
 
-                if (keyEvent.hasCharacter()) {
+                if (!keyEvent.hasCharacter()) {
+                    break;
+                }
+
+                if (keyEvent.character() == ' ') {
+
+                    uiState.toggleSelectedDependency();
+
+                } else {
+
                     appendCharacter(
                             keyEvent.character());
                 }
