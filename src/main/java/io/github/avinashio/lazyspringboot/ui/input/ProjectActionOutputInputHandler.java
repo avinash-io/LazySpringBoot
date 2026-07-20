@@ -78,11 +78,39 @@ public class ProjectActionOutputInputHandler
                                     output.lines().size(),
                                     visibleHeight);
 
+            case CHARACTER ->
+                    handleCharacter(
+                            keyEvent,
+                            output,
+                            visibleHeight);
+
             default -> {
                 // No action.
             }
         }
 
         return true;
+    }
+
+    private void handleCharacter(
+            KeyEvent keyEvent,
+            ProjectActionOutput output,
+            int visibleHeight) {
+
+        if (keyEvent.character() == 'g') {
+
+            uiState.outputViewport()
+                    .moveToTop();
+
+            return;
+        }
+
+        if (keyEvent.character() == 'G') {
+
+            uiState.outputViewport()
+                    .moveToBottom(
+                            output.lines().size(),
+                            visibleHeight);
+        }
     }
 }

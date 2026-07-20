@@ -4,7 +4,9 @@ import io.github.avinashio.lazyspringboot.domain.action.ProjectAction;
 import io.github.avinashio.lazyspringboot.domain.action.ProjectCommand;
 import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
@@ -14,8 +16,10 @@ public class ProjectCommandResolver {
     public ProjectCommand resolve(
             SpringProject project,
             ProjectAction action) {
+
         if (project.metadata().buildTool()
                 != BuildTool.MAVEN) {
+
             throw new IllegalArgumentException(
                     "Unsupported build tool: "
                             + project
@@ -33,39 +37,51 @@ public class ProjectCommandResolver {
     private List<String> resolveMavenCommand(
             SpringProject project,
             ProjectAction action) {
-        String executable =
-                resolveMavenExecutable(project);
 
-        return switch (action) {
-            case BUILD ->
-                    List.of(
-                            executable,
-                            "clean",
-                            "package");
+        List<String> command =
+                new ArrayList<>(
+                        resolveMavenCommandPrefix(
+                                project));
+
+        switch (action) {
+
+            case BUILD -> {
+                command.add("clean");
+                command.add("package");
+            }
 
             case TEST ->
-                    List.of(
-                            executable,
+                    command.add(
                             "test");
 
             case RUN, VIEW_LOGS, RESTART, STOP ->
                     throw new IllegalArgumentException(
                             "Action is not a command action: "
                                     + action);
-        };
+        }
+
+        return List.copyOf(
+                command);
     }
 
-    private String resolveMavenExecutable(
+    private List<String> resolveMavenCommandPrefix(
             SpringProject project) {
+
         Path mavenWrapper =
                 project
                         .path()
-                        .resolve("mvnw");
+                        .resolve(
+                                "mvnw");
 
-        if (mavenWrapper.toFile().isFile()) {
-            return mavenWrapper.toString();
+        if (Files.isRegularFile(
+                mavenWrapper)) {
+
+            return List.of(
+                    "sh",
+                    "./mvnw");
         }
 
-        return "mvn";
+        return List.of(
+                "mvn");
     }
 }

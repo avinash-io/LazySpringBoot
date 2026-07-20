@@ -1,5 +1,6 @@
 package io.github.avinashio.lazyspringboot.ui.screen;
 
+import io.github.avinashio.lazyspringboot.domain.action.ProjectAction;
 import io.github.avinashio.lazyspringboot.domain.action.ProjectActionOutput;
 import io.github.avinashio.lazyspringboot.ui.component.TextFormatter;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
@@ -79,9 +80,13 @@ public class ProjectActionOutputScreen {
                         .action()
                         .displayName());
 
-        writer.println(
-                "Exit Code: "
-                        + output.exitCode());
+        if (output.action()
+                != ProjectAction.VIEW_LOGS) {
+
+            writer.println(
+                    "Exit Code: "
+                            + output.exitCode());
+        }
 
         writer.println();
 
@@ -101,11 +106,10 @@ public class ProjectActionOutputScreen {
                         visibleHeight));
 
         writer.println(
-                "↑↓ Scroll"
-                        + "    PgUp/PgDn Page"
-                        + "    g Top"
-                        + "    G Bottom"
-                        + "    Esc Close");
+                buildNavigationText(
+                        output,
+                        offset,
+                        visibleHeight));
 
         writer.flush();
     }
@@ -124,6 +128,49 @@ public class ProjectActionOutputScreen {
                 .action()
                 .displayName()
                 + " Output";
+    }
+
+    private String buildNavigationText(
+            ProjectActionOutput output,
+            int offset,
+            int visibleHeight) {
+
+        String navigation =
+                "↑↓ Scroll"
+                        + "    PgUp/PgDn Page"
+                        + "    g Top"
+                        + "    G Bottom"
+                        + "    Esc Close";
+
+        if (output.action()
+                != ProjectAction.VIEW_LOGS) {
+            return navigation;
+        }
+
+        String followStatus =
+                isAtBottom(
+                        output.lines().size(),
+                        offset,
+                        visibleHeight)
+                        ? "[Following]"
+                        : "[Paused]";
+
+        return followStatus
+                + "    "
+                + navigation;
+    }
+
+    private boolean isAtBottom(
+            int contentSize,
+            int offset,
+            int visibleHeight) {
+
+        int maximumOffset =
+                Math.max(
+                        0,
+                        contentSize - visibleHeight);
+
+        return offset >= maximumOffset;
     }
 
     private void renderOutput(

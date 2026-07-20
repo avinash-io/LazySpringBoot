@@ -322,10 +322,6 @@ public class TuiApplication
 
     private void handleTimeout() {
 
-        if (!shouldUseRefreshTimeout()) {
-            return;
-        }
-
         render();
     }
 

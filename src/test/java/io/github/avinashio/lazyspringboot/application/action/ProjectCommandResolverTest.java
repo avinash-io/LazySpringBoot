@@ -25,6 +25,7 @@ class ProjectCommandResolverTest {
     @Test
     void shouldResolveMavenBuildCommand()
             throws Exception {
+
         Files.createFile(
                 temporaryDirectory.resolve("mvnw"));
 
@@ -35,9 +36,8 @@ class ProjectCommandResolverTest {
 
         assertThat(command.arguments())
                 .containsExactly(
-                        temporaryDirectory
-                                .resolve("mvnw")
-                                .toString(),
+                        "sh",
+                        "./mvnw",
                         "clean",
                         "package");
 
@@ -49,6 +49,7 @@ class ProjectCommandResolverTest {
     @Test
     void shouldResolveMavenTestCommand()
             throws Exception {
+
         Files.createFile(
                 temporaryDirectory.resolve("mvnw"));
 
@@ -59,9 +60,8 @@ class ProjectCommandResolverTest {
 
         assertThat(command.arguments())
                 .containsExactly(
-                        temporaryDirectory
-                                .resolve("mvnw")
-                                .toString(),
+                        "sh",
+                        "./mvnw",
                         "test");
 
         assertThat(command.workingDirectory())
@@ -71,6 +71,7 @@ class ProjectCommandResolverTest {
 
     @Test
     void shouldRejectRunAsCommandAction() {
+
         assertThatThrownBy(
                 () ->
                         resolver.resolve(
@@ -84,6 +85,7 @@ class ProjectCommandResolverTest {
 
     @Test
     void shouldRejectViewLogsAsCommandAction() {
+
         assertThatThrownBy(
                 () ->
                         resolver.resolve(
@@ -96,7 +98,22 @@ class ProjectCommandResolverTest {
     }
 
     @Test
+    void shouldRejectRestartAsCommandAction() {
+
+        assertThatThrownBy(
+                () ->
+                        resolver.resolve(
+                                project(),
+                                ProjectAction.RESTART))
+                .isInstanceOf(
+                        IllegalArgumentException.class)
+                .hasMessage(
+                        "Action is not a command action: RESTART");
+    }
+
+    @Test
     void shouldRejectStopAsCommandAction() {
+
         assertThatThrownBy(
                 () ->
                         resolver.resolve(
@@ -111,6 +128,7 @@ class ProjectCommandResolverTest {
     @Test
     void shouldFallbackToInstalledMaven()
             throws Exception {
+
         ProjectCommand command =
                 resolver.resolve(
                         project(),
@@ -127,6 +145,7 @@ class ProjectCommandResolverTest {
     }
 
     private SpringProject project() {
+
         return new SpringProject(
                 "demo",
                 temporaryDirectory,
