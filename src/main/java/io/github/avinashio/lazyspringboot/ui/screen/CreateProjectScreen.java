@@ -3,6 +3,7 @@ package io.github.avinashio.lazyspringboot.ui.screen;
 import io.github.avinashio.lazyspringboot.domain.dependency.SpringDependency;
 import io.github.avinashio.lazyspringboot.ui.state.CreateProjectState;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import org.jline.terminal.Terminal;
 import org.jline.utils.InfoCmp;
@@ -11,8 +12,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class CreateProjectScreen {
 
-    private static final int MAX_VISIBLE_DEPENDENCIES =
-            15;
+    private static final int WIDTH_PERCENTAGE = 70;
+
+    private static final int HEIGHT_PERCENTAGE = 80;
+
+    private static final int MINIMUM_POPUP_WIDTH = 60;
+
+    private static final int MINIMUM_POPUP_HEIGHT = 16;
+
+    private static final int MAX_VISIBLE_DEPENDENCIES = 15;
 
     private final Terminal terminal;
 
@@ -28,242 +36,213 @@ public class CreateProjectScreen {
         PrintWriter writer =
                 terminal.writer();
 
-        terminal.puts(
-                InfoCmp.Capability.clear_screen);
+        int popupWidth =
+                popupWidth();
 
-        terminal.puts(
-                InfoCmp.Capability.cursor_address,
-                0,
-                0);
+        int popupHeight =
+                popupHeight();
 
-        writer.println(
-                "LazySpringBoot");
+        int startColumn =
+                Math.max(
+                        0,
+                        (terminal.getWidth()
+                                - popupWidth)
+                                / 2);
 
-        writer.println();
+        int startRow =
+                Math.max(
+                        0,
+                        (terminal.getHeight()
+                                - popupHeight)
+                                / 2);
 
-        if (state.metadataStage()) {
+        List<String> content =
+                buildContent(state);
 
-            renderMetadataStage(
-                    writer,
-                    state);
+        renderHeader(
+                writer,
+                state,
+                startRow,
+                startColumn,
+                popupWidth);
 
-        } else {
+        renderContent(
+                writer,
+                content,
+                startRow,
+                startColumn,
+                popupWidth,
+                popupHeight);
 
-            renderDependencyStage(
-                    writer,
-                    state);
-        }
+        renderFooter(
+                writer,
+                state,
+                startRow,
+                startColumn,
+                popupWidth,
+                popupHeight);
 
         writer.flush();
     }
 
-    private void renderMetadataStage(
-            PrintWriter writer,
+    private List<String> buildContent(
             CreateProjectState state) {
 
-        writer.println(
-                "Create Spring Boot Project");
-
-        writer.println();
-
-        if (state.versionSelecting()) {
-
-            renderVersionSelection(
-                    writer,
-                    state);
-
-            return;
+        if (state.metadataStage()) {
+            return buildMetadataContent(state);
         }
 
-        renderField(
-                writer,
-                state,
-                0,
-                "Name",
-                state.name());
+        return buildDependencyContent(state);
+    }
 
-        renderField(
-                writer,
-                state,
-                1,
-                "Group",
-                state.groupId());
+    private List<String> buildMetadataContent(
+            CreateProjectState state) {
 
-        renderField(
-                writer,
-                state,
-                2,
-                "Artifact",
-                state.artifactId());
+        List<String> lines =
+                new ArrayList<>();
 
-        renderField(
-                writer,
-                state,
-                3,
-                "Package",
-                state.packageName());
+        if (state.versionSelecting()) {
+            buildVersionSelectionContent(
+                    lines,
+                    state);
 
-        renderField(
-                writer,
-                state,
-                4,
-                "Java",
-                state.javaVersion());
+            return lines;
+        }
 
-        renderField(
-                writer,
-                state,
-                5,
-                "Spring Boot",
-                state.springBootVersion());
+        lines.add(
+                buildField(
+                        state,
+                        0,
+                        "Name",
+                        state.name()));
+
+        lines.add(
+                buildField(
+                        state,
+                        1,
+                        "Group",
+                        state.groupId()));
+
+        lines.add(
+                buildField(
+                        state,
+                        2,
+                        "Artifact",
+                        state.artifactId()));
+
+        lines.add(
+                buildField(
+                        state,
+                        3,
+                        "Package",
+                        state.packageName()));
+
+        lines.add(
+                buildField(
+                        state,
+                        4,
+                        "Java",
+                        state.javaVersion()));
+
+        lines.add(
+                buildField(
+                        state,
+                        5,
+                        "Spring Boot",
+                        state.springBootVersion()));
 
         if (state.hasErrorMessage()) {
-
-            writer.println();
-
-            writer.println(
-                    "Error: "
+            lines.add("");
+            lines.add(
+                    " Error: "
                             + state.errorMessage());
         }
 
-        writer.println();
-
-        writer.println(
-                "↑↓ Navigate"
-                        + "    Enter Edit/Select"
-                        + "    Tab Continue"
-                        + "    Esc Cancel");
+        return lines;
     }
 
-    private void renderVersionSelection(
-            PrintWriter writer,
+    private void buildVersionSelectionContent(
+            List<String> lines,
             CreateProjectState state) {
-
-        String title =
-                state.selectedField() == 4
-                        ? "Select Java Version"
-                        : "Select Spring Boot Version";
-
-        writer.println(
-                title);
-
-        writer.println();
 
         List<String> versions =
                 state.currentVersionOptions();
 
         if (versions.isEmpty()) {
-
-            writer.println(
+            lines.add(
                     "  No versions available");
 
-        } else {
-
-            for (int index = 0;
-                 index < versions.size();
-                 index++) {
-
-                String marker =
-                        index
-                                == state.selectedVersionIndex()
-                                ? ">"
-                                : " ";
-
-                writer.printf(
-                        "%s %s%n",
-                        marker,
-                        versions.get(index));
-            }
+            return;
         }
 
-        writer.println();
+        for (int index = 0;
+             index < versions.size();
+             index++) {
 
-        writer.println(
-                "↑↓ Navigate"
-                        + "    Enter Edit/Select"
-                        + "    Tab Continue"
-                        + "    Esc Cancel");
+            String marker =
+                    index
+                            == state.selectedVersionIndex()
+                            ? ">"
+                            : " ";
+
+            lines.add(
+                    " "
+                            + marker
+                            + " "
+                            + versions.get(index));
+        }
     }
 
-    private void renderDependencyStage(
-            PrintWriter writer,
+    private List<String> buildDependencyContent(
             CreateProjectState state) {
 
-        writer.println(
-                "Select Dependencies");
-
-        writer.println();
+        List<String> lines =
+                new ArrayList<>();
 
         if (state.dependencySearchActive()) {
-
-            writer.println(
-                    "Search: "
+            lines.add(
+                    " Search: "
                             + state.dependencySearchQuery()
                             + "_");
-
         } else {
-
-            writer.println(
-                    "Search: /");
+            lines.add(
+                    " Search: /");
         }
 
-        writer.println();
+        lines.add("");
 
         List<SpringDependency> dependencies =
                 state.filteredDependencies();
 
         if (dependencies.isEmpty()) {
-
-            writer.println(
+            lines.add(
                     "  No matching dependencies");
-
         } else {
-
-            renderDependencies(
-                    writer,
+            buildDependencyLines(
+                    lines,
                     state,
                     dependencies);
         }
 
-        writer.println();
+        lines.add("");
 
-        writer.println(
-                "Selected: "
+        lines.add(
+                " Selected: "
                         + state.selectedDependencies()
                         .size());
 
-        writer.println();
-
         if (state.hasErrorMessage()) {
-
-            writer.println();
-
-            writer.println(
-                    "Error: "
+            lines.add("");
+            lines.add(
+                    " Error: "
                             + state.errorMessage());
         }
 
-        if (state.dependencySearchActive()) {
-
-            writer.println(
-                    "Type to Search"
-                            + "    ↑↓ Navigate"
-                            + "    Space/Enter Toggle"
-                            + "    Esc Close Search");
-
-        } else {
-
-            writer.println(
-                    "↑↓ Navigate"
-                            + "    Space Toggle"
-                            + "    / Search"
-                            + "    Enter Create"
-                            + "    Esc Back");
-        }
+        return lines;
     }
 
-    private void renderDependencies(
-            PrintWriter writer,
+    private void buildDependencyLines(
+            List<String> lines,
             CreateProjectState state,
             List<SpringDependency> dependencies) {
 
@@ -286,8 +265,7 @@ public class CreateProjectScreen {
              index++) {
 
             SpringDependency dependency =
-                    dependencies.get(
-                            index);
+                    dependencies.get(index);
 
             boolean selected =
                     state.dependencySelected(
@@ -303,25 +281,212 @@ public class CreateProjectScreen {
                             ? "[x]"
                             : "[ ]";
 
-            writer.printf(
-                    "%s %s %-30s %s%n",
-                    cursor,
-                    checkbox,
-                    dependency.name(),
-                    dependency.group());
+            lines.add(
+                    String.format(
+                            " %s %s %-30s %s",
+                            cursor,
+                            checkbox,
+                            dependency.name(),
+                            dependency.group()));
         }
 
         if (dependencies.size()
                 > MAX_VISIBLE_DEPENDENCIES) {
 
-            writer.println();
+            lines.add("");
 
-            writer.printf(
-                    "  Showing %d-%d of %d%n",
-                    startIndex + 1,
-                    endIndex,
-                    dependencies.size());
+            lines.add(
+                    String.format(
+                            "  Showing %d-%d of %d",
+                            startIndex + 1,
+                            endIndex,
+                            dependencies.size()));
         }
+    }
+
+    private void renderHeader(
+            PrintWriter writer,
+            CreateProjectState state,
+            int startRow,
+            int startColumn,
+            int width) {
+
+        moveCursor(
+                startRow,
+                startColumn);
+
+        String title =
+                buildTitle(state);
+
+        writer.print(
+                "┌─ "
+                        + title
+                        + " "
+                        + "─".repeat(
+                        Math.max(
+                                0,
+                                width
+                                        - title.length()
+                                        - 5))
+                        + "┐");
+    }
+
+    private void renderContent(
+            PrintWriter writer,
+            List<String> lines,
+            int startRow,
+            int startColumn,
+            int width,
+            int height) {
+
+        int contentHeight =
+                Math.max(
+                        1,
+                        height - 4);
+
+        for (int row = 0;
+             row < contentHeight;
+             row++) {
+
+            moveCursor(
+                    startRow
+                            + row
+                            + 1,
+                    startColumn);
+
+            writer.print("│");
+
+            String line =
+                    row < lines.size()
+                            ? lines.get(row)
+                            : "";
+
+            writer.print(
+                    fit(
+                            line,
+                            width - 2));
+
+            writer.print("│");
+        }
+    }
+
+    private void renderFooter(
+            PrintWriter writer,
+            CreateProjectState state,
+            int startRow,
+            int startColumn,
+            int width,
+            int height) {
+
+        int separatorRow =
+                startRow
+                        + height
+                        - 3;
+
+        moveCursor(
+                separatorRow,
+                startColumn);
+
+        writer.print("├");
+
+        writer.print(
+                "─".repeat(
+                        width - 2));
+
+        writer.print("┤");
+
+        moveCursor(
+                separatorRow + 1,
+                startColumn);
+
+        writer.print("│");
+
+        writer.print(
+                fit(
+                        " "
+                                + buildNavigationText(
+                                state),
+                        width - 2));
+
+        writer.print("│");
+
+        moveCursor(
+                separatorRow + 2,
+                startColumn);
+
+        writer.print("└");
+
+        writer.print(
+                "─".repeat(
+                        width - 2));
+
+        writer.print("┘");
+    }
+
+    private String buildTitle(
+            CreateProjectState state) {
+
+        if (state.versionSelecting()) {
+            return state.selectedField() == 4
+                    ? "Select Java Version"
+                    : "Select Spring Boot Version";
+        }
+
+        if (state.metadataStage()) {
+            return "Create Spring Boot Project";
+        }
+
+        return "Select Dependencies";
+    }
+
+    private String buildNavigationText(
+            CreateProjectState state) {
+
+        if (state.versionSelecting()) {
+            return "↑↓ Navigate"
+                    + "    Enter Select"
+                    + "    Esc Back";
+        }
+
+        if (state.metadataStage()) {
+            return "↑↓ Navigate"
+                    + "    Enter Edit/Select"
+                    + "    Tab Continue"
+                    + "    Esc Cancel";
+        }
+
+        if (state.dependencySearchActive()) {
+            return "Type to Search"
+                    + "    ↑↓ Navigate"
+                    + "    Space/Enter Toggle"
+                    + "    Esc Close Search";
+        }
+
+        return "↑↓ Navigate"
+                + "    Space Toggle"
+                + "    / Search"
+                + "    Enter Create"
+                + "    Esc Back";
+    }
+
+    private String buildField(
+            CreateProjectState state,
+            int index,
+            String label,
+            String value) {
+
+        String marker =
+                state.selectedField() == index
+                        ? state.editing()
+                        ? "*"
+                        : ">"
+                        : " ";
+
+        return String.format(
+                " %s %-15s %s",
+                marker,
+                label,
+                value);
     }
 
     private int calculateStartIndex(
@@ -330,12 +495,12 @@ public class CreateProjectScreen {
 
         if (dependencyCount
                 <= MAX_VISIBLE_DEPENDENCIES) {
-
             return 0;
         }
 
         int halfWindow =
-                MAX_VISIBLE_DEPENDENCIES / 2;
+                MAX_VISIBLE_DEPENDENCIES
+                        / 2;
 
         int startIndex =
                 selectedIndex
@@ -354,24 +519,65 @@ public class CreateProjectScreen {
                 maximumStart);
     }
 
-    private void renderField(
-            PrintWriter writer,
-            CreateProjectState state,
-            int index,
-            String label,
-            String value) {
+    private int popupWidth() {
 
-        String marker =
-                state.selectedField() == index
-                        ? (state.editing()
-                        ? "*"
-                        : ">")
-                        : " ";
+        int terminalWidth =
+                terminal.getWidth();
 
-        writer.printf(
-                "%s %-15s %s%n",
-                marker,
-                label,
-                value);
+        int calculatedWidth =
+                terminalWidth
+                        * WIDTH_PERCENTAGE
+                        / 100;
+
+        return Math.min(
+                terminalWidth,
+                Math.max(
+                        MINIMUM_POPUP_WIDTH,
+                        calculatedWidth));
+    }
+
+    private int popupHeight() {
+
+        int terminalHeight =
+                terminal.getHeight();
+
+        int calculatedHeight =
+                terminalHeight
+                        * HEIGHT_PERCENTAGE
+                        / 100;
+
+        return Math.min(
+                terminalHeight,
+                Math.max(
+                        MINIMUM_POPUP_HEIGHT,
+                        calculatedHeight));
+    }
+
+    private String fit(
+            String value,
+            int width) {
+
+        if (value.length()
+                > width) {
+
+            return value.substring(
+                    0,
+                    width);
+        }
+
+        return value
+                + " ".repeat(
+                width
+                        - value.length());
+    }
+
+    private void moveCursor(
+            int row,
+            int column) {
+
+        terminal.puts(
+                InfoCmp.Capability.cursor_address,
+                row,
+                column);
     }
 }

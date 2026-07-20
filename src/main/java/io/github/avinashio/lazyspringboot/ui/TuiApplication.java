@@ -185,6 +185,8 @@ public class TuiApplication
 
         if (commandPaletteController.active()) {
 
+            mainScreen.render(uiState);
+
             commandPaletteScreen.render(
                     commandPaletteController.commands(),
                     commandPaletteController
@@ -207,6 +209,8 @@ public class TuiApplication
                 .state()
                 .active()) {
 
+            mainScreen.render(uiState);
+
             createProjectScreen.render(
                     createProjectController.state());
 
@@ -223,16 +227,23 @@ public class TuiApplication
                         project);
             }
 
+            mainScreen.render(uiState);
+
             projectActionOutputScreen.render(
                     uiState);
+
             return;
         }
 
         if (uiState.projectActionsActive()) {
+
+            mainScreen.render(uiState);
+
             projectActionsScreen.render(
                     uiState,
                     projectActionController.actions(
                             uiState.selectedProject()));
+
             return;
         }
 

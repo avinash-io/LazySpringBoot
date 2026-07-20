@@ -13,9 +13,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProjectActionOutputScreen {
 
-    private static final int HEADER_HEIGHT = 7;
+    private static final int WIDTH_PERCENTAGE = 80;
 
-    private static final int FOOTER_HEIGHT = 4;
+    private static final int HEIGHT_PERCENTAGE = 80;
+
+    private static final int MINIMUM_POPUP_WIDTH = 50;
+
+    private static final int MINIMUM_POPUP_HEIGHT = 12;
+
+    private static final int OUTPUT_HEADER_HEIGHT = 4;
+
+    private static final int OUTPUT_FOOTER_HEIGHT = 4;
 
     private final Terminal terminal;
 
@@ -24,6 +32,7 @@ public class ProjectActionOutputScreen {
     public ProjectActionOutputScreen(
             Terminal terminal,
             TextFormatter textFormatter) {
+
         this.terminal =
                 terminal;
 
@@ -33,28 +42,36 @@ public class ProjectActionOutputScreen {
 
     public void render(
             UiState state) {
-        PrintWriter writer =
-                terminal.writer();
-
-        terminal.puts(
-                InfoCmp.Capability.clear_screen);
-
-        terminal.puts(
-                InfoCmp.Capability.cursor_address,
-                0,
-                0);
 
         ProjectActionOutput output =
                 state.projectActionOutput();
 
         if (output == null) {
-            writer.flush();
-
             return;
         }
 
-        int width =
-                terminal.getWidth();
+        PrintWriter writer =
+                terminal.writer();
+
+        int popupWidth =
+                popupWidth();
+
+        int popupHeight =
+                popupHeight();
+
+        int startColumn =
+                Math.max(
+                        0,
+                        (terminal.getWidth()
+                                - popupWidth)
+                                / 2);
+
+        int startRow =
+                Math.max(
+                        0,
+                        (terminal.getHeight()
+                                - popupHeight)
+                                / 2);
 
         int visibleHeight =
                 visibleHeight();
@@ -64,66 +81,250 @@ public class ProjectActionOutputScreen {
                         .outputViewport()
                         .offset();
 
-        writer.println("LazySpringBoot");
-        writer.println();
-
-        writer.println(
-                buildTitle(output));
-
-        writer.println(
-                "Project: "
-                        + output.projectName());
-
-        writer.println(
-                "Action: "
-                        + output
-                        .action()
-                        .displayName());
-
-        if (output.action()
-                != ProjectAction.VIEW_LOGS) {
-
-            writer.println(
-                    "Exit Code: "
-                            + output.exitCode());
-        }
-
-        writer.println();
+        renderHeader(
+                writer,
+                output,
+                startRow,
+                startColumn,
+                popupWidth);
 
         renderOutput(
                 writer,
                 output.lines(),
                 offset,
                 visibleHeight,
-                width);
+                startRow,
+                startColumn,
+                popupWidth);
 
-        writer.println();
-
-        writer.println(
-                buildPositionText(
-                        output.lines().size(),
-                        offset,
-                        visibleHeight));
-
-        writer.println(
-                buildNavigationText(
-                        output,
-                        offset,
-                        visibleHeight));
+        renderFooter(
+                writer,
+                output,
+                offset,
+                visibleHeight,
+                startRow,
+                startColumn,
+                popupWidth);
 
         writer.flush();
     }
 
     public int visibleHeight() {
+
         return Math.max(
                 1,
-                terminal.getHeight()
-                        - HEADER_HEIGHT
-                        - FOOTER_HEIGHT);
+                popupHeight()
+                        - OUTPUT_HEADER_HEIGHT
+                        - OUTPUT_FOOTER_HEIGHT);
+    }
+
+    private int popupWidth() {
+
+        int terminalWidth =
+                terminal.getWidth();
+
+        int calculatedWidth =
+                terminalWidth
+                        * WIDTH_PERCENTAGE
+                        / 100;
+
+        return Math.min(
+                terminalWidth,
+                Math.max(
+                        MINIMUM_POPUP_WIDTH,
+                        calculatedWidth));
+    }
+
+    private int popupHeight() {
+
+        int terminalHeight =
+                terminal.getHeight();
+
+        int calculatedHeight =
+                terminalHeight
+                        * HEIGHT_PERCENTAGE
+                        / 100;
+
+        return Math.min(
+                terminalHeight,
+                Math.max(
+                        MINIMUM_POPUP_HEIGHT,
+                        calculatedHeight));
+    }
+
+    private void renderHeader(
+            PrintWriter writer,
+            ProjectActionOutput output,
+            int startRow,
+            int startColumn,
+            int width) {
+
+        moveCursor(
+                startRow,
+                startColumn);
+
+        String title =
+                buildTitle(output);
+
+        writer.print(
+                "┌─ "
+                        + title
+                        + " "
+                        + "─".repeat(
+                        Math.max(
+                                0,
+                                width
+                                        - title.length()
+                                        - 5))
+                        + "┐");
+
+        moveCursor(
+                startRow + 1,
+                startColumn);
+
+        writer.print("│");
+
+        writer.print(
+                textFormatter.fit(
+                        " Project: "
+                                + output.projectName(),
+                        width - 2));
+
+        writer.print("│");
+
+        moveCursor(
+                startRow + 2,
+                startColumn);
+
+        writer.print("├");
+
+        writer.print(
+                "─".repeat(
+                        width - 2));
+
+        writer.print("┤");
+    }
+
+    private void renderOutput(
+            PrintWriter writer,
+            List<String> lines,
+            int offset,
+            int visibleHeight,
+            int startRow,
+            int startColumn,
+            int width) {
+
+        int endIndex =
+                Math.min(
+                        lines.size(),
+                        offset + visibleHeight);
+
+        for (int row = 0;
+             row < visibleHeight;
+             row++) {
+
+            moveCursor(
+                    startRow
+                            + OUTPUT_HEADER_HEIGHT
+                            - 1
+                            + row,
+                    startColumn);
+
+            writer.print("│");
+
+            String line =
+                    row
+                            < endIndex - offset
+                            ? lines.get(
+                            offset + row)
+                            : "";
+
+            writer.print(
+                    textFormatter.fit(
+                            line,
+                            width - 2));
+
+            writer.print("│");
+        }
+    }
+
+    private void renderFooter(
+            PrintWriter writer,
+            ProjectActionOutput output,
+            int offset,
+            int visibleHeight,
+            int startRow,
+            int startColumn,
+            int width) {
+
+        int footerStartRow =
+                startRow
+                        + OUTPUT_HEADER_HEIGHT
+                        - 1
+                        + visibleHeight;
+
+        moveCursor(
+                footerStartRow,
+                startColumn);
+
+        writer.print("├");
+
+        writer.print(
+                "─".repeat(
+                        width - 2));
+
+        writer.print("┤");
+
+        moveCursor(
+                footerStartRow + 1,
+                startColumn);
+
+        writer.print("│");
+
+        writer.print(
+                textFormatter.fit(
+                        " "
+                                + buildPositionText(
+                                output.lines().size(),
+                                offset,
+                                visibleHeight),
+                        width - 2));
+
+        writer.print("│");
+
+        moveCursor(
+                footerStartRow + 2,
+                startColumn);
+
+        writer.print("│");
+
+        writer.print(
+                textFormatter.fit(
+                        " "
+                                + buildNavigationText(
+                                output,
+                                offset,
+                                visibleHeight),
+                        width - 2));
+
+        writer.print("│");
+
+        moveCursor(
+                footerStartRow + 3,
+                startColumn);
+
+        writer.print("└");
+
+        writer.print(
+                "─".repeat(
+                        width - 2));
+
+        writer.print("┘");
     }
 
     private String buildTitle(
             ProjectActionOutput output) {
+
         return output
                 .action()
                 .displayName()
@@ -168,45 +369,18 @@ public class ProjectActionOutputScreen {
         int maximumOffset =
                 Math.max(
                         0,
-                        contentSize - visibleHeight);
+                        contentSize
+                                - visibleHeight);
 
-        return offset >= maximumOffset;
-    }
-
-    private void renderOutput(
-            PrintWriter writer,
-            List<String> lines,
-            int offset,
-            int visibleHeight,
-            int width) {
-        int endIndex =
-                Math.min(
-                        lines.size(),
-                        offset + visibleHeight);
-
-        for (int index = offset;
-             index < endIndex;
-             index++) {
-            writer.println(
-                    textFormatter.fit(
-                            lines.get(index),
-                            width));
-        }
-
-        int renderedLineCount =
-                endIndex - offset;
-
-        for (int index = renderedLineCount;
-             index < visibleHeight;
-             index++) {
-            writer.println();
-        }
+        return offset
+                >= maximumOffset;
     }
 
     private String buildPositionText(
             int contentSize,
             int offset,
             int visibleHeight) {
+
         if (contentSize == 0) {
             return "Lines 0-0 of 0";
         }
@@ -217,7 +391,8 @@ public class ProjectActionOutputScreen {
         int lastLine =
                 Math.min(
                         contentSize,
-                        offset + visibleHeight);
+                        offset
+                                + visibleHeight);
 
         return "Lines "
                 + firstLine
@@ -225,5 +400,15 @@ public class ProjectActionOutputScreen {
                 + lastLine
                 + " of "
                 + contentSize;
+    }
+
+    private void moveCursor(
+            int row,
+            int column) {
+
+        terminal.puts(
+                InfoCmp.Capability.cursor_address,
+                row,
+                column);
     }
 }

@@ -63,7 +63,7 @@ public class MainScreen {
                 width * DEPENDENCY_PANEL_PERCENTAGE / 100;
 
         int detailPanelWidth =
-                width - projectPanelWidth - dependencyPanelWidth - 2;
+                width - projectPanelWidth - dependencyPanelWidth - 1;
 
         int height = terminal.getHeight();
 

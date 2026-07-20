@@ -21,9 +21,17 @@ class CreateProjectScreenTest {
         StringWriter output =
                 new StringWriter();
 
+        PrintWriter writer =
+                new PrintWriter(output);
+
         when(terminal.writer())
-                .thenReturn(
-                        new PrintWriter(output));
+                .thenReturn(writer);
+
+        when(terminal.getWidth())
+                .thenReturn(120);
+
+        when(terminal.getHeight())
+                .thenReturn(40);
 
         CreateProjectScreen screen =
                 new CreateProjectScreen(
@@ -31,6 +39,8 @@ class CreateProjectScreenTest {
 
         screen.render(
                 new CreateProjectState());
+
+        writer.flush();
 
         verify(terminal)
                 .writer();

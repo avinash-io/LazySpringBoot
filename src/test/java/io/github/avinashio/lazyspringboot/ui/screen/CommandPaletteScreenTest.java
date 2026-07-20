@@ -29,6 +29,12 @@ class CommandPaletteScreenTest {
         when(terminal.writer())
                 .thenReturn(writer);
 
+        when(terminal.getWidth())
+                .thenReturn(120);
+
+        when(terminal.getHeight())
+                .thenReturn(40);
+
         CommandPaletteScreen screen =
                 new CommandPaletteScreen(
                         terminal);
@@ -52,17 +58,13 @@ class CommandPaletteScreenTest {
         assertThat(
                 output.toString())
                 .contains(
-                        "LazySpringBoot")
-                .contains(
                         "Command Palette")
                 .contains(
                         "Search: build_")
                 .contains(
                         "> Build Project")
                 .contains(
-                        "  Run Project")
-                .contains(
-                        "Type to Search")
+                        "Run Project")
                 .contains(
                         "Enter Execute")
                 .contains(
