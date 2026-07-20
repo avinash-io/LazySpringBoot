@@ -30,6 +30,7 @@ public class ProjectProcessCommandFactory {
         if (Files.isRegularFile(
                 project.path().resolve("mvnw"))) {
             return List.of(
+                    "sh",
                     "./mvnw",
                     "spring-boot:run");
         }

@@ -5,6 +5,7 @@ public enum ProjectAction {
     TEST("Test"),
     RUN("Run"),
     VIEW_LOGS("View Logs"),
+    RESTART("Restart"),
     STOP("Stop");
 
     private final String displayName;

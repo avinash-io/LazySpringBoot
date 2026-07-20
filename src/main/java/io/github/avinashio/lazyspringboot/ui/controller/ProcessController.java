@@ -12,6 +12,7 @@ import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.io.IOException;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
+import io.github.avinashio.lazyspringboot.application.process.RestartProjectProcessUseCase;
 
 @Component
 public class ProcessController {
@@ -30,10 +31,14 @@ public class ProcessController {
     private final ProjectActionOutputScreen
             projectActionOutputScreen;
 
+    private final RestartProjectProcessUseCase
+            restartProjectProcessUseCase;
+
     public ProcessController(
             UiState uiState,
             StartProjectProcessUseCase startProjectProcessUseCase,
             StopProjectProcessUseCase stopProjectProcessUseCase,
+            RestartProjectProcessUseCase restartProjectProcessUseCase,
             GetProjectProcessUseCase getProjectProcessUseCase,
             ProjectActionOutputScreen projectActionOutputScreen) {
 
@@ -46,6 +51,8 @@ public class ProcessController {
                 getProjectProcessUseCase;
         this.projectActionOutputScreen =
                 projectActionOutputScreen;
+        this.restartProjectProcessUseCase =
+                restartProjectProcessUseCase;
     }
 
     public void start(
@@ -68,6 +75,31 @@ public class ProcessController {
             uiState.showErrorMessage(
                     buildProcessErrorMessage(
                             "Failed to start " + project.name(),
+                            exception));
+        }
+    }
+
+    public void restart(
+            SpringProject project) {
+
+        try {
+
+            restartProjectProcessUseCase.restart(
+                    project);
+
+            uiState.stopProjectActions();
+
+            uiState.showSuccessMessage(
+                    "Restarted " + project.name());
+
+        } catch (IOException exception) {
+
+            uiState.stopProjectActions();
+
+            uiState.showErrorMessage(
+                    buildProcessErrorMessage(
+                            "Failed to restart "
+                                    + project.name(),
                             exception));
         }
     }

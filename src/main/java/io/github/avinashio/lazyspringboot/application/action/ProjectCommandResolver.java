@@ -48,7 +48,7 @@ public class ProjectCommandResolver {
                             executable,
                             "test");
 
-            case RUN, VIEW_LOGS, STOP ->
+            case RUN, VIEW_LOGS, RESTART, STOP ->
                     throw new IllegalArgumentException(
                             "Action is not a command action: "
                                     + action);

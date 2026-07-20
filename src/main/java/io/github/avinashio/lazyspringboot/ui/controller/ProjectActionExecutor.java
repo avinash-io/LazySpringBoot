@@ -46,6 +46,10 @@ public class ProjectActionExecutor {
                     processController.stop(
                             project);
 
+            case RESTART ->
+                    processController.restart(
+                            project);
+
             case VIEW_LOGS ->
                     processController.showLogs(
                             project);

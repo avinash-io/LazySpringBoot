@@ -52,6 +52,7 @@ class ProjectActionCatalogTest {
                         ProjectAction.BUILD,
                         ProjectAction.TEST,
                         ProjectAction.VIEW_LOGS,
+                        ProjectAction.RESTART,
                         ProjectAction.STOP);
     }
 
@@ -72,6 +73,7 @@ class ProjectActionCatalogTest {
                         ProjectAction.BUILD,
                         ProjectAction.TEST,
                         ProjectAction.VIEW_LOGS,
+                        ProjectAction.RESTART,
                         ProjectAction.STOP);
     }
 

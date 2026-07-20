@@ -37,6 +37,7 @@ class ProjectProcessCommandFactoryTest {
 
         assertThat(command)
                 .containsExactly(
+                        "sh",
                         "./mvnw",
                         "spring-boot:run");
     }

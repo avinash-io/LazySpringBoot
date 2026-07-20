@@ -13,6 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.springframework.stereotype.Component;
+import java.util.concurrent.TimeUnit;
+
 
 @Component
 public class ProjectProcessManager {
@@ -26,6 +28,9 @@ public class ProjectProcessManager {
 
     private final ExecutorService executorService =
             Executors.newCachedThreadPool();
+
+    private static final long PROCESS_STOP_TIMEOUT_SECONDS =
+            10;
 
     public ProjectProcessManager(
             ProjectProcessCommandFactory commandFactory) {
@@ -43,8 +48,8 @@ public class ProjectProcessManager {
 
         if (existingProcess != null
                 && existingProcess
-                .snapshot()
-                .running()) {
+                .process()
+                .isAlive()) {
             return existingProcess.snapshot();
         }
 
@@ -75,6 +80,69 @@ public class ProjectProcessManager {
                                 managedProcess));
 
         return managedProcess.snapshot();
+    }
+
+    public ProjectProcess restart(
+            SpringProject project)
+            throws IOException {
+
+        ManagedProjectProcess managedProcess =
+                processes.get(
+                        projectKey(project));
+
+        if (managedProcess != null
+                && managedProcess
+                .process()
+                .isAlive()) {
+
+            stopAndWait(
+                    managedProcess);
+        }
+
+        return start(
+                project);
+    }
+
+    private void stopAndWait(
+            ManagedProjectProcess managedProcess)
+            throws IOException {
+
+        Process process =
+                managedProcess.process();
+
+        managedProcess.requestStop();
+
+        process.destroy();
+
+        try {
+
+            boolean stopped =
+                    process.waitFor(
+                            PROCESS_STOP_TIMEOUT_SECONDS,
+                            TimeUnit.SECONDS);
+
+            if (stopped) {
+                return;
+            }
+
+            managedProcess.addOutput(
+                    "Process did not stop gracefully; "
+                            + "forcing termination");
+
+            process.destroyForcibly();
+
+            process.waitFor();
+
+        } catch (InterruptedException exception) {
+
+            Thread.currentThread()
+                    .interrupt();
+
+            throw new IOException(
+                    "Interrupted while waiting "
+                            + "for project process to stop",
+                    exception);
+        }
     }
 
     public Optional<ProjectProcess> find(

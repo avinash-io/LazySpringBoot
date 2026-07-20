@@ -46,6 +46,9 @@ public class ProjectActionCatalog {
                         ProjectAction.VIEW_LOGS,
                         true),
                 new ActionItem(
+                        ProjectAction.RESTART,
+                        true),
+                new ActionItem(
                         ProjectAction.STOP,
                         true));
     }
