@@ -122,11 +122,12 @@ class ProjectActionCatalogTest {
             Integer exitCode) {
 
         return new ProjectProcess(
-                "testboot",
+                "test-project",
                 status,
-                output,
-                exitCode,
-                PID,
-                STARTED_AT);
+                List.of(),
+                null,
+                12345L,
+                Instant.now(),
+                null);
     }
 }

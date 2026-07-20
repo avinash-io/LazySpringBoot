@@ -274,7 +274,7 @@ public class TuiApplication
     private boolean shouldUseRefreshTimeout() {
 
         return isLiveProcessOutputVisible()
-                || isProjectStarting();
+                || isSelectedProjectActive();
     }
 
     private boolean isProjectStarting() {
@@ -293,6 +293,21 @@ public class TuiApplication
                         status
                                 == ProjectProcessStatus.STARTING)
                 .isPresent();
+    }
+
+    private boolean isSelectedProjectActive() {
+
+        SpringProject project =
+                uiState.selectedProject();
+
+        if (project == null) {
+            return false;
+        }
+
+        return getProjectProcessUseCase
+                .get(project)
+                .map(ProjectProcess::running)
+                .orElse(false);
     }
 
     private boolean isLiveProcessOutputVisible() {

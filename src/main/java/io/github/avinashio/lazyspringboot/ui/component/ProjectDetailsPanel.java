@@ -135,12 +135,17 @@ public class ProjectDetailsPanel {
                             startedAt.atZone(
                                     ZoneId.systemDefault()))));
 
+            Instant uptimeEnd =
+                    projectProcess.hasEndTime()
+                            ? projectProcess.endedAt()
+                            : Instant.now();
+
             lines.add(detail(
                     "Uptime",
                     durationFormatter.format(
                             Duration.between(
                                     startedAt,
-                                    Instant.now()))));
+                                    uptimeEnd))));
         }
 
         if (projectProcess.exitCode() != null) {

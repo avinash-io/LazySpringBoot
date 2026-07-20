@@ -9,7 +9,8 @@ public record ProjectProcess(
         List<String> output,
         Integer exitCode,
         Long pid,
-        Instant startedAt) {
+        Instant startedAt,
+        Instant endedAt) {
 
     public ProjectProcess {
         output = List.copyOf(output);
@@ -26,5 +27,9 @@ public record ProjectProcess(
 
     public boolean hasStartTime() {
         return startedAt != null;
+    }
+
+    public boolean hasEndTime() {
+        return endedAt != null;
     }
 }

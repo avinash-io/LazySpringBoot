@@ -18,6 +18,7 @@ final class ManagedProjectProcess {
     private final long pid;
 
     private final Instant startedAt;
+    private Instant endedAt;
 
     private final List<String> output =
             new ArrayList<>();
@@ -63,7 +64,10 @@ final class ManagedProjectProcess {
 
     synchronized void markStopped(
             int processExitCode) {
+
         exitCode = processExitCode;
+
+        endedAt = Instant.now();
 
         if (status
                 != ProjectProcessStatus.FAILED) {
@@ -74,7 +78,10 @@ final class ManagedProjectProcess {
 
     synchronized void markFailed(
             int processExitCode) {
+
         exitCode = processExitCode;
+
+        endedAt = Instant.now();
 
         status =
                 ProjectProcessStatus.FAILED;
@@ -87,7 +94,8 @@ final class ManagedProjectProcess {
                 List.copyOf(output),
                 exitCode,
                 pid,
-                startedAt);
+                startedAt,
+                endedAt);
     }
 
     Process process() {
