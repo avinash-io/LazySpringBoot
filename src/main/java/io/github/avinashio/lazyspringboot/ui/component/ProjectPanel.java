@@ -4,8 +4,7 @@ import io.github.avinashio.lazyspringboot.application.process.GetProjectProcessU
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcessStatus;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
-import io.github.avinashio.lazyspringboot.ui.service.ProjectFilterService;
-import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
+import io.github.avinashio.lazyspringboot.ui.service.VisibleProjectService;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,8 +22,8 @@ public class ProjectPanel {
     private final ProjectBadgeFormatter
             projectBadgeFormatter;
 
-    private final ProjectFilterService
-            projectFilterService;
+    private final VisibleProjectService
+            visibleProjectService;
 
     private final TextInputController
             textInputController;
@@ -33,7 +32,7 @@ public class ProjectPanel {
             GetProjectProcessUseCase getProjectProcessUseCase,
             StatusFormatter statusFormatter,
             ProjectBadgeFormatter projectBadgeFormatter,
-            ProjectFilterService projectFilterService,
+            VisibleProjectService visibleProjectService,
             TextInputController textInputController) {
 
         this.getProjectProcessUseCase =
@@ -45,15 +44,16 @@ public class ProjectPanel {
         this.projectBadgeFormatter =
                 projectBadgeFormatter;
 
-        this.projectFilterService =
-                projectFilterService;
+        this.visibleProjectService =
+                visibleProjectService;
 
         this.textInputController =
                 textInputController;
     }
 
     public List<String> render(
-            UiState state) {
+            UiState state,
+            int visibleHeight) {
 
         List<String> lines =
                 new ArrayList<>();
@@ -67,8 +67,8 @@ public class ProjectPanel {
         }
 
         List<SpringProject> visibleProjects =
-                visibleProjects(
-                        state);
+                visibleProjectService.visibleProjects(
+                        state.projects());
 
         if (visibleProjects.isEmpty()) {
 
@@ -80,8 +80,33 @@ public class ProjectPanel {
             return lines;
         }
 
-        for (SpringProject project :
-                visibleProjects) {
+        int selectedVisibleIndex =
+                selectedVisibleIndex(
+                        state,
+                        visibleProjects);
+
+        state.projectViewport()
+                .update(
+                        selectedVisibleIndex,
+                        visibleProjects.size(),
+                        visibleHeight);
+
+        int start =
+                state.projectViewport()
+                        .offset();
+
+        int end =
+                Math.min(
+                        start + visibleHeight,
+                        visibleProjects.size());
+
+        for (int visibleIndex = start;
+             visibleIndex < end;
+             visibleIndex++) {
+
+            SpringProject project =
+                    visibleProjects.get(
+                            visibleIndex);
 
             int projectIndex =
                     state.projects()
@@ -104,18 +129,24 @@ public class ProjectPanel {
         return lines;
     }
 
-    private List<SpringProject> visibleProjects(
-            UiState state) {
+    private int selectedVisibleIndex(
+            UiState state,
+            List<SpringProject> visibleProjects) {
 
-        if (!textInputController.active(
-                TextInputPurpose.PROJECT_SEARCH)) {
+        SpringProject selectedProject =
+                state.selectedProject();
 
-            return state.projects();
+        if (selectedProject == null) {
+            return 0;
         }
 
-        return projectFilterService.filter(
-                state.projects(),
-                textInputController.value());
+        int index =
+                visibleProjects.indexOf(
+                        selectedProject);
+
+        return Math.max(
+                index,
+                0);
     }
 
     private String statusIcon(
@@ -123,9 +154,10 @@ public class ProjectPanel {
 
         return getProjectProcessUseCase
                 .get(project)
-                .map(process ->
-                        statusFormatter.icon(
-                                process.status()))
+                .map(
+                        process ->
+                                statusFormatter.icon(
+                                        process.status()))
                 .orElseGet(
                         () ->
                                 statusFormatter.icon(

@@ -15,6 +15,10 @@ import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import io.github.avinashio.lazyspringboot.ui.service.ProjectSortService;
+import io.github.avinashio.lazyspringboot.ui.service.VisibleProjectService;
+import io.github.avinashio.lazyspringboot.ui.state.ProjectSortState;
+
 
 class ProjectSearchInputHandlerTest {
 
@@ -45,11 +49,17 @@ class ProjectSearchInputHandlerTest {
                 new TextInputController(
                         textInputState);
 
+        VisibleProjectService visibleProjectService =
+                new VisibleProjectService(
+                        new ProjectFilterService(),
+                        new ProjectSortService(),
+                        new ProjectSortState(),
+                        textInputController);
+
         ProjectNavigation projectNavigation =
                 new ProjectNavigation(
                         uiState,
-                        new ProjectFilterService(),
-                        textInputController);
+                        visibleProjectService);
 
         handler =
                 new ProjectSearchInputHandler(

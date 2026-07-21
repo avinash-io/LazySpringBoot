@@ -15,6 +15,8 @@ import java.util.List;
 import org.jline.terminal.Terminal;
 import org.jline.utils.InfoCmp;
 import org.springframework.stereotype.Component;
+import io.github.avinashio.lazyspringboot.ui.state.ProjectSortState;
+
 
 @Component
 public class MainScreen {
@@ -39,6 +41,8 @@ public class MainScreen {
 
     private final TextInputController textInputController;
 
+    private final ProjectSortState projectSortState;
+
     public MainScreen(
             Terminal terminal,
             ProjectPanel projectPanel,
@@ -47,7 +51,7 @@ public class MainScreen {
             StatusBar statusBar,
             TextFormatter textFormatter,
             ProjectFilterService projectFilterService,
-            TextInputController textInputController) {
+            TextInputController textInputController, ProjectSortState projectSortState) {
 
         this.terminal =
                 terminal;
@@ -72,6 +76,7 @@ public class MainScreen {
 
         this.textInputController =
                 textInputController;
+        this.projectSortState = projectSortState;
     }
 
     public void render(
@@ -128,7 +133,8 @@ public class MainScreen {
 
         List<String> projectLines =
                 projectPanel.render(
-                        state);
+                        state,
+                        contentHeight);
 
         List<String> dependencyLines =
                 dependencyPanel.render(
@@ -226,26 +232,36 @@ public class MainScreen {
         int totalProjects =
                 state.projects().size();
 
-        if (!textInputController.active(
+        String count;
+
+        if (textInputController.active(
                 TextInputPurpose.PROJECT_SEARCH)) {
 
-            return "Projects ("
-                    + totalProjects
-                    + ")";
+            int visibleProjects =
+                    projectFilterService
+                            .filter(
+                                    state.projects(),
+                                    textInputController.value())
+                            .size();
+
+            count =
+                    visibleProjects
+                            + "/"
+                            + totalProjects;
+
+        } else {
+
+            count =
+                    String.valueOf(
+                            totalProjects);
         }
 
-        int visibleProjects =
-                projectFilterService
-                        .filter(
-                                state.projects(),
-                                textInputController.value())
-                        .size();
-
         return "Projects ("
-                + visibleProjects
-                + "/"
-                + totalProjects
-                + ")";
+                + count
+                + ") · "
+                + projectSortState
+                .mode()
+                .label();
     }
 
     private String panelHeader(

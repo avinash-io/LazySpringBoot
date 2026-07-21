@@ -39,6 +39,9 @@ public class UiState {
 
     private ProjectActionOutput projectActionOutput;
 
+    private final Viewport projectViewport =
+            new Viewport();
+
     private final Viewport dependencyViewport =
             new Viewport();
 
@@ -51,10 +54,13 @@ public class UiState {
 
     public void setProjects(
             List<SpringProject> projects) {
+
         this.projects =
                 List.copyOf(projects);
 
         selectedProjectIndex = 0;
+
+        projectViewport.reset();
     }
 
     public int selectedProjectIndex() {
@@ -72,20 +78,25 @@ public class UiState {
         selectedProjectIndex =
                 projectIndex;
     }
+
     public void selectNextProject() {
+
         if (selectedProjectIndex
                 < projects.size() - 1) {
+
             selectedProjectIndex++;
         }
     }
 
     public void selectPreviousProject() {
+
         if (selectedProjectIndex > 0) {
             selectedProjectIndex--;
         }
     }
 
     public SpringProject selectedProject() {
+
         if (projects.isEmpty()) {
             return null;
         }
@@ -96,6 +107,7 @@ public class UiState {
 
     public void replaceSelectedProject(
             SpringProject project) {
+
         if (project == null
                 || projects.isEmpty()) {
             return;
@@ -112,6 +124,10 @@ public class UiState {
                 List.copyOf(updatedProjects);
     }
 
+    public Viewport projectViewport() {
+        return projectViewport;
+    }
+
     public PanelFocus panelFocus() {
         return panelFocus;
     }
@@ -124,8 +140,10 @@ public class UiState {
     }
 
     public void focusNextPanel() {
+
         panelFocus =
                 switch (panelFocus) {
+
                     case PROJECTS ->
                             PanelFocus.DEPENDENCIES;
 
@@ -138,8 +156,10 @@ public class UiState {
     }
 
     public void focusPreviousPanel() {
+
         panelFocus =
                 switch (panelFocus) {
+
                     case PROJECTS ->
                             PanelFocus.PROJECT_DETAILS;
 
@@ -157,6 +177,7 @@ public class UiState {
 
     public void setDependencyItems(
             List<DependencyItem> dependencyItems) {
+
         this.dependencyItems =
                 dependencyItems.stream()
                         .map(
@@ -182,6 +203,7 @@ public class UiState {
     }
 
     public DependencyItem selectedDependencyItem() {
+
         if (dependencyItems.isEmpty()) {
             return null;
         }
@@ -191,13 +213,16 @@ public class UiState {
     }
 
     public void selectNextDependency() {
+
         if (selectedDependencyIndex
                 < dependencyItems.size() - 1) {
+
             selectedDependencyIndex++;
         }
     }
 
     public void selectPreviousDependency() {
+
         if (selectedDependencyIndex > 0) {
             selectedDependencyIndex--;
         }
@@ -205,9 +230,11 @@ public class UiState {
 
     public void selectDependency(
             int dependencyIndex) {
+
         if (dependencyIndex < 0
                 || dependencyIndex
                 >= dependencyItems.size()) {
+
             return;
         }
 
@@ -224,6 +251,7 @@ public class UiState {
     }
 
     public void toggleSelectedDependency() {
+
         if (dependencyItems.isEmpty()) {
             return;
         }
@@ -245,9 +273,12 @@ public class UiState {
 
         if (updatedIds.contains(
                 dependencyId)) {
+
             updatedIds.remove(
                     dependencyId);
+
         } else {
+
             updatedIds.add(
                     dependencyId);
         }
@@ -259,6 +290,7 @@ public class UiState {
     }
 
     private void updateDependencySelection() {
+
         dependencyItems =
                 dependencyItems.stream()
                         .map(
@@ -280,11 +312,13 @@ public class UiState {
     }
 
     public boolean dependencyConfirmationActive() {
+
         return inputMode
                 == InputMode.DEPENDENCY_CONFIRMATION;
     }
 
     public void startDependencyConfirmation() {
+
         if (selectedDependencyIds.isEmpty()) {
             return;
         }
@@ -294,6 +328,7 @@ public class UiState {
     }
 
     public void stopDependencyConfirmation() {
+
         if (!dependencyConfirmationActive()) {
             return;
         }
@@ -304,6 +339,7 @@ public class UiState {
 
     public List<DependencyItem>
     selectedDependencyItems() {
+
         return dependencyItems.stream()
                 .filter(
                         item ->
@@ -317,7 +353,9 @@ public class UiState {
     }
 
     public void clearDependencySelections() {
-        selectedDependencyIds = Set.of();
+
+        selectedDependencyIds =
+                Set.of();
 
         updateDependencySelection();
     }
@@ -328,6 +366,7 @@ public class UiState {
 
     public void showSuccessMessage(
             String text) {
+
         message =
                 new UiMessage(
                         UiMessageType.SUCCESS,
@@ -336,6 +375,7 @@ public class UiState {
 
     public void showErrorMessage(
             String text) {
+
         message =
                 new UiMessage(
                         UiMessageType.ERROR,
@@ -355,13 +395,18 @@ public class UiState {
     }
 
     public void startProjectActions() {
-        projectActionsActive = true;
 
-        selectedProjectActionIndex = 0;
+        projectActionsActive =
+                true;
+
+        selectedProjectActionIndex =
+                0;
     }
 
     public void stopProjectActions() {
-        projectActionsActive = false;
+
+        projectActionsActive =
+                false;
     }
 
     public int selectedProjectActionIndex() {
@@ -370,34 +415,42 @@ public class UiState {
 
     public void selectNextProjectAction(
             int actionCount) {
+
         if (actionCount <= 0) {
             return;
         }
 
         if (selectedProjectActionIndex
                 < actionCount - 1) {
+
             selectedProjectActionIndex++;
         }
     }
 
     public void selectPreviousProjectAction() {
+
         if (selectedProjectActionIndex > 0) {
+
             selectedProjectActionIndex--;
         }
     }
 
     public boolean projectActionOutputActive() {
+
         return projectActionOutput != null;
     }
 
     public ProjectActionOutput projectActionOutput() {
+
         return projectActionOutput;
     }
 
     public void showProjectActionOutput(
             ProjectActionOutput output,
             int visibleHeight) {
-        projectActionOutput = output;
+
+        projectActionOutput =
+                output;
 
         outputViewport.moveToBottom(
                 output.lines().size(),
@@ -406,11 +459,15 @@ public class UiState {
 
     public void replaceProjectActionOutput(
             ProjectActionOutput output) {
-        projectActionOutput = output;
+
+        projectActionOutput =
+                output;
     }
 
     public void closeProjectActionOutput() {
-        projectActionOutput = null;
+
+        projectActionOutput =
+                null;
 
         outputViewport.reset();
     }
@@ -430,12 +487,20 @@ public class UiState {
                         refreshedProjects);
 
         if (projects.isEmpty()) {
+
             selectedProjectIndex = 0;
+
+            projectViewport.reset();
+
             return;
         }
 
         if (previouslySelected == null) {
+
             selectedProjectIndex = 0;
+
+            projectViewport.reset();
+
             return;
         }
 
@@ -462,5 +527,4 @@ public class UiState {
                         selectedProjectIndex,
                         projects.size() - 1);
     }
-
 }

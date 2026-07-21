@@ -43,6 +43,7 @@ public class StatusBar {
             case PROJECTS ->
                     " ↑↓ Navigate"
                             + "    / Search"
+                            + "    s Sort"
                             + "    a Project Actions"
                             + "    c Create"
                             + "    w Workspace"

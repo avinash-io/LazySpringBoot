@@ -1,8 +1,7 @@
 package io.github.avinashio.lazyspringboot.ui.project;
 
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
-import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
-import io.github.avinashio.lazyspringboot.ui.service.ProjectFilterService;
+import io.github.avinashio.lazyspringboot.ui.service.VisibleProjectService;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.util.List;
 import org.springframework.stereotype.Component;
@@ -12,25 +11,18 @@ public class ProjectNavigation {
 
     private final UiState uiState;
 
-    private final ProjectFilterService
-            projectFilterService;
-
-    private final TextInputController
-            textInputController;
+    private final VisibleProjectService
+            visibleProjectService;
 
     public ProjectNavigation(
             UiState uiState,
-            ProjectFilterService projectFilterService,
-            TextInputController textInputController) {
+            VisibleProjectService visibleProjectService) {
 
         this.uiState =
                 uiState;
 
-        this.projectFilterService =
-                projectFilterService;
-
-        this.textInputController =
-                textInputController;
+        this.visibleProjectService =
+                visibleProjectService;
     }
 
     public void selectFirstVisible() {
@@ -67,10 +59,12 @@ public class ProjectNavigation {
             return;
         }
 
-        if (current < indexes.size() - 1) {
+        if (current
+                < indexes.size() - 1) {
 
             uiState.selectProject(
-                    indexes.get(current + 1));
+                    indexes.get(
+                            current + 1));
         }
     }
 
@@ -98,7 +92,8 @@ public class ProjectNavigation {
         if (current > 0) {
 
             uiState.selectProject(
-                    indexes.get(current - 1));
+                    indexes.get(
+                            current - 1));
         }
     }
 
@@ -107,12 +102,9 @@ public class ProjectNavigation {
         List<SpringProject> projects =
                 uiState.projects();
 
-        List<SpringProject> visibleProjects =
-                projectFilterService.filter(
-                        projects,
-                        textInputController.value());
-
-        return visibleProjects.stream()
+        return visibleProjectService
+                .visibleProjects(projects)
+                .stream()
                 .map(projects::indexOf)
                 .toList();
     }

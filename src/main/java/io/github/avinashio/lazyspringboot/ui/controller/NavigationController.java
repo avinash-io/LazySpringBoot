@@ -3,67 +3,101 @@ package io.github.avinashio.lazyspringboot.ui.controller;
 import io.github.avinashio.lazyspringboot.ui.command.CommandPaletteController;
 import io.github.avinashio.lazyspringboot.ui.dependency.DependencyNavigation;
 import io.github.avinashio.lazyspringboot.ui.input.KeyEvent;
+import io.github.avinashio.lazyspringboot.ui.project.ProjectNavigation;
 import io.github.avinashio.lazyspringboot.ui.service.DependencyItemsService;
 import io.github.avinashio.lazyspringboot.ui.service.DependencyUndoService;
 import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
+import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import org.springframework.stereotype.Component;
-
-import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
-import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
 
 @Component
 public class NavigationController {
 
     private final UiState uiState;
 
-    private final DependencyNavigation dependencyNavigation;
+    private final DependencyNavigation
+            dependencyNavigation;
 
-    private final DependencyItemsService dependencyItemsService;
+    private final ProjectNavigation
+            projectNavigation;
 
-    private final ProjectActionController projectActionController;
+    private final DependencyItemsService
+            dependencyItemsService;
 
-    private final CreateProjectController createProjectController;
+    private final ProjectActionController
+            projectActionController;
 
-    private final CommandPaletteController commandPaletteController;
+    private final CreateProjectController
+            createProjectController;
 
-    private final DependencyUndoService dependencyUndoService;
+    private final CommandPaletteController
+            commandPaletteController;
 
-    private final ProjectRefreshController projectRefreshController;
+    private final DependencyUndoService
+            dependencyUndoService;
 
-    private final WorkspaceController workspaceController;
+    private final ProjectRefreshController
+            projectRefreshController;
 
-    private final TextInputController textInputController;
+    private final WorkspaceController
+            workspaceController;
+
+    private final TextInputController
+            textInputController;
+
+    private final ProjectSortController
+            projectSortController;
 
     public NavigationController(
             UiState uiState,
             DependencyNavigation dependencyNavigation,
+            ProjectNavigation projectNavigation,
             DependencyItemsService dependencyItemsService,
             ProjectActionController projectActionController,
             CreateProjectController createProjectController,
             DependencyUndoService dependencyUndoService,
             CommandPaletteController commandPaletteController,
             ProjectRefreshController projectRefreshController,
-            WorkspaceController workspaceController, TextInputController textInputController) {
+            WorkspaceController workspaceController,
+            TextInputController textInputController,
+            ProjectSortController projectSortController) {
 
-        this.uiState = uiState;
+        this.uiState =
+                uiState;
+
         this.dependencyNavigation =
                 dependencyNavigation;
+
+        this.projectNavigation =
+                projectNavigation;
+
         this.dependencyItemsService =
                 dependencyItemsService;
+
         this.projectActionController =
                 projectActionController;
+
         this.createProjectController =
                 createProjectController;
+
         this.commandPaletteController =
                 commandPaletteController;
+
         this.dependencyUndoService =
                 dependencyUndoService;
+
         this.projectRefreshController =
                 projectRefreshController;
-        this.workspaceController = workspaceController;
 
-        this.textInputController = textInputController;
+        this.workspaceController =
+                workspaceController;
+
+        this.textInputController =
+                textInputController;
+
+        this.projectSortController =
+                projectSortController;
     }
 
     public boolean handle(
@@ -143,9 +177,34 @@ public class NavigationController {
             case 'w' ->
                     workspaceController.open();
 
+            case 's' ->
+                    handleSort();
+
             default -> {
                 // No action.
             }
+        }
+    }
+
+    private void handleSort() {
+
+        if (uiState.panelFocus()
+                != PanelFocus.PROJECTS) {
+
+            return;
+        }
+
+        int previousIndex =
+                uiState.selectedProjectIndex();
+
+        projectSortController.cycle();
+
+        projectNavigation.selectFirstVisible();
+
+        if (previousIndex
+                != uiState.selectedProjectIndex()) {
+
+            dependencyItemsService.refresh();
         }
     }
 
@@ -177,7 +236,8 @@ public class NavigationController {
                 int previousIndex =
                         uiState.selectedProjectIndex();
 
-                uiState.selectPreviousProject();
+                projectNavigation
+                        .selectPreviousVisible();
 
                 if (previousIndex
                         != uiState.selectedProjectIndex()) {
@@ -205,7 +265,8 @@ public class NavigationController {
                 int previousIndex =
                         uiState.selectedProjectIndex();
 
-                uiState.selectNextProject();
+                projectNavigation
+                        .selectNextVisible();
 
                 if (previousIndex
                         != uiState.selectedProjectIndex()) {
@@ -237,9 +298,14 @@ public class NavigationController {
 
         switch (uiState.panelFocus()) {
 
-            case PROJECTS ->
-                    textInputController.start(
-                            TextInputPurpose.PROJECT_SEARCH);
+            case PROJECTS -> {
+
+                textInputController.start(
+                        TextInputPurpose.PROJECT_SEARCH);
+
+                projectNavigation
+                        .selectFirstVisible();
+            }
 
             case DEPENDENCIES -> {
 
@@ -267,4 +333,23 @@ public class NavigationController {
         uiState.startDependencyConfirmation();
     }
 
+    private SpringProjectSelection currentProjectSelection() {
+
+        return new SpringProjectSelection(
+                uiState.selectedProjectIndex());
+    }
+
+    private void refreshDependenciesIfProjectChanged(
+            SpringProjectSelection previousSelection) {
+
+        if (previousSelection.index()
+                != uiState.selectedProjectIndex()) {
+
+            dependencyItemsService.refresh();
+        }
+    }
+
+    private record SpringProjectSelection(
+            int index) {
+    }
 }
