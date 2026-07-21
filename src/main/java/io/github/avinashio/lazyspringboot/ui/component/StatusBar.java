@@ -26,9 +26,11 @@ public class StatusBar {
             case PROJECTS ->
                     " ↑↓ Navigate"
                             + "    a Project Actions"
+                            + "    c Create"
+                            + "    w Workspace"
                             + "    r Refresh"
                             + "    u Undo"
-                            + "    Ctrl+P Commands"
+                            + "    Ctrl+P Command Palette"
                             + "    ←→ Switch Panel"
                             + "    q Quit";
 
@@ -38,16 +40,21 @@ public class StatusBar {
                             + "    / Search"
                             + "    Enter Apply"
                             + "    a Project Actions"
+                            + "    c Create"
+                            + "    w Workspace"
                             + "    r Refresh"
                             + "    u Undo"
-                            + "    Ctrl+P Commands"
+                            + "    Ctrl+P Command Palette"
                             + "    ←→ Switch Panel"
                             + "    q Quit";
 
             case PROJECT_DETAILS ->
                     " a Project Actions"
+                            + "    c Create"
+                            + "    w Workspace"
                             + "    r Refresh"
-                            + "    Ctrl+P Commands"
+                            + "    u Undo"
+                            + "    Ctrl+P Command Palette"
                             + "    ←→ Switch Panel"
                             + "    q Quit";
         };
@@ -76,6 +83,7 @@ public class StatusBar {
                 + "_"
                 + "    ↑↓ Navigate"
                 + "    Backspace Delete"
+                + "    Enter Apply"
                 + "    Esc Close";
     }
 }

@@ -41,6 +41,13 @@ public class WorkspaceInputHandler {
                 return true;
             }
 
+            case SEARCH -> {
+
+                workspaceState.append('/');
+
+                return true;
+            }
+
             case BACKSPACE -> {
 
                 workspaceState.backspace();
