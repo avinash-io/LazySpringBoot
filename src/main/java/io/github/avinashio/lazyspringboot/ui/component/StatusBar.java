@@ -84,6 +84,7 @@ public class StatusBar {
                 + textInputController.value()
                 + "_"
                 + "    ↑↓ Navigate"
+                + "    Enter Select"
                 + "    Backspace Delete"
                 + "    Esc Close";
     }

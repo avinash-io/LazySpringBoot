@@ -44,6 +44,9 @@ public class ProjectSearchInputHandler {
                     projectNavigation
                             .selectNextVisible();
 
+            case ENTER ->
+                    textInputController.stop();
+
             case ESCAPE ->
                     textInputController.stop();
 

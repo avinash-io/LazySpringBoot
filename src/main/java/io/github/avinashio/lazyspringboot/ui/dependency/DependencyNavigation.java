@@ -5,6 +5,7 @@ import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.util.List;
 import org.springframework.stereotype.Component;
+import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
 
 @Component
 public class DependencyNavigation {
@@ -90,8 +91,14 @@ public class DependencyNavigation {
 
     private List<Integer> visibleIndexes() {
 
+        String query =
+                textInputController.active(
+                        TextInputPurpose.DEPENDENCY_SEARCH)
+                        ? textInputController.value()
+                        : "";
+
         return dependencyFilter.matchingIndexes(
                 uiState.dependencyItems(),
-                textInputController.value());
+                query);
     }
 }

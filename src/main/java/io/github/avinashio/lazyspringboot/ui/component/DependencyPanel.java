@@ -7,7 +7,7 @@ import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
-
+import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
 @Component
 public class DependencyPanel {
 
@@ -51,7 +51,7 @@ public class DependencyPanel {
         }
 
         String searchQuery =
-                textInputController.value();
+                dependencySearchQuery();
 
         List<DependencyItem> visibleItems =
                 dependencyFilter.filter(
@@ -108,6 +108,17 @@ public class DependencyPanel {
         }
 
         return List.copyOf(lines);
+    }
+
+    private String dependencySearchQuery() {
+
+        if (!textInputController.active(
+                TextInputPurpose.DEPENDENCY_SEARCH)) {
+
+            return "";
+        }
+
+        return textInputController.value();
     }
 
     private String renderRow(
