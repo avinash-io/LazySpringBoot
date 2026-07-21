@@ -39,6 +39,12 @@ public class TuiApplication
     private static final long
             PROJECT_REFRESH_INTERVAL_MILLIS = 2_000;
 
+    private boolean quitConfirmationPending;
+
+    private int quitActiveProjectCount;
+
+
+
     private final ProjectRefreshController
             projectRefreshController;
 
@@ -281,23 +287,106 @@ public class TuiApplication
 
     private void runEventLoop()
             throws Exception {
+
         while (true) {
+
             KeyEvent keyEvent =
                     readNextKeyEvent();
 
             if (keyEvent.type()
                     == KeyType.TIMEOUT) {
+
                 handleTimeout();
                 continue;
             }
 
-            if (shouldQuit(keyEvent)) {
-                return;
+            if (quitConfirmationPending) {
+
+                if (handleQuitConfirmation(
+                        keyEvent)) {
+
+                    return;
+                }
+
+                render();
+
+                continue;
+            }
+
+            if (isQuitKey(
+                    keyEvent)) {
+
+                int activeProjectCount =
+                        activeProjectCount();
+
+                if (activeProjectCount == 0) {
+                    return;
+                }
+
+                quitActiveProjectCount =
+                        activeProjectCount;
+
+                quitConfirmationPending =
+                        true;
+
+                uiState.showWarningMessage(
+                        buildQuitWarningMessage(
+                                activeProjectCount));
+
+                render();
+
+                continue;
             }
 
             handleKey(keyEvent);
+
             render();
         }
+    }
+
+    private boolean handleQuitConfirmation(
+            KeyEvent keyEvent) {
+
+        if (keyEvent.type()
+                == KeyType.ESCAPE) {
+
+            cancelQuitConfirmation();
+
+            return false;
+        }
+
+        if (keyEvent.type()
+                == KeyType.CHARACTER
+                && keyEvent.hasCharacter()) {
+
+            char character =
+                    keyEvent.character();
+
+            if (character == 'q'
+                    || character == 'y') {
+
+                return true;
+            }
+
+            if (character == 'n') {
+
+                cancelQuitConfirmation();
+
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    private void cancelQuitConfirmation() {
+
+        quitConfirmationPending =
+                false;
+
+        quitActiveProjectCount = 0;
+
+        uiState.clearMessage();
     }
 
     private KeyEvent readNextKeyEvent()
@@ -416,7 +505,8 @@ public class TuiApplication
                 .projectActionOutputActive();
     }
 
-    private boolean shouldQuit(
+
+    private boolean isQuitKey(
             KeyEvent keyEvent) {
 
         if (createProjectController
@@ -436,78 +526,63 @@ public class TuiApplication
                 && keyEvent.character() == 'q';
     }
 
+    private void handleQuitCancellation(
+            KeyEvent keyEvent) {
+
+        if (!quitConfirmationPending) {
+            return;
+        }
+
+        if (keyEvent.type()
+                == KeyType.ESCAPE) {
+
+            quitConfirmationPending = false;
+
+            uiState.clearMessage();
+        }
+    }
+
+    private int activeProjectCount() {
+
+        int activeProjectCount = 0;
+
+        for (SpringProject project :
+                uiState.projects()) {
+
+            boolean active =
+                    getProjectProcessUseCase
+                            .get(project)
+                            .map(ProjectProcess::running)
+                            .orElse(false);
+
+            if (active) {
+                activeProjectCount++;
+            }
+        }
+
+        return activeProjectCount;
+    }
+
+    private String buildQuitWarningMessage(
+            int activeProjectCount) {
+
+        String projectLabel =
+                activeProjectCount == 1
+                        ? "project is"
+                        : "projects are";
+
+        return activeProjectCount
+                + " "
+                + projectLabel
+                + " still running. "
+                + "Press q again to quit anyway "
+                + "or Esc to cancel.";
+    }
+
     private void handleKey(
             KeyEvent keyEvent) {
 
         inputDispatcher.handle(keyEvent);
-    }
-
-    private void refreshProcessOutput() {
-        ProjectActionOutput output =
-                uiState.projectActionOutput();
-
-        SpringProject project =
-                uiState.selectedProject();
-
-        if (output == null
-                || project == null
-                || output.action()
-                != ProjectAction.VIEW_LOGS) {
-            return;
-        }
-
-        getProjectProcessUseCase
-                .get(project)
-                .ifPresent(
-                        this::replaceProcessOutput);
-    }
-
-    private void replaceProcessOutput(
-            ProjectProcess process) {
-        int visibleHeight =
-                projectActionOutputScreen
-                        .visibleHeight();
-
-        int previousContentSize =
-                uiState
-                        .projectActionOutput()
-                        .lines()
-                        .size();
-
-        int maximumPreviousOffset =
-                Math.max(
-                        0,
-                        previousContentSize
-                                - visibleHeight);
-
-        boolean followingOutput =
-                uiState
-                        .outputViewport()
-                        .offset()
-                        >= maximumPreviousOffset;
-
-        int exitCode =
-                process.exitCode() == null
-                        ? -1
-                        : process.exitCode();
-
-        ProjectActionOutput output =
-                new ProjectActionOutput(
-                        process.projectName(),
-                        ProjectAction.VIEW_LOGS,
-                        exitCode,
-                        process.output());
-
-        uiState.replaceProjectActionOutput(
-                output);
-
-        if (followingOutput) {
-            uiState
-                    .outputViewport()
-                    .moveToBottom(
-                            output.lines().size(),
-                            visibleHeight);
-        }
     }
 
     private String buildProjectActionErrorMessage(

@@ -373,6 +373,15 @@ public class UiState {
                         text);
     }
 
+    public void showWarningMessage(
+            String text) {
+
+        message =
+                new UiMessage(
+                        UiMessageType.WARNING,
+                        text);
+    }
+
     public void showErrorMessage(
             String text) {
 

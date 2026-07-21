@@ -4,5 +4,7 @@ public enum TextInputPurpose {
 
     DEPENDENCY_SEARCH,
 
-    PROJECT_SEARCH
+    PROJECT_SEARCH,
+
+    LOG_SEARCH
 }

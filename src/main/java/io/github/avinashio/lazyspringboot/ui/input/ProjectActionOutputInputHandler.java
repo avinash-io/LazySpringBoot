@@ -1,6 +1,8 @@
 package io.github.avinashio.lazyspringboot.ui.input;
 
+import io.github.avinashio.lazyspringboot.domain.action.ProjectAction;
 import io.github.avinashio.lazyspringboot.domain.action.ProjectActionOutput;
+import io.github.avinashio.lazyspringboot.ui.controller.LogSearchController;
 import io.github.avinashio.lazyspringboot.ui.screen.ProjectActionOutputScreen;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import org.springframework.stereotype.Component;
@@ -14,13 +16,22 @@ public class ProjectActionOutputInputHandler
     private final ProjectActionOutputScreen
             projectActionOutputScreen;
 
+    private final LogSearchController
+            logSearchController;
+
     public ProjectActionOutputInputHandler(
             UiState uiState,
-            ProjectActionOutputScreen projectActionOutputScreen) {
+            ProjectActionOutputScreen projectActionOutputScreen,
+            LogSearchController logSearchController) {
 
-        this.uiState = uiState;
+        this.uiState =
+                uiState;
+
         this.projectActionOutputScreen =
                 projectActionOutputScreen;
+
+        this.logSearchController =
+                logSearchController;
     }
 
     @Override
@@ -38,6 +49,14 @@ public class ProjectActionOutputInputHandler
             return true;
         }
 
+        if (logSearchController.active()) {
+
+            handleSearchInput(
+                    keyEvent);
+
+            return true;
+        }
+
         int visibleHeight =
                 projectActionOutputScreen
                         .visibleHeight();
@@ -46,6 +65,10 @@ public class ProjectActionOutputInputHandler
 
             case ESCAPE ->
                     uiState.closeProjectActionOutput();
+
+            case SEARCH ->
+                    startSearch(
+                            output);
 
             case UP ->
                     uiState.outputViewport()
@@ -92,10 +115,55 @@ public class ProjectActionOutputInputHandler
         return true;
     }
 
+    private void startSearch(
+            ProjectActionOutput output) {
+
+        if (output.action()
+                != ProjectAction.VIEW_LOGS) {
+
+            return;
+        }
+
+        logSearchController.start();
+    }
+
+    private void handleSearchInput(
+            KeyEvent keyEvent) {
+
+        switch (keyEvent.type()) {
+
+            case ESCAPE ->
+                    logSearchController.stopInput();
+
+            case ENTER ->
+                    logSearchController.apply();
+
+            case BACKSPACE ->
+                    logSearchController.backspace();
+
+            case CHARACTER -> {
+
+                if (keyEvent.hasCharacter()) {
+
+                    logSearchController.append(
+                            keyEvent.character());
+                }
+            }
+
+            default -> {
+                // No action.
+            }
+        }
+    }
+
     private void handleCharacter(
             KeyEvent keyEvent,
             ProjectActionOutput output,
             int visibleHeight) {
+
+        if (!keyEvent.hasCharacter()) {
+            return;
+        }
 
         if (keyEvent.character() == 'g') {
 
@@ -111,6 +179,26 @@ public class ProjectActionOutputInputHandler
                     .moveToBottom(
                             output.lines().size(),
                             visibleHeight);
+
+            return;
+        }
+
+        if (output.action()
+                != ProjectAction.VIEW_LOGS) {
+
+            return;
+        }
+
+        if (keyEvent.character() == 'n') {
+
+            logSearchController.next();
+
+            return;
+        }
+
+        if (keyEvent.character() == 'N') {
+
+            logSearchController.previous();
         }
     }
 }

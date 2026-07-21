@@ -2,7 +2,9 @@ package io.github.avinashio.lazyspringboot.ui.screen;
 
 import io.github.avinashio.lazyspringboot.domain.action.ProjectAction;
 import io.github.avinashio.lazyspringboot.domain.action.ProjectActionOutput;
+import io.github.avinashio.lazyspringboot.ui.component.TerminalStyle;
 import io.github.avinashio.lazyspringboot.ui.component.TextFormatter;
+import io.github.avinashio.lazyspringboot.ui.controller.LogSearchController;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.io.PrintWriter;
 import java.util.List;
@@ -29,15 +31,28 @@ public class ProjectActionOutputScreen {
 
     private final TextFormatter textFormatter;
 
+    private final TerminalStyle terminalStyle;
+
+    private final LogSearchController
+            logSearchController;
+
     public ProjectActionOutputScreen(
             Terminal terminal,
-            TextFormatter textFormatter) {
+            TextFormatter textFormatter,
+            TerminalStyle terminalStyle,
+            LogSearchController logSearchController) {
 
         this.terminal =
                 terminal;
 
         this.textFormatter =
                 textFormatter;
+
+        this.terminalStyle =
+                terminalStyle;
+
+        this.logSearchController =
+                logSearchController;
     }
 
     public void render(
@@ -90,6 +105,7 @@ public class ProjectActionOutputScreen {
 
         renderOutput(
                 writer,
+                output,
                 output.lines(),
                 offset,
                 visibleHeight,
@@ -164,7 +180,8 @@ public class ProjectActionOutputScreen {
                 startColumn);
 
         String title =
-                buildTitle(output);
+                buildTitle(
+                        output);
 
         writer.print(
                 "┌─ "
@@ -186,8 +203,8 @@ public class ProjectActionOutputScreen {
 
         writer.print(
                 textFormatter.fit(
-                        " Project: "
-                                + output.projectName(),
+                        buildHeaderText(
+                                output),
                         width - 2));
 
         writer.print("│");
@@ -205,8 +222,29 @@ public class ProjectActionOutputScreen {
         writer.print("┤");
     }
 
+    private String buildHeaderText(
+            ProjectActionOutput output) {
+
+        String project =
+                " Project: "
+                        + output.projectName();
+
+        if (output.action()
+                != ProjectAction.VIEW_LOGS
+                || !logSearchController.active()) {
+
+            return project;
+        }
+
+        return project
+                + "    Search: "
+                + logSearchController.query()
+                + "_";
+    }
+
     private void renderOutput(
             PrintWriter writer,
+            ProjectActionOutput output,
             List<String> lines,
             int offset,
             int visibleHeight,
@@ -218,6 +256,10 @@ public class ProjectActionOutputScreen {
                 Math.min(
                         lines.size(),
                         offset + visibleHeight);
+
+        int selectedLineIndex =
+                selectedSearchLineIndex(
+                        output);
 
         for (int row = 0;
              row < visibleHeight;
@@ -232,20 +274,48 @@ public class ProjectActionOutputScreen {
 
             writer.print("│");
 
+            int lineIndex =
+                    offset + row;
+
             String line =
                     row
                             < endIndex - offset
                             ? lines.get(
-                            offset + row)
+                            lineIndex)
                             : "";
 
-            writer.print(
+            String formattedLine =
                     textFormatter.fit(
                             line,
-                            width - 2));
+                            width - 2);
+
+            if (lineIndex
+                    == selectedLineIndex) {
+
+                formattedLine =
+                        terminalStyle.highlight(
+                                formattedLine);
+            }
+
+            writer.print(
+                    formattedLine);
 
             writer.print("│");
         }
+    }
+
+    private int selectedSearchLineIndex(
+            ProjectActionOutput output) {
+
+        if (output.action()
+                != ProjectAction.VIEW_LOGS
+                || !logSearchController.hasQuery()) {
+
+            return -1;
+        }
+
+        return logSearchController
+                .selectedLineIndex();
     }
 
     private void renderFooter(
@@ -325,6 +395,12 @@ public class ProjectActionOutputScreen {
     private String buildTitle(
             ProjectActionOutput output) {
 
+        if (output.action()
+                == ProjectAction.VIEW_LOGS) {
+
+            return "Logs";
+        }
+
         return output
                 .action()
                 .displayName()
@@ -336,16 +412,15 @@ public class ProjectActionOutputScreen {
             int offset,
             int visibleHeight) {
 
-        String navigation =
-                "↑↓ Scroll"
-                        + "    PgUp/PgDn Page"
-                        + "    g Top"
-                        + "    G Bottom"
-                        + "    Esc Close";
-
         if (output.action()
                 != ProjectAction.VIEW_LOGS) {
-            return navigation;
+
+            return standardNavigation();
+        }
+
+        if (logSearchController.active()) {
+
+            return buildSearchNavigationText();
         }
 
         String followStatus =
@@ -353,12 +428,63 @@ public class ProjectActionOutputScreen {
                         output.lines().size(),
                         offset,
                         visibleHeight)
-                        ? "[Following]"
-                        : "[Paused]";
+                        ? "[FOLLOW]"
+                        : "[PAUSED]";
+
+        String searchNavigation =
+                logSearchController.hasQuery()
+                        ? "    / Search"
+                        + "    n Next"
+                        + "    N Previous"
+                        : "    / Search";
 
         return followStatus
-                + "    "
-                + navigation;
+                + searchNavigation
+                + "    ↑↓ Scroll"
+                + "    PgUp/PgDn Page"
+                + "    g Top"
+                + "    G Follow"
+                + "    Esc Close";
+    }
+
+    private String buildSearchNavigationText() {
+
+        int matchCount =
+                logSearchController.matchCount();
+
+        int selectedMatch =
+                logSearchController
+                        .selectedMatchNumber();
+
+        String matchStatus;
+
+        if (matchCount == 0) {
+
+            matchStatus =
+                    "Match 0/0";
+
+        } else {
+
+            matchStatus =
+                    "Match "
+                            + selectedMatch
+                            + "/"
+                            + matchCount;
+        }
+
+        return matchStatus
+                + "    Enter Apply"
+                + "    Backspace Delete"
+                + "    Esc Apply";
+    }
+
+    private String standardNavigation() {
+
+        return "↑↓ Scroll"
+                + "    PgUp/PgDn Page"
+                + "    g Top"
+                + "    G Bottom"
+                + "    Esc Close";
     }
 
     private boolean isAtBottom(

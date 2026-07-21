@@ -98,10 +98,14 @@ public class StatusBar {
             UiMessage message) {
 
         String marker =
-                message.type()
-                        == UiMessageType.SUCCESS
-                        ? "✓"
-                        : "✗";
+                switch (message.type()) {
+
+                    case SUCCESS -> "✓";
+
+                    case WARNING -> "⚠";
+
+                    case ERROR -> "✗";
+                };
 
         return " "
                 + marker

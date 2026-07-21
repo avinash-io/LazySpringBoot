@@ -81,4 +81,13 @@ public class OutputViewport {
                 0,
                 contentSize - visibleHeight);
     }
+
+    public void moveTo(
+            int offset) {
+
+        this.offset =
+                Math.max(
+                        0,
+                        offset);
+    }
 }
