@@ -1,29 +1,40 @@
 package io.github.avinashio.lazyspringboot.ui;
 
 import io.github.avinashio.lazyspringboot.application.process.GetProjectProcessUseCase;
-import io.github.avinashio.lazyspringboot.domain.action.ActionItem;
 import io.github.avinashio.lazyspringboot.domain.action.ProjectAction;
 import io.github.avinashio.lazyspringboot.domain.action.ProjectActionOutput;
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcess;
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcessStatus;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.ui.command.CommandPaletteController;
-import io.github.avinashio.lazyspringboot.ui.controller.*;
+import io.github.avinashio.lazyspringboot.ui.controller.CreateProjectController;
+import io.github.avinashio.lazyspringboot.ui.controller.ProcessController;
+import io.github.avinashio.lazyspringboot.ui.controller.ProjectActionController;
+import io.github.avinashio.lazyspringboot.ui.controller.ProjectRefreshController;
+import io.github.avinashio.lazyspringboot.ui.controller.QuitController;
+import io.github.avinashio.lazyspringboot.ui.controller.QuitDecision;
+import io.github.avinashio.lazyspringboot.ui.controller.StartupController;
+import io.github.avinashio.lazyspringboot.ui.controller.WorkspaceController;
 import io.github.avinashio.lazyspringboot.ui.input.InputDispatcher;
 import io.github.avinashio.lazyspringboot.ui.input.KeyEvent;
 import io.github.avinashio.lazyspringboot.ui.input.KeyReader;
 import io.github.avinashio.lazyspringboot.ui.input.KeyType;
-import io.github.avinashio.lazyspringboot.ui.screen.*;
+import io.github.avinashio.lazyspringboot.ui.screen.CommandPaletteScreen;
+import io.github.avinashio.lazyspringboot.ui.screen.ConfirmationScreen;
+import io.github.avinashio.lazyspringboot.ui.screen.CreateProjectScreen;
+import io.github.avinashio.lazyspringboot.ui.screen.MainScreen;
+import io.github.avinashio.lazyspringboot.ui.screen.ProjectActionOutputScreen;
+import io.github.avinashio.lazyspringboot.ui.screen.ProjectActionsScreen;
+import io.github.avinashio.lazyspringboot.ui.screen.WorkspaceScreen;
 import io.github.avinashio.lazyspringboot.ui.state.InputMode;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
+import java.io.IOException;
 import org.jline.terminal.Terminal;
 import org.jline.utils.InfoCmp;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
 
 @Component
 @ConditionalOnProperty(
@@ -39,11 +50,7 @@ public class TuiApplication
     private static final long
             PROJECT_REFRESH_INTERVAL_MILLIS = 2_000;
 
-    private boolean quitConfirmationPending;
-
-    private int quitActiveProjectCount;
-
-
+    private final QuitController quitController;
 
     private final ProjectRefreshController
             projectRefreshController;
@@ -51,14 +58,15 @@ public class TuiApplication
     private long lastProjectRefreshTime;
 
     private final Terminal terminal;
-    private final KeyReader keyReader;
-    private final MainScreen mainScreen;
-    private final UiState uiState;
 
+    private final KeyReader keyReader;
+
+    private final MainScreen mainScreen;
+
+    private final UiState uiState;
 
     private final ConfirmationScreen
             confirmationScreen;
-
 
     private final ProjectActionsScreen
             projectActionsScreen;
@@ -75,7 +83,6 @@ public class TuiApplication
     private final ProjectActionController
             projectActionController;
 
-
     private final CreateProjectController
             createProjectController;
 
@@ -84,7 +91,8 @@ public class TuiApplication
 
     private final InputDispatcher inputDispatcher;
 
-    private final StartupController startupController;
+    private final StartupController
+            startupController;
 
     private final CommandPaletteController
             commandPaletteController;
@@ -98,8 +106,8 @@ public class TuiApplication
     private final WorkspaceScreen
             workspaceScreen;
 
-
     public TuiApplication(
+            QuitController quitController,
             Terminal terminal,
             KeyReader keyReader,
             MainScreen mainScreen,
@@ -117,23 +125,36 @@ public class TuiApplication
             InputDispatcher inputDispatcher,
             GetProjectProcessUseCase
                     getProjectProcessUseCase,
-            ProjectRefreshController projectRefreshController,
-            CommandPaletteController commandPaletteController,
+            ProjectRefreshController
+                    projectRefreshController,
+            CommandPaletteController
+                    commandPaletteController,
             CommandPaletteScreen commandPaletteScreen,
             StartupController startupController,
             WorkspaceController workspaceController,
             WorkspaceScreen workspaceScreen) {
 
-        this.terminal = terminal;
-        this.keyReader = keyReader;
-        this.mainScreen = mainScreen;
-        this.uiState = uiState;
+        this.quitController =
+                quitController;
+
+        this.terminal =
+                terminal;
+
+        this.keyReader =
+                keyReader;
+
+        this.mainScreen =
+                mainScreen;
+
+        this.uiState =
+                uiState;
 
         this.confirmationScreen =
                 confirmationScreen;
 
         this.projectActionsScreen =
                 projectActionsScreen;
+
         this.projectActionOutputScreen =
                 projectActionOutputScreen;
 
@@ -142,18 +163,21 @@ public class TuiApplication
 
         this.processController =
                 processController;
+
         this.projectActionController =
                 projectActionController;
 
         this.createProjectScreen =
                 createProjectScreen;
+
         this.createProjectController =
                 createProjectController;
 
         this.inputDispatcher =
                 inputDispatcher;
 
-        this.startupController = startupController;
+        this.startupController =
+                startupController;
 
         this.commandPaletteController =
                 commandPaletteController;
@@ -164,13 +188,15 @@ public class TuiApplication
         this.projectRefreshController =
                 projectRefreshController;
 
-        this.workspaceController = workspaceController;
+        this.workspaceController =
+                workspaceController;
+
         this.workspaceScreen =
                 workspaceScreen;
     }
 
     @Override
-    public void run (
+    public void run(
             ApplicationArguments args)
             throws Exception {
 
@@ -178,6 +204,7 @@ public class TuiApplication
                 terminal.getAttributes();
 
         try {
+
             terminal.enterRawMode();
 
             terminal.puts(
@@ -193,7 +220,9 @@ public class TuiApplication
             render();
 
             runEventLoop();
+
         } finally {
+
             terminal.puts(
                     InfoCmp.Capability.cursor_visible);
 
@@ -211,7 +240,8 @@ public class TuiApplication
 
         if (commandPaletteController.active()) {
 
-            mainScreen.render(uiState);
+            mainScreen.render(
+                    uiState);
 
             commandPaletteScreen.render(
                     commandPaletteController.commands(),
@@ -226,16 +256,19 @@ public class TuiApplication
 
         if (uiState
                 .dependencyConfirmationActive()) {
-            confirmationScreen.render(uiState);
+
+            confirmationScreen.render(
+                    uiState);
+
             return;
         }
-
 
         if (createProjectController
                 .state()
                 .active()) {
 
-            mainScreen.render(uiState);
+            mainScreen.render(
+                    uiState);
 
             createProjectScreen.render(
                     createProjectController.state());
@@ -245,7 +278,8 @@ public class TuiApplication
 
         if (workspaceController.isOpen()) {
 
-            mainScreen.render(uiState);
+            mainScreen.render(
+                    uiState);
 
             workspaceScreen.render();
 
@@ -258,11 +292,13 @@ public class TuiApplication
                     uiState.selectedProject();
 
             if (project != null) {
+
                 processController.refreshLogs(
                         project);
             }
 
-            mainScreen.render(uiState);
+            mainScreen.render(
+                    uiState);
 
             projectActionOutputScreen.render(
                     uiState);
@@ -272,7 +308,8 @@ public class TuiApplication
 
         if (uiState.projectActionsActive()) {
 
-            mainScreen.render(uiState);
+            mainScreen.render(
+                    uiState);
 
             projectActionsScreen.render(
                     uiState,
@@ -282,7 +319,8 @@ public class TuiApplication
             return;
         }
 
-        mainScreen.render(uiState);
+        mainScreen.render(
+                uiState);
     }
 
     private void runEventLoop()
@@ -297,13 +335,20 @@ public class TuiApplication
                     == KeyType.TIMEOUT) {
 
                 handleTimeout();
+
                 continue;
             }
 
-            if (quitConfirmationPending) {
+            if (quitController
+                    .confirmationPending()) {
 
-                if (handleQuitConfirmation(
-                        keyEvent)) {
+                QuitDecision decision =
+                        quitController
+                                .handleConfirmation(
+                                        keyEvent);
+
+                if (decision
+                        == QuitDecision.QUIT) {
 
                     return;
                 }
@@ -316,83 +361,33 @@ public class TuiApplication
             if (isQuitKey(
                     keyEvent)) {
 
-                int activeProjectCount =
-                        activeProjectCount();
+                QuitDecision decision =
+                        quitController
+                                .requestQuit();
 
-                if (activeProjectCount == 0) {
+                if (decision
+                        == QuitDecision.QUIT) {
+
                     return;
                 }
-
-                quitActiveProjectCount =
-                        activeProjectCount;
-
-                quitConfirmationPending =
-                        true;
-
-                uiState.showWarningMessage(
-                        buildQuitWarningMessage(
-                                activeProjectCount));
 
                 render();
 
                 continue;
             }
 
-            handleKey(keyEvent);
+            handleKey(
+                    keyEvent);
 
             render();
         }
-    }
-
-    private boolean handleQuitConfirmation(
-            KeyEvent keyEvent) {
-
-        if (keyEvent.type()
-                == KeyType.ESCAPE) {
-
-            cancelQuitConfirmation();
-
-            return false;
-        }
-
-        if (keyEvent.type()
-                == KeyType.CHARACTER
-                && keyEvent.hasCharacter()) {
-
-            char character =
-                    keyEvent.character();
-
-            if (character == 'q'
-                    || character == 'y') {
-
-                return true;
-            }
-
-            if (character == 'n') {
-
-                cancelQuitConfirmation();
-
-                return false;
-            }
-        }
-
-        return false;
-    }
-
-    private void cancelQuitConfirmation() {
-
-        quitConfirmationPending =
-                false;
-
-        quitActiveProjectCount = 0;
-
-        uiState.clearMessage();
     }
 
     private KeyEvent readNextKeyEvent()
             throws IOException {
 
         if (shouldUseRefreshTimeout()) {
+
             return keyReader.read(
                     UI_REFRESH_INTERVAL_MILLIS);
         }
@@ -419,9 +414,10 @@ public class TuiApplication
         return getProjectProcessUseCase
                 .get(project)
                 .map(ProjectProcess::status)
-                .filter(status ->
-                        status
-                                == ProjectProcessStatus.STARTING)
+                .filter(
+                        status ->
+                                status
+                                        == ProjectProcessStatus.STARTING)
                 .isPresent();
     }
 
@@ -441,6 +437,7 @@ public class TuiApplication
     }
 
     private boolean isLiveProcessOutputVisible() {
+
         ProjectActionOutput output =
                 uiState.projectActionOutput();
 
@@ -469,6 +466,7 @@ public class TuiApplication
         if (currentTime
                 - lastProjectRefreshTime
                 < PROJECT_REFRESH_INTERVAL_MILLIS) {
+
             return;
         }
 
@@ -505,7 +503,6 @@ public class TuiApplication
                 .projectActionOutputActive();
     }
 
-
     private boolean isQuitKey(
             KeyEvent keyEvent) {
 
@@ -526,84 +523,10 @@ public class TuiApplication
                 && keyEvent.character() == 'q';
     }
 
-    private void handleQuitCancellation(
-            KeyEvent keyEvent) {
-
-        if (!quitConfirmationPending) {
-            return;
-        }
-
-        if (keyEvent.type()
-                == KeyType.ESCAPE) {
-
-            quitConfirmationPending = false;
-
-            uiState.clearMessage();
-        }
-    }
-
-    private int activeProjectCount() {
-
-        int activeProjectCount = 0;
-
-        for (SpringProject project :
-                uiState.projects()) {
-
-            boolean active =
-                    getProjectProcessUseCase
-                            .get(project)
-                            .map(ProjectProcess::running)
-                            .orElse(false);
-
-            if (active) {
-                activeProjectCount++;
-            }
-        }
-
-        return activeProjectCount;
-    }
-
-    private String buildQuitWarningMessage(
-            int activeProjectCount) {
-
-        String projectLabel =
-                activeProjectCount == 1
-                        ? "project is"
-                        : "projects are";
-
-        return activeProjectCount
-                + " "
-                + projectLabel
-                + " still running. "
-                + "Press q again to quit anyway "
-                + "or Esc to cancel.";
-    }
-
     private void handleKey(
             KeyEvent keyEvent) {
 
-        inputDispatcher.handle(keyEvent);
+        inputDispatcher.handle(
+                keyEvent);
     }
-
-    private String buildProjectActionErrorMessage(
-            ActionItem actionItem,
-            IOException exception) {
-        String actionName =
-                actionItem
-                        .action()
-                        .displayName();
-
-        String message =
-                exception.getMessage();
-
-        if (message == null
-                || message.isBlank()) {
-            return actionName + " failed";
-        }
-
-        return actionName
-                + " failed: "
-                + message;
-    }
-
 }
