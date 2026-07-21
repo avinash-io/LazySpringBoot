@@ -344,172 +344,6 @@ class UiStateTest {
                 .doesNotContain("native");
     }
 
-    private UiState createStateWithProjects() {
-        UiState state = new UiState();
-
-        state.setProjects(
-                List.of(
-                        createProject("cv-api"),
-                        createProject("payment-service"),
-                        createProject("demo")));
-
-        return state;
-    }
-
-    private UiState createStateWithDependencies() {
-        UiState state = new UiState();
-
-        state.setDependencyItems(
-                List.of(
-                        dependencyItem(
-                                "native",
-                                "GraalVM Native Support",
-                                "Native executable support",
-                                "Developer Tools"),
-                        dependencyItem(
-                                "devtools",
-                                "Spring Boot DevTools",
-                                "Development tools",
-                                "Developer Tools"),
-                        dependencyItem(
-                                "lombok",
-                                "Lombok",
-                                "Reduce boilerplate",
-                                "Developer Tools")));
-
-        return state;
-    }
-
-    private DependencyItem dependencyItem(String id) {
-        return dependencyItem(
-                id,
-                id,
-                "Test dependency",
-                "Test");
-    }
-
-    private DependencyItem dependencyItem(
-            String id,
-            DependencyAvailability availability) {
-        return new DependencyItem(
-                dependency(
-                        id,
-                        id,
-                        "Test dependency",
-                        "Test"),
-                availability,
-                false);
-    }
-
-    private DependencyItem dependencyItem(
-            String id,
-            String name,
-            String description,
-            String group) {
-        return new DependencyItem(
-                dependency(
-                        id,
-                        name,
-                        description,
-                        group),
-                DependencyAvailability.AVAILABLE,
-                false);
-    }
-
-    private SpringDependency dependency(
-            String id,
-            String name,
-            String description,
-            String group) {
-        return new SpringDependency(
-                id,
-                name,
-                description,
-                group);
-    }
-
-    private SpringProject createProject(String name) {
-        return new SpringProject(
-                name,
-                Path.of("/projects/" + name),
-                new ProjectMetadata(
-                        "com.example",
-                        name,
-                        "4.1.0",
-                        "26",
-                        BuildTool.MAVEN,
-                        List.of()));
-    }
-
-    @Test
-    void shouldStartDependencySearch() {
-        UiState state = new UiState();
-
-        state.startDependencySearch();
-
-        assertThat(state.inputMode())
-                .isEqualTo(InputMode.DEPENDENCY_SEARCH);
-
-        assertThat(state.dependencySearchActive())
-                .isTrue();
-    }
-
-    @Test
-    void shouldAppendDependencySearchCharacter() {
-        UiState state = new UiState();
-
-        state.startDependencySearch();
-        state.appendDependencySearchCharacter('w');
-        state.appendDependencySearchCharacter('e');
-        state.appendDependencySearchCharacter('b');
-
-        assertThat(state.dependencySearchQuery())
-                .isEqualTo("web");
-    }
-
-    @Test
-    void shouldRemoveLastDependencySearchCharacter() {
-        UiState state = new UiState();
-
-        state.startDependencySearch();
-        state.appendDependencySearchCharacter('w');
-        state.appendDependencySearchCharacter('e');
-        state.appendDependencySearchCharacter('b');
-
-        state.removeLastDependencySearchCharacter();
-
-        assertThat(state.dependencySearchQuery())
-                .isEqualTo("we");
-    }
-
-    @Test
-    void shouldIgnoreBackspaceForEmptySearch() {
-        UiState state = new UiState();
-
-        state.startDependencySearch();
-
-        state.removeLastDependencySearchCharacter();
-
-        assertThat(state.dependencySearchQuery())
-                .isEmpty();
-    }
-
-    @Test
-    void shouldStopAndClearDependencySearch() {
-        UiState state = new UiState();
-
-        state.startDependencySearch();
-        state.appendDependencySearchCharacter('w');
-
-        state.stopDependencySearch();
-
-        assertThat(state.inputMode())
-                .isEqualTo(InputMode.NAVIGATION);
-
-        assertThat(state.dependencySearchQuery())
-                .isEmpty();
-    }
-
     @Test
     void shouldStartDependencyConfirmationWhenDependenciesAreSelected() {
         UiState state = createStateWithDependencies();
@@ -685,5 +519,109 @@ class UiStateTest {
                 .isNull();
     }
 
+    private UiState createStateWithProjects() {
+        UiState state = new UiState();
 
+        state.setProjects(
+                List.of(
+                        createProject("cv-api"),
+                        createProject("payment-service"),
+                        createProject("demo")));
+
+        return state;
+    }
+
+    private UiState createStateWithDependencies() {
+        UiState state = new UiState();
+
+        state.setDependencyItems(
+                List.of(
+                        dependencyItem(
+                                "native",
+                                "GraalVM Native Support",
+                                "Native executable support",
+                                "Developer Tools"),
+                        dependencyItem(
+                                "devtools",
+                                "Spring Boot DevTools",
+                                "Development tools",
+                                "Developer Tools"),
+                        dependencyItem(
+                                "lombok",
+                                "Lombok",
+                                "Reduce boilerplate",
+                                "Developer Tools")));
+
+        return state;
+    }
+
+    private DependencyItem dependencyItem(
+            String id) {
+
+        return dependencyItem(
+                id,
+                id,
+                "Test dependency",
+                "Test");
+    }
+
+    private DependencyItem dependencyItem(
+            String id,
+            DependencyAvailability availability) {
+
+        return new DependencyItem(
+                dependency(
+                        id,
+                        id,
+                        "Test dependency",
+                        "Test"),
+                availability,
+                false);
+    }
+
+    private DependencyItem dependencyItem(
+            String id,
+            String name,
+            String description,
+            String group) {
+
+        return new DependencyItem(
+                dependency(
+                        id,
+                        name,
+                        description,
+                        group),
+                DependencyAvailability.AVAILABLE,
+                false);
+    }
+
+    private SpringDependency dependency(
+            String id,
+            String name,
+            String description,
+            String group) {
+
+        return new SpringDependency(
+                id,
+                name,
+                description,
+                group);
+    }
+
+    private SpringProject createProject(
+            String name) {
+
+        return new SpringProject(
+                name,
+                Path.of(
+                        "/projects/"
+                                + name),
+                new ProjectMetadata(
+                        "com.example",
+                        name,
+                        "4.1.0",
+                        "26",
+                        BuildTool.MAVEN,
+                        List.of()));
+    }
 }

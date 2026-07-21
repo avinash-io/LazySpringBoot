@@ -4,11 +4,13 @@ import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.ui.controller.CreateProjectController;
 import io.github.avinashio.lazyspringboot.ui.controller.ProcessController;
 import io.github.avinashio.lazyspringboot.ui.controller.ProjectRefreshService;
+import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
+import io.github.avinashio.lazyspringboot.ui.service.DependencyUndoService;
 import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
+import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.io.IOException;
 import org.springframework.stereotype.Component;
-import io.github.avinashio.lazyspringboot.ui.service.DependencyUndoService;
 
 @Component
 public class CommandPaletteExecutor {
@@ -25,6 +27,9 @@ public class CommandPaletteExecutor {
     private final DependencyUndoService
             dependencyUndoService;
 
+    private final TextInputController
+            textInputController;
+
     private final UiState
             uiState;
 
@@ -33,6 +38,7 @@ public class CommandPaletteExecutor {
             ProjectRefreshService projectRefreshService,
             ProcessController processController,
             DependencyUndoService dependencyUndoService,
+            TextInputController textInputController,
             UiState uiState) {
 
         this.createProjectController =
@@ -46,6 +52,9 @@ public class CommandPaletteExecutor {
 
         this.dependencyUndoService =
                 dependencyUndoService;
+
+        this.textInputController =
+                textInputController;
 
         this.uiState =
                 uiState;
@@ -149,7 +158,8 @@ public class CommandPaletteExecutor {
         uiState.focusPanel(
                 PanelFocus.DEPENDENCIES);
 
-        uiState.startDependencySearch();
+        textInputController.start(
+                TextInputPurpose.DEPENDENCY_SEARCH);
     }
 
     private boolean hasSelectedProject() {

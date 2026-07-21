@@ -1,6 +1,7 @@
 package io.github.avinashio.lazyspringboot.ui.dependency;
 
 import io.github.avinashio.lazyspringboot.ui.component.DependencyFilter;
+import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.util.List;
 import org.springframework.stereotype.Component;
@@ -9,19 +10,31 @@ import org.springframework.stereotype.Component;
 public class DependencyNavigation {
 
     private final UiState uiState;
+
     private final DependencyFilter dependencyFilter;
+
+    private final TextInputController
+            textInputController;
 
     public DependencyNavigation(
             UiState uiState,
-            DependencyFilter dependencyFilter) {
+            DependencyFilter dependencyFilter,
+            TextInputController textInputController) {
 
-        this.uiState = uiState;
-        this.dependencyFilter = dependencyFilter;
+        this.uiState =
+                uiState;
+
+        this.dependencyFilter =
+                dependencyFilter;
+
+        this.textInputController =
+                textInputController;
     }
 
     public void selectNextVisible() {
 
-        List<Integer> indexes = visibleIndexes();
+        List<Integer> indexes =
+                visibleIndexes();
 
         int current =
                 indexes.indexOf(
@@ -40,7 +53,8 @@ public class DependencyNavigation {
 
     public void selectPreviousVisible() {
 
-        List<Integer> indexes = visibleIndexes();
+        List<Integer> indexes =
+                visibleIndexes();
 
         int current =
                 indexes.indexOf(
@@ -58,7 +72,9 @@ public class DependencyNavigation {
     }
 
     public void selectFirstVisible() {
-        selectFirstVisible(visibleIndexes());
+
+        selectFirstVisible(
+                visibleIndexes());
     }
 
     private void selectFirstVisible(
@@ -76,6 +92,6 @@ public class DependencyNavigation {
 
         return dependencyFilter.matchingIndexes(
                 uiState.dependencyItems(),
-                uiState.dependencySearchQuery());
+                textInputController.value());
     }
 }

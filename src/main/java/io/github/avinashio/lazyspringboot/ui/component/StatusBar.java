@@ -1,5 +1,7 @@
 package io.github.avinashio.lazyspringboot.ui.component;
 
+import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
+import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
 import io.github.avinashio.lazyspringboot.ui.state.UiMessage;
 import io.github.avinashio.lazyspringboot.ui.state.UiMessageType;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
@@ -7,6 +9,15 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class StatusBar {
+
+    private final TextInputController textInputController;
+
+    public StatusBar(
+            TextInputController textInputController) {
+
+        this.textInputController =
+                textInputController;
+    }
 
     public String render(
             UiState state) {
@@ -16,9 +27,9 @@ public class StatusBar {
                     state.message());
         }
 
-        if (state.dependencySearchActive()) {
-            return renderDependencySearch(
-                    state);
+        if (textInputController.active(
+                TextInputPurpose.DEPENDENCY_SEARCH)) {
+            return renderDependencySearch();
         }
 
         return switch (state.panelFocus()) {
@@ -75,11 +86,10 @@ public class StatusBar {
                 + message.text();
     }
 
-    private String renderDependencySearch(
-            UiState state) {
+    private String renderDependencySearch() {
 
         return " Search: "
-                + state.dependencySearchQuery()
+                + textInputController.value()
                 + "_"
                 + "    ↑↓ Navigate"
                 + "    Backspace Delete"

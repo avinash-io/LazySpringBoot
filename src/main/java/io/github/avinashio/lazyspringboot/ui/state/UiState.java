@@ -29,8 +29,6 @@ public class UiState {
     private InputMode inputMode =
             InputMode.NAVIGATION;
 
-    private String dependencySearchQuery = "";
-
     private int selectedProjectIndex;
 
     private int selectedDependencyIndex;
@@ -268,50 +266,6 @@ public class UiState {
 
     public InputMode inputMode() {
         return inputMode;
-    }
-
-    public String dependencySearchQuery() {
-        return dependencySearchQuery;
-    }
-
-    public boolean dependencySearchActive() {
-        return inputMode
-                == InputMode.DEPENDENCY_SEARCH;
-    }
-
-    public void startDependencySearch() {
-        inputMode =
-                InputMode.DEPENDENCY_SEARCH;
-
-        dependencySearchQuery = "";
-    }
-
-    public void stopDependencySearch() {
-        inputMode =
-                InputMode.NAVIGATION;
-
-        dependencySearchQuery = "";
-    }
-
-    public void appendDependencySearchCharacter(
-            char character) {
-        if (!dependencySearchActive()) {
-            return;
-        }
-
-        dependencySearchQuery += character;
-    }
-
-    public void removeLastDependencySearchCharacter() {
-        if (!dependencySearchActive()
-                || dependencySearchQuery.isEmpty()) {
-            return;
-        }
-
-        dependencySearchQuery =
-                dependencySearchQuery.substring(
-                        0,
-                        dependencySearchQuery.length() - 1);
     }
 
     public boolean dependencyConfirmationActive() {

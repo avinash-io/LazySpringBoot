@@ -2,6 +2,7 @@ package io.github.avinashio.lazyspringboot.ui.component;
 
 import io.github.avinashio.lazyspringboot.domain.dependency.DependencyAvailability;
 import io.github.avinashio.lazyspringboot.domain.dependency.DependencyItem;
+import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,34 +12,56 @@ import org.springframework.stereotype.Component;
 public class DependencyPanel {
 
     private final TerminalStyle terminalStyle;
-    private final DependencyRowBuilder dependencyRowBuilder;
-    private final DependencyFilter dependencyFilter;
+
+    private final DependencyRowBuilder
+            dependencyRowBuilder;
+
+    private final DependencyFilter
+            dependencyFilter;
+
+    private final TextInputController
+            textInputController;
 
     public DependencyPanel(
             TerminalStyle terminalStyle,
             DependencyRowBuilder dependencyRowBuilder,
-            DependencyFilter dependencyFilter) {
-        this.terminalStyle = terminalStyle;
-        this.dependencyRowBuilder = dependencyRowBuilder;
-        this.dependencyFilter = dependencyFilter;
+            DependencyFilter dependencyFilter,
+            TextInputController textInputController) {
+
+        this.terminalStyle =
+                terminalStyle;
+
+        this.dependencyRowBuilder =
+                dependencyRowBuilder;
+
+        this.dependencyFilter =
+                dependencyFilter;
+
+        this.textInputController =
+                textInputController;
     }
 
     public List<String> render(
             UiState state,
             int visibleHeight) {
+
         if (state.dependencyItems().isEmpty()) {
-            return List.of(" No dependencies available.");
+            return List.of(
+                    " No dependencies available.");
         }
+
+        String searchQuery =
+                textInputController.value();
 
         List<DependencyItem> visibleItems =
                 dependencyFilter.filter(
                         state.dependencyItems(),
-                        state.dependencySearchQuery());
+                        searchQuery);
 
         if (visibleItems.isEmpty()) {
             return List.of(
                     " No dependencies match \""
-                            + state.dependencySearchQuery()
+                            + searchQuery
                             + "\"");
         }
 
@@ -77,6 +100,7 @@ public class DependencyPanel {
         for (int rowIndex = start;
              rowIndex < end;
              rowIndex++) {
+
             lines.add(
                     renderRow(
                             rows.get(rowIndex),
@@ -89,9 +113,12 @@ public class DependencyPanel {
     private String renderRow(
             DependencyRow row,
             int selectedDependencyIndex) {
+
         if (row
                 instanceof DependencyRow.GroupHeader header) {
-            return renderGroupHeader(header);
+
+            return renderGroupHeader(
+                    header);
         }
 
         DependencyRow.Dependency dependencyRow =
@@ -104,12 +131,16 @@ public class DependencyPanel {
 
     private String renderGroupHeader(
             DependencyRow.GroupHeader header) {
-        return " ── " + header.name() + " ──";
+
+        return " ── "
+                + header.name()
+                + " ──";
     }
 
     private String renderDependency(
             DependencyRow.Dependency dependencyRow,
             int selectedDependencyIndex) {
+
         DependencyItem item =
                 dependencyRow.item();
 
@@ -127,13 +158,17 @@ public class DependencyPanel {
                         + " "
                         + item.dependency().name();
 
-        return style(item, line);
+        return style(
+                item,
+                line);
     }
 
     private String marker(
             DependencyItem item) {
+
         if (item.availability()
                 == DependencyAvailability.ALREADY_PRESENT) {
+
             return "[*]";
         }
 
@@ -147,9 +182,12 @@ public class DependencyPanel {
     private String style(
             DependencyItem item,
             String line) {
+
         if (item.availability()
                 == DependencyAvailability.ALREADY_PRESENT) {
-            return terminalStyle.dim(line);
+
+            return terminalStyle.dim(
+                    line);
         }
 
         return line;
