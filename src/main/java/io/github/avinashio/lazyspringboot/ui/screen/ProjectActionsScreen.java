@@ -2,13 +2,10 @@ package io.github.avinashio.lazyspringboot.ui.screen;
 
 import io.github.avinashio.lazyspringboot.domain.action.ActionItem;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
-import io.github.avinashio.lazyspringboot.ui.component.TextFormatter;
+import io.github.avinashio.lazyspringboot.ui.component.ModalRenderer;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import org.jline.terminal.Terminal;
-import org.jline.utils.InfoCmp;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -20,86 +17,32 @@ public class ProjectActionsScreen {
 
     private static final int POPUP_PADDING = 4;
 
-    private final Terminal terminal;
+    private static final String FOOTER =
+            " ↑↓ Navigate"
+                    + "  Enter Execute"
+                    + "  Esc Close";
 
-    private final TextFormatter textFormatter;
+    private final ModalRenderer modalRenderer;
 
     public ProjectActionsScreen(
-            Terminal terminal,
-            TextFormatter textFormatter) {
+            ModalRenderer modalRenderer) {
 
-        this.terminal = terminal;
-        this.textFormatter = textFormatter;
+        this.modalRenderer = modalRenderer;
     }
 
     public void render(
             UiState state,
             List<ActionItem> actions) {
 
-        PrintWriter writer =
-                terminal.writer();
-
-        int terminalWidth =
-                terminal.getWidth();
-
-        int terminalHeight =
-                terminal.getHeight();
-
-        int popupWidth =
-                Math.min(
-                        POPUP_WIDTH,
-                        terminalWidth
-                                - POPUP_PADDING);
-
-        if (popupWidth
-                < MINIMUM_POPUP_WIDTH) {
-            return;
-        }
-
-        List<String> content =
+        modalRenderer.renderFixedWidth(
+                "Project Actions",
                 buildContent(
                         state,
-                        actions);
-
-        int popupHeight =
-                content.size()
-                        + 4;
-
-        int startColumn =
-                Math.max(
-                        0,
-                        (terminalWidth
-                                - popupWidth)
-                                / 2);
-
-        int startRow =
-                Math.max(
-                        0,
-                        (terminalHeight
-                                - popupHeight)
-                                / 2);
-
-        renderHeader(
-                writer,
-                startRow,
-                startColumn,
-                popupWidth);
-
-        renderContent(
-                writer,
-                content,
-                startRow,
-                startColumn,
-                popupWidth);
-
-        renderFooter(
-                writer,
-                startRow,
-                startColumn,
-                popupWidth,
-                content.size());
-
-        writer.flush();
+                        actions),
+                FOOTER,
+                POPUP_WIDTH,
+                MINIMUM_POPUP_WIDTH,
+                POPUP_PADDING);
     }
 
     private List<String> buildContent(
@@ -152,121 +95,5 @@ public class ProjectActionsScreen {
         }
 
         return lines;
-    }
-
-    private void renderHeader(
-            PrintWriter writer,
-            int startRow,
-            int startColumn,
-            int width) {
-
-        moveCursor(
-                startRow,
-                startColumn);
-
-        String title =
-                "Project Actions";
-
-        writer.print(
-                "┌─ "
-                        + title
-                        + " "
-                        + "─".repeat(
-                        Math.max(
-                                0,
-                                width
-                                        - title.length()
-                                        - 5))
-                        + "┐");
-    }
-
-    private void renderContent(
-            PrintWriter writer,
-            List<String> lines,
-            int startRow,
-            int startColumn,
-            int width) {
-
-        for (int index = 0;
-             index < lines.size();
-             index++) {
-
-            moveCursor(
-                    startRow
-                            + index
-                            + 1,
-                    startColumn);
-
-            writer.print("│");
-
-            writer.print(
-                    textFormatter.fit(
-                            lines.get(index),
-                            width - 2));
-
-            writer.print("│");
-        }
-    }
-
-    private void renderFooter(
-            PrintWriter writer,
-            int startRow,
-            int startColumn,
-            int width,
-            int contentSize) {
-
-        int separatorRow =
-                startRow
-                        + contentSize
-                        + 1;
-
-        moveCursor(
-                separatorRow,
-                startColumn);
-
-        writer.print("├");
-
-        writer.print(
-                "─".repeat(
-                        width - 2));
-
-        writer.print("┤");
-
-        moveCursor(
-                separatorRow + 1,
-                startColumn);
-
-        writer.print("│");
-
-        writer.print(
-                textFormatter.fit(
-                        " ↑↓ Navigate"
-                                + "  Enter Execute"
-                                + "  Esc Close",
-                        width - 2));
-
-        writer.print("│");
-
-        moveCursor(
-                separatorRow + 2,
-                startColumn);
-
-        writer.print("└");
-
-        writer.print(
-                "─".repeat(
-                        width - 2));
-
-        writer.print("┘");
-    }
-
-    private void moveCursor(
-            int row,
-            int column) {
-
-        terminal.puts(
-                InfoCmp.Capability.cursor_address,
-                row,
-                column);
     }
 }

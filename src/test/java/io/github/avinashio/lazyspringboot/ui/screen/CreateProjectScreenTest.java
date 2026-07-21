@@ -9,6 +9,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import org.jline.terminal.Terminal;
 import org.junit.jupiter.api.Test;
+import io.github.avinashio.lazyspringboot.ui.component.ModalRenderer;
+import io.github.avinashio.lazyspringboot.ui.component.TextFormatter;
 
 class CreateProjectScreenTest {
 
@@ -33,9 +35,17 @@ class CreateProjectScreenTest {
         when(terminal.getHeight())
                 .thenReturn(40);
 
+        TextFormatter textFormatter =
+                new TextFormatter();
+
+        ModalRenderer modalRenderer =
+                new ModalRenderer(
+                        terminal,
+                        textFormatter);
+
         CreateProjectScreen screen =
                 new CreateProjectScreen(
-                        terminal);
+                        modalRenderer);
 
         screen.render(
                 new CreateProjectState());

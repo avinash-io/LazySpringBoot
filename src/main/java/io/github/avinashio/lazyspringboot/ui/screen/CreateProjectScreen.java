@@ -1,12 +1,10 @@
 package io.github.avinashio.lazyspringboot.ui.screen;
 
 import io.github.avinashio.lazyspringboot.domain.dependency.SpringDependency;
+import io.github.avinashio.lazyspringboot.ui.component.ModalRenderer;
 import io.github.avinashio.lazyspringboot.ui.state.CreateProjectState;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import org.jline.terminal.Terminal;
-import org.jline.utils.InfoCmp;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -22,67 +20,25 @@ public class CreateProjectScreen {
 
     private static final int MAX_VISIBLE_DEPENDENCIES = 15;
 
-    private final Terminal terminal;
+    private final ModalRenderer modalRenderer;
 
     public CreateProjectScreen(
-            Terminal terminal) {
+            ModalRenderer modalRenderer) {
 
-        this.terminal = terminal;
+        this.modalRenderer = modalRenderer;
     }
 
     public void render(
             CreateProjectState state) {
 
-        PrintWriter writer =
-                terminal.writer();
-
-        int popupWidth =
-                popupWidth();
-
-        int popupHeight =
-                popupHeight();
-
-        int startColumn =
-                Math.max(
-                        0,
-                        (terminal.getWidth()
-                                - popupWidth)
-                                / 2);
-
-        int startRow =
-                Math.max(
-                        0,
-                        (terminal.getHeight()
-                                - popupHeight)
-                                / 2);
-
-        List<String> content =
-                buildContent(state);
-
-        renderHeader(
-                writer,
-                state,
-                startRow,
-                startColumn,
-                popupWidth);
-
-        renderContent(
-                writer,
-                content,
-                startRow,
-                startColumn,
-                popupWidth,
-                popupHeight);
-
-        renderFooter(
-                writer,
-                state,
-                startRow,
-                startColumn,
-                popupWidth,
-                popupHeight);
-
-        writer.flush();
+        modalRenderer.renderPercentageSize(
+                buildTitle(state),
+                buildContent(state),
+                " " + buildNavigationText(state),
+                WIDTH_PERCENTAGE,
+                HEIGHT_PERCENTAGE,
+                MINIMUM_POPUP_WIDTH,
+                MINIMUM_POPUP_HEIGHT);
     }
 
     private List<String> buildContent(
@@ -304,125 +260,6 @@ public class CreateProjectScreen {
         }
     }
 
-    private void renderHeader(
-            PrintWriter writer,
-            CreateProjectState state,
-            int startRow,
-            int startColumn,
-            int width) {
-
-        moveCursor(
-                startRow,
-                startColumn);
-
-        String title =
-                buildTitle(state);
-
-        writer.print(
-                "┌─ "
-                        + title
-                        + " "
-                        + "─".repeat(
-                        Math.max(
-                                0,
-                                width
-                                        - title.length()
-                                        - 5))
-                        + "┐");
-    }
-
-    private void renderContent(
-            PrintWriter writer,
-            List<String> lines,
-            int startRow,
-            int startColumn,
-            int width,
-            int height) {
-
-        int contentHeight =
-                Math.max(
-                        1,
-                        height - 4);
-
-        for (int row = 0;
-             row < contentHeight;
-             row++) {
-
-            moveCursor(
-                    startRow
-                            + row
-                            + 1,
-                    startColumn);
-
-            writer.print("│");
-
-            String line =
-                    row < lines.size()
-                            ? lines.get(row)
-                            : "";
-
-            writer.print(
-                    fit(
-                            line,
-                            width - 2));
-
-            writer.print("│");
-        }
-    }
-
-    private void renderFooter(
-            PrintWriter writer,
-            CreateProjectState state,
-            int startRow,
-            int startColumn,
-            int width,
-            int height) {
-
-        int separatorRow =
-                startRow
-                        + height
-                        - 3;
-
-        moveCursor(
-                separatorRow,
-                startColumn);
-
-        writer.print("├");
-
-        writer.print(
-                "─".repeat(
-                        width - 2));
-
-        writer.print("┤");
-
-        moveCursor(
-                separatorRow + 1,
-                startColumn);
-
-        writer.print("│");
-
-        writer.print(
-                fit(
-                        " "
-                                + buildNavigationText(
-                                state),
-                        width - 2));
-
-        writer.print("│");
-
-        moveCursor(
-                separatorRow + 2,
-                startColumn);
-
-        writer.print("└");
-
-        writer.print(
-                "─".repeat(
-                        width - 2));
-
-        writer.print("┘");
-    }
-
     private String buildTitle(
             CreateProjectState state) {
 
@@ -517,67 +354,5 @@ public class CreateProjectScreen {
         return Math.min(
                 startIndex,
                 maximumStart);
-    }
-
-    private int popupWidth() {
-
-        int terminalWidth =
-                terminal.getWidth();
-
-        int calculatedWidth =
-                terminalWidth
-                        * WIDTH_PERCENTAGE
-                        / 100;
-
-        return Math.min(
-                terminalWidth,
-                Math.max(
-                        MINIMUM_POPUP_WIDTH,
-                        calculatedWidth));
-    }
-
-    private int popupHeight() {
-
-        int terminalHeight =
-                terminal.getHeight();
-
-        int calculatedHeight =
-                terminalHeight
-                        * HEIGHT_PERCENTAGE
-                        / 100;
-
-        return Math.min(
-                terminalHeight,
-                Math.max(
-                        MINIMUM_POPUP_HEIGHT,
-                        calculatedHeight));
-    }
-
-    private String fit(
-            String value,
-            int width) {
-
-        if (value.length()
-                > width) {
-
-            return value.substring(
-                    0,
-                    width);
-        }
-
-        return value
-                + " ".repeat(
-                width
-                        - value.length());
-    }
-
-    private void moveCursor(
-            int row,
-            int column) {
-
-        terminal.puts(
-                InfoCmp.Capability.cursor_address,
-                row,
-                column);
     }
 }

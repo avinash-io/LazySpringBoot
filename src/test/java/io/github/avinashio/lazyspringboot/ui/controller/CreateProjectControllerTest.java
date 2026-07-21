@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import io.github.avinashio.lazyspringboot.application.project.CreateSpringProjectUseCase;
 import io.github.avinashio.lazyspringboot.application.project.DiscoverProjectsUseCase;
 import io.github.avinashio.lazyspringboot.domain.dependency.SpringDependency;
+import io.github.avinashio.lazyspringboot.service.WorkspaceService;
 import io.github.avinashio.lazyspringboot.ui.service.DependencyItemsService;
 import io.github.avinashio.lazyspringboot.ui.state.CreateProjectState;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
@@ -114,6 +115,8 @@ class CreateProjectControllerTest {
                         UiState.class),
                 mock(
                         CreateProjectValidator.class),
-                dependencyItemsService);
+                dependencyItemsService,
+                mock(
+                        WorkspaceService.class));
     }
 }

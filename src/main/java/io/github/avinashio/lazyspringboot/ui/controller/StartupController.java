@@ -3,6 +3,7 @@ package io.github.avinashio.lazyspringboot.ui.controller;
 import io.github.avinashio.lazyspringboot.application.initializr.GetInitializrConfigurationUseCase;
 import io.github.avinashio.lazyspringboot.application.project.DiscoverProjectsUseCase;
 import io.github.avinashio.lazyspringboot.domain.initializr.InitializrConfiguration;
+import io.github.avinashio.lazyspringboot.service.WorkspaceService;
 import io.github.avinashio.lazyspringboot.ui.service.DependencyItemsService;
 import io.github.avinashio.lazyspringboot.ui.state.CreateProjectState;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
@@ -28,12 +29,15 @@ public class StartupController {
     private final DependencyItemsService
             dependencyItemsService;
 
+    private final WorkspaceService workspaceService;
+
     public StartupController(
             UiState uiState,
             DiscoverProjectsUseCase discoverProjectsUseCase,
             GetInitializrConfigurationUseCase getInitializrConfigurationUseCase,
             CreateProjectState createProjectState,
-            DependencyItemsService dependencyItemsService) {
+            DependencyItemsService dependencyItemsService,
+            WorkspaceService workspaceService) {
 
         this.uiState = uiState;
         this.discoverProjectsUseCase =
@@ -44,19 +48,18 @@ public class StartupController {
                 getInitializrConfigurationUseCase;
         this.createProjectState =
                 createProjectState;
+        this.workspaceService = workspaceService;
     }
 
     public void initialize()
             throws IOException,
             InterruptedException {
 
-        Path currentDirectory =
-                Path.of("")
-                        .toAbsolutePath();
+        Path workspace =
+                workspaceService.workspace();
 
         uiState.setProjects(
-                discoverProjectsUseCase.discover(
-                        currentDirectory));
+                discoverProjectsUseCase.discover());
 
         InitializrConfiguration configuration =
                 getInitializrConfigurationUseCase

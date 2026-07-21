@@ -26,6 +26,7 @@ public class StatusBar {
             case PROJECTS ->
                     " ↑↓ Navigate"
                             + "    a Project Actions"
+                            + "    r Refresh"
                             + "    u Undo"
                             + "    Ctrl+P Commands"
                             + "    ←→ Switch Panel"
@@ -37,6 +38,7 @@ public class StatusBar {
                             + "    / Search"
                             + "    Enter Apply"
                             + "    a Project Actions"
+                            + "    r Refresh"
                             + "    u Undo"
                             + "    Ctrl+P Commands"
                             + "    ←→ Switch Panel"
@@ -44,6 +46,7 @@ public class StatusBar {
 
             case PROJECT_DETAILS ->
                     " a Project Actions"
+                            + "    r Refresh"
                             + "    Ctrl+P Commands"
                             + "    ←→ Switch Panel"
                             + "    q Quit";

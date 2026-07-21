@@ -8,10 +8,7 @@ import io.github.avinashio.lazyspringboot.domain.process.ProjectProcess;
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcessStatus;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.ui.command.CommandPaletteController;
-import io.github.avinashio.lazyspringboot.ui.controller.CreateProjectController;
-import io.github.avinashio.lazyspringboot.ui.controller.ProcessController;
-import io.github.avinashio.lazyspringboot.ui.controller.ProjectActionController;
-import io.github.avinashio.lazyspringboot.ui.controller.StartupController;
+import io.github.avinashio.lazyspringboot.ui.controller.*;
 import io.github.avinashio.lazyspringboot.ui.input.InputDispatcher;
 import io.github.avinashio.lazyspringboot.ui.input.KeyEvent;
 import io.github.avinashio.lazyspringboot.ui.input.KeyReader;
@@ -28,7 +25,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-
 @Component
 @ConditionalOnProperty(
         name = "lazyspringboot.tui.enabled",
@@ -39,6 +35,14 @@ public class TuiApplication
 
     private static final long
             UI_REFRESH_INTERVAL_MILLIS = 150;
+
+    private static final long
+            PROJECT_REFRESH_INTERVAL_MILLIS = 2_000;
+
+    private final ProjectRefreshController
+            projectRefreshController;
+
+    private long lastProjectRefreshTime;
 
     private final Terminal terminal;
     private final KeyReader keyReader;
@@ -82,6 +86,12 @@ public class TuiApplication
     private final CommandPaletteScreen
             commandPaletteScreen;
 
+    private final WorkspaceController
+            workspaceController;
+
+    private final WorkspaceScreen
+            workspaceScreen;
+
 
     public TuiApplication(
             Terminal terminal,
@@ -101,9 +111,12 @@ public class TuiApplication
             InputDispatcher inputDispatcher,
             GetProjectProcessUseCase
                     getProjectProcessUseCase,
+            ProjectRefreshController projectRefreshController,
             CommandPaletteController commandPaletteController,
             CommandPaletteScreen commandPaletteScreen,
-            StartupController startupController) {
+            StartupController startupController,
+            WorkspaceController workspaceController,
+            WorkspaceScreen workspaceScreen) {
 
         this.terminal = terminal;
         this.keyReader = keyReader;
@@ -141,6 +154,13 @@ public class TuiApplication
 
         this.commandPaletteScreen =
                 commandPaletteScreen;
+
+        this.projectRefreshController =
+                projectRefreshController;
+
+        this.workspaceController = workspaceController;
+        this.workspaceScreen =
+                workspaceScreen;
     }
 
     @Override
@@ -217,6 +237,15 @@ public class TuiApplication
             return;
         }
 
+        if (workspaceController.isOpen()) {
+
+            mainScreen.render(uiState);
+
+            workspaceScreen.render();
+
+            return;
+        }
+
         if (uiState.projectActionOutputActive()) {
 
             SpringProject project =
@@ -279,7 +308,8 @@ public class TuiApplication
                     UI_REFRESH_INTERVAL_MILLIS);
         }
 
-        return keyReader.read();
+        return keyReader.read(
+                PROJECT_REFRESH_INTERVAL_MILLIS);
     }
 
     private boolean shouldUseRefreshTimeout() {
@@ -333,7 +363,57 @@ public class TuiApplication
 
     private void handleTimeout() {
 
+        refreshProjectsIfNeeded();
+
         render();
+    }
+
+    private void refreshProjectsIfNeeded() {
+
+        if (!isMainScreenActive()) {
+            return;
+        }
+
+        long currentTime =
+                System.currentTimeMillis();
+
+        if (currentTime
+                - lastProjectRefreshTime
+                < PROJECT_REFRESH_INTERVAL_MILLIS) {
+            return;
+        }
+
+        try {
+
+            projectRefreshController.refresh();
+
+            lastProjectRefreshTime =
+                    currentTime;
+
+        } catch (IOException exception) {
+
+            uiState.showErrorMessage(
+                    "Failed to refresh projects: "
+                            + exception.getMessage());
+
+            lastProjectRefreshTime =
+                    currentTime;
+        }
+    }
+
+    private boolean isMainScreenActive() {
+
+        return !commandPaletteController.active()
+                && !createProjectController
+                .state()
+                .active()
+                && !workspaceController.isOpen()
+                && !uiState
+                .dependencyConfirmationActive()
+                && !uiState
+                .projectActionsActive()
+                && !uiState
+                .projectActionOutputActive();
     }
 
     private boolean shouldQuit(

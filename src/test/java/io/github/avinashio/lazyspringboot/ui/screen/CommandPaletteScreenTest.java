@@ -2,10 +2,11 @@ package io.github.avinashio.lazyspringboot.ui.screen;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.github.avinashio.lazyspringboot.ui.command.Command;
+import io.github.avinashio.lazyspringboot.ui.component.ModalRenderer;
+import io.github.avinashio.lazyspringboot.ui.component.TextFormatter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
@@ -19,6 +20,9 @@ class CommandPaletteScreenTest {
 
         Terminal terminal =
                 mock(Terminal.class);
+
+        TextFormatter textFormatter =
+                new TextFormatter();
 
         StringWriter output =
                 new StringWriter();
@@ -35,9 +39,14 @@ class CommandPaletteScreenTest {
         when(terminal.getHeight())
                 .thenReturn(40);
 
+        ModalRenderer modalRenderer =
+                new ModalRenderer(
+                        terminal,
+                        textFormatter);
+
         CommandPaletteScreen screen =
                 new CommandPaletteScreen(
-                        terminal);
+                        modalRenderer);
 
         screen.render(
                 List.of(
@@ -51,9 +60,6 @@ class CommandPaletteScreenTest {
                 "build");
 
         writer.flush();
-
-        verify(terminal)
-                .writer();
 
         assertThat(
                 output.toString())

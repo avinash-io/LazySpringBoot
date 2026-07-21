@@ -26,6 +26,10 @@ public class NavigationController {
 
     private final DependencyUndoService dependencyUndoService;
 
+    private final ProjectRefreshController projectRefreshController;
+
+    private final WorkspaceController workspaceController;
+
     public NavigationController(
             UiState uiState,
             DependencyNavigation dependencyNavigation,
@@ -33,11 +37,15 @@ public class NavigationController {
             ProjectActionController projectActionController,
             CreateProjectController createProjectController,
             DependencyUndoService dependencyUndoService,
-            CommandPaletteController commandPaletteController) {
+            CommandPaletteController commandPaletteController,
+            ProjectRefreshController projectRefreshController,
+            WorkspaceController workspaceController) {
 
         this.uiState = uiState;
-        this.dependencyNavigation = dependencyNavigation;
-        this.dependencyItemsService = dependencyItemsService;
+        this.dependencyNavigation =
+                dependencyNavigation;
+        this.dependencyItemsService =
+                dependencyItemsService;
         this.projectActionController =
                 projectActionController;
         this.createProjectController =
@@ -46,6 +54,10 @@ public class NavigationController {
                 commandPaletteController;
         this.dependencyUndoService =
                 dependencyUndoService;
+        this.projectRefreshController =
+                projectRefreshController;
+        this.workspaceController = workspaceController;
+
     }
 
     public boolean handle(
@@ -119,9 +131,34 @@ public class NavigationController {
             case 'n' ->
                     createProjectController.open();
 
+            case 'r' ->
+                    handleRefresh();
+
+            case 'w' ->
+                    workspaceController.open();
+
             default -> {
                 // No action.
             }
+        }
+    }
+
+    private void handleRefresh() {
+
+        try {
+
+            projectRefreshController.refresh();
+
+            dependencyItemsService.refresh();
+
+            uiState.showSuccessMessage(
+                    "Projects refreshed");
+
+        } catch (Exception exception) {
+
+            uiState.showErrorMessage(
+                    "Failed to refresh projects: "
+                            + exception.getMessage());
         }
     }
 

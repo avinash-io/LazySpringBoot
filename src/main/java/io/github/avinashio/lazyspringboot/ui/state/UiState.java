@@ -454,5 +454,48 @@ public class UiState {
         return outputViewport;
     }
 
+    public void refreshProjects(
+            List<SpringProject> refreshedProjects) {
+
+        SpringProject previouslySelected =
+                selectedProject();
+
+        projects =
+                List.copyOf(
+                        refreshedProjects);
+
+        if (projects.isEmpty()) {
+            selectedProjectIndex = 0;
+            return;
+        }
+
+        if (previouslySelected == null) {
+            selectedProjectIndex = 0;
+            return;
+        }
+
+        for (int index = 0;
+             index < projects.size();
+             index++) {
+
+            SpringProject project =
+                    projects.get(index);
+
+            if (project.path()
+                    .equals(
+                            previouslySelected.path())) {
+
+                selectedProjectIndex =
+                        index;
+
+                return;
+            }
+        }
+
+        selectedProjectIndex =
+                Math.min(
+                        selectedProjectIndex,
+                        projects.size() - 1);
+    }
 
 }

@@ -2,6 +2,7 @@ package io.github.avinashio.lazyspringboot.ui.controller;
 
 import io.github.avinashio.lazyspringboot.application.project.CreateSpringProjectUseCase;
 import io.github.avinashio.lazyspringboot.domain.project.NewProjectRequest;
+import io.github.avinashio.lazyspringboot.service.WorkspaceService;
 import io.github.avinashio.lazyspringboot.ui.state.CreateProjectState;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.io.IOException;
@@ -36,6 +37,8 @@ public class CreateProjectController {
     private final DependencyItemsService
             dependencyItemsService;
 
+    private final WorkspaceService workspaceService;
+
     public CreateProjectController(
             CreateProjectState createProjectState,
             CreateProjectRequestMapper requestMapper,
@@ -43,7 +46,8 @@ public class CreateProjectController {
             DiscoverProjectsUseCase discoverProjectsUseCase,
             UiState uiState,
             CreateProjectValidator validator,
-            DependencyItemsService dependencyItemsService) {
+            DependencyItemsService dependencyItemsService,
+            WorkspaceService workspaceService) {
 
         this.createProjectState =
                 createProjectState;
@@ -59,6 +63,8 @@ public class CreateProjectController {
                 validator;
         this.dependencyItemsService =
                 dependencyItemsService;
+        this.workspaceService =
+                workspaceService;
     }
 
     public void open() {
@@ -107,8 +113,7 @@ public class CreateProjectController {
                     destination);
 
             List<SpringProject> projects =
-                    discoverProjectsUseCase.discover(
-                            destination);
+                    discoverProjectsUseCase.discover();
 
             uiState.setProjects(
                     projects);
