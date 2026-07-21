@@ -2,13 +2,19 @@ package io.github.avinashio.lazyspringboot.ui.component;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.github.avinashio.lazyspringboot.application.process.GetProjectProcessUseCase;
 import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
 import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+import io.github.avinashio.lazyspringboot.service.WorkspaceService;
 import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
 import io.github.avinashio.lazyspringboot.ui.service.ProjectFilterService;
+import io.github.avinashio.lazyspringboot.ui.service.ProjectSortService;
+import io.github.avinashio.lazyspringboot.ui.service.VisibleProjectService;
+import io.github.avinashio.lazyspringboot.ui.state.ProjectSortMode;
+import io.github.avinashio.lazyspringboot.ui.state.ProjectSortState;
 import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
 import io.github.avinashio.lazyspringboot.ui.state.TextInputState;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
@@ -16,11 +22,6 @@ import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import io.github.avinashio.lazyspringboot.ui.component.Spinner;
-import io.github.avinashio.lazyspringboot.ui.service.ProjectSortService;
-import io.github.avinashio.lazyspringboot.ui.service.VisibleProjectService;
-import io.github.avinashio.lazyspringboot.ui.state.ProjectSortState;
-
 
 class ProjectPanelTest {
 
@@ -48,7 +49,7 @@ class ProjectPanelTest {
                 new VisibleProjectService(
                         new ProjectFilterService(),
                         new ProjectSortService(),
-                        new ProjectSortState(),
+                        projectSortState(),
                         textInputController);
 
         projectPanel =
@@ -392,6 +393,21 @@ class ProjectPanelTest {
             textInputController.append(
                     character);
         }
+    }
+
+    private ProjectSortState projectSortState() {
+
+        WorkspaceService workspaceService =
+                mock(
+                        WorkspaceService.class);
+
+        when(
+                workspaceService.projectSortMode())
+                .thenReturn(
+                        ProjectSortMode.NAME_ASC);
+
+        return new ProjectSortState(
+                workspaceService);
     }
 
     private List<SpringProject> projects() {

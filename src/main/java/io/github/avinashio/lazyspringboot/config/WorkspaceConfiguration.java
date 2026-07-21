@@ -1,12 +1,16 @@
 package io.github.avinashio.lazyspringboot.config;
 
+import io.github.avinashio.lazyspringboot.ui.state.ProjectSortMode;
+
 public record WorkspaceConfiguration(
-        String workspace) {
+        String workspace,
+        ProjectSortMode projectSortMode) {
 
     public static WorkspaceConfiguration defaultConfiguration(
             String workspace) {
 
         return new WorkspaceConfiguration(
-                workspace);
+                workspace,
+                ProjectSortMode.NAME_ASC);
     }
 }

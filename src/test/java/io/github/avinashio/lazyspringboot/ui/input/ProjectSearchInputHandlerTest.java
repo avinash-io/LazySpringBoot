@@ -1,13 +1,20 @@
 package io.github.avinashio.lazyspringboot.ui.input;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
 import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+import io.github.avinashio.lazyspringboot.service.WorkspaceService;
 import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
 import io.github.avinashio.lazyspringboot.ui.project.ProjectNavigation;
 import io.github.avinashio.lazyspringboot.ui.service.ProjectFilterService;
+import io.github.avinashio.lazyspringboot.ui.service.ProjectSortService;
+import io.github.avinashio.lazyspringboot.ui.service.VisibleProjectService;
+import io.github.avinashio.lazyspringboot.ui.state.ProjectSortMode;
+import io.github.avinashio.lazyspringboot.ui.state.ProjectSortState;
 import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
 import io.github.avinashio.lazyspringboot.ui.state.TextInputState;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
@@ -15,10 +22,6 @@ import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import io.github.avinashio.lazyspringboot.ui.service.ProjectSortService;
-import io.github.avinashio.lazyspringboot.ui.service.VisibleProjectService;
-import io.github.avinashio.lazyspringboot.ui.state.ProjectSortState;
-
 
 class ProjectSearchInputHandlerTest {
 
@@ -38,9 +41,12 @@ class ProjectSearchInputHandlerTest {
 
         uiState.setProjects(
                 List.of(
-                        project("payment-service"),
-                        project("demo"),
-                        project("user-service")));
+                        project(
+                                "payment-service"),
+                        project(
+                                "demo"),
+                        project(
+                                "user-service")));
 
         TextInputState textInputState =
                 new TextInputState();
@@ -53,7 +59,7 @@ class ProjectSearchInputHandlerTest {
                 new VisibleProjectService(
                         new ProjectFilterService(),
                         new ProjectSortService(),
-                        new ProjectSortState(),
+                        projectSortState(),
                         textInputController);
 
         ProjectNavigation projectNavigation =
@@ -98,7 +104,8 @@ class ProjectSearchInputHandlerTest {
 
         assertThat(
                 textInputController.value())
-                .isEqualTo("d");
+                .isEqualTo(
+                        "d");
     }
 
     @Test
@@ -107,20 +114,25 @@ class ProjectSearchInputHandlerTest {
         startProjectSearch();
 
         handler.handle(
-                KeyEvent.character('d'));
+                KeyEvent.character(
+                        'd'));
 
         handler.handle(
-                KeyEvent.character('e'));
+                KeyEvent.character(
+                        'e'));
 
         handler.handle(
-                KeyEvent.character('m'));
+                KeyEvent.character(
+                        'm'));
 
         handler.handle(
-                KeyEvent.character('o'));
+                KeyEvent.character(
+                        'o'));
 
         assertThat(
                 textInputController.value())
-                .isEqualTo("demo");
+                .isEqualTo(
+                        "demo");
     }
 
     @Test
@@ -129,10 +141,12 @@ class ProjectSearchInputHandlerTest {
         startProjectSearch();
 
         handler.handle(
-                KeyEvent.character('u'));
+                KeyEvent.character(
+                        'u'));
 
         assertThat(
-                uiState.selectedProject().name())
+                uiState.selectedProject()
+                        .name())
                 .isEqualTo(
                         "user-service");
     }
@@ -151,7 +165,8 @@ class ProjectSearchInputHandlerTest {
                         null));
 
         assertThat(
-                uiState.selectedProject().name())
+                uiState.selectedProject()
+                        .name())
                 .isEqualTo(
                         "user-service");
     }
@@ -175,7 +190,8 @@ class ProjectSearchInputHandlerTest {
                         null));
 
         assertThat(
-                uiState.selectedProject().name())
+                uiState.selectedProject()
+                        .name())
                 .isEqualTo(
                         "payment-service");
     }
@@ -241,7 +257,8 @@ class ProjectSearchInputHandlerTest {
                 .isFalse();
 
         assertThat(
-                uiState.selectedProject().name())
+                uiState.selectedProject()
+                        .name())
                 .isEqualTo(
                         "user-service");
     }
@@ -281,6 +298,21 @@ class ProjectSearchInputHandlerTest {
                     KeyEvent.character(
                             character));
         }
+    }
+
+    private ProjectSortState projectSortState() {
+
+        WorkspaceService workspaceService =
+                mock(
+                        WorkspaceService.class);
+
+        when(
+                workspaceService.projectSortMode())
+                .thenReturn(
+                        ProjectSortMode.NAME_ASC);
+
+        return new ProjectSortState(
+                workspaceService);
     }
 
     private SpringProject project(

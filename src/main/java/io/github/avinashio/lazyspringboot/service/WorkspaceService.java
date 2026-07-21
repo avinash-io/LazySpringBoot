@@ -2,6 +2,7 @@ package io.github.avinashio.lazyspringboot.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.avinashio.lazyspringboot.config.WorkspaceConfiguration;
+import io.github.avinashio.lazyspringboot.ui.state.ProjectSortMode;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,6 +51,18 @@ public class WorkspaceService {
                 configuration.workspace());
     }
 
+    public ProjectSortMode projectSortMode() {
+
+        ProjectSortMode projectSortMode =
+                configuration.projectSortMode();
+
+        if (projectSortMode == null) {
+            return ProjectSortMode.NAME_ASC;
+        }
+
+        return projectSortMode;
+    }
+
     public void changeWorkspace(
             Path workspace)
             throws IOException {
@@ -58,7 +71,20 @@ public class WorkspaceService {
                 new WorkspaceConfiguration(
                         workspace.toAbsolutePath()
                                 .normalize()
-                                .toString());
+                                .toString(),
+                        projectSortMode());
+
+        save();
+    }
+
+    public void changeProjectSortMode(
+            ProjectSortMode projectSortMode)
+            throws IOException {
+
+        configuration =
+                new WorkspaceConfiguration(
+                        configuration.workspace(),
+                        projectSortMode);
 
         save();
     }
@@ -77,6 +103,8 @@ public class WorkspaceService {
                             configurationFile.toFile(),
                             WorkspaceConfiguration.class);
 
+            normalizeConfiguration();
+
             return;
         }
 
@@ -87,6 +115,23 @@ public class WorkspaceService {
                                         .toAbsolutePath()
                                         .normalize()
                                         .toString());
+
+        save();
+    }
+
+    private void normalizeConfiguration()
+            throws IOException {
+
+        if (configuration.projectSortMode()
+                != null) {
+
+            return;
+        }
+
+        configuration =
+                new WorkspaceConfiguration(
+                        configuration.workspace(),
+                        ProjectSortMode.NAME_ASC);
 
         save();
     }
