@@ -624,4 +624,34 @@ class UiStateTest {
                         BuildTool.MAVEN,
                         List.of()));
     }
+
+    @Test
+    void shouldSelectProjectByIndex() {
+        UiState state = createStateWithProjects();
+
+        state.selectProject(2);
+
+        assertThat(state.selectedProjectIndex())
+                .isEqualTo(2);
+
+        assertThat(state.selectedProject().name())
+                .isEqualTo("demo");
+    }
+
+    @Test
+    void shouldIgnoreInvalidProjectIndex() {
+        UiState state = createStateWithProjects();
+
+        state.selectProject(1);
+
+        state.selectProject(100);
+
+        assertThat(state.selectedProjectIndex())
+                .isEqualTo(1);
+
+        state.selectProject(-1);
+
+        assertThat(state.selectedProjectIndex())
+                .isEqualTo(1);
+    }
 }

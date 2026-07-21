@@ -28,6 +28,12 @@ public class StatusBar {
         }
 
         if (textInputController.active(
+                TextInputPurpose.PROJECT_SEARCH)) {
+
+            return renderProjectSearch();
+        }
+
+        if (textInputController.active(
                 TextInputPurpose.DEPENDENCY_SEARCH)) {
             return renderDependencySearch();
         }
@@ -36,6 +42,7 @@ public class StatusBar {
 
             case PROJECTS ->
                     " ↑↓ Navigate"
+                            + "    / Search"
                             + "    a Project Actions"
                             + "    c Create"
                             + "    w Workspace"
@@ -69,6 +76,16 @@ public class StatusBar {
                             + "    ←→ Switch Panel"
                             + "    q Quit";
         };
+    }
+
+    private String renderProjectSearch() {
+
+        return " Search Projects: "
+                + textInputController.value()
+                + "_"
+                + "    ↑↓ Navigate"
+                + "    Backspace Delete"
+                + "    Esc Close";
     }
 
     private String renderMessage(

@@ -235,16 +235,25 @@ public class NavigationController {
 
     private void handleSearch() {
 
-        if (uiState.panelFocus()
-                != PanelFocus.DEPENDENCIES) {
+        switch (uiState.panelFocus()) {
 
-            return;
+            case PROJECTS ->
+                    textInputController.start(
+                            TextInputPurpose.PROJECT_SEARCH);
+
+            case DEPENDENCIES -> {
+
+                textInputController.start(
+                        TextInputPurpose.DEPENDENCY_SEARCH);
+
+                dependencyNavigation
+                        .selectFirstVisible();
+            }
+
+            case PROJECT_DETAILS -> {
+                // No action.
+            }
         }
-
-        textInputController.start(
-                TextInputPurpose.DEPENDENCY_SEARCH);
-
-        dependencyNavigation.selectFirstVisible();
     }
 
     private void handleEnter() {

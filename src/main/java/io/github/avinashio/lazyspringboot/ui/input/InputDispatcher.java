@@ -22,6 +22,9 @@ public class InputDispatcher {
     private final DependencySearchInputHandler
             dependencySearchInputHandler;
 
+    private final ProjectSearchInputHandler
+            projectSearchInputHandler;
+
     private final NavigationController
             navigationController;
 
@@ -42,9 +45,11 @@ public class InputDispatcher {
                     projectActionsInputHandler,
             DependencySearchInputHandler
                     dependencySearchInputHandler,
+            ProjectSearchInputHandler
+                    projectSearchInputHandler,
             CommandPaletteController commandPaletteController,
-            NavigationController
-                    navigationController, WorkspaceInputHandler workspaceInputHandler) {
+            NavigationController navigationController,
+            WorkspaceInputHandler workspaceInputHandler) {
 
         this.dependencyConfirmationInputHandler =
                 dependencyConfirmationInputHandler;
@@ -61,17 +66,21 @@ public class InputDispatcher {
         this.dependencySearchInputHandler =
                 dependencySearchInputHandler;
 
+        this.projectSearchInputHandler =
+                projectSearchInputHandler;
+
         this.navigationController =
                 navigationController;
 
         this.commandPaletteController =
                 commandPaletteController;
-        this.workspaceInputHandler = workspaceInputHandler;
+
+        this.workspaceInputHandler =
+                workspaceInputHandler;
     }
 
     public void handle(
             KeyEvent keyEvent) {
-
 
         if (commandPaletteController.active()) {
 
@@ -80,7 +89,6 @@ public class InputDispatcher {
 
             return;
         }
-
 
         if (dependencyConfirmationInputHandler.handle(
                 keyEvent)) {
@@ -108,6 +116,11 @@ public class InputDispatcher {
         }
 
         if (dependencySearchInputHandler.handle(
+                keyEvent)) {
+            return;
+        }
+
+        if (projectSearchInputHandler.handle(
                 keyEvent)) {
             return;
         }

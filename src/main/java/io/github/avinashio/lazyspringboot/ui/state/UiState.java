@@ -61,6 +61,17 @@ public class UiState {
         return selectedProjectIndex;
     }
 
+    public void selectProject(
+            int projectIndex) {
+
+        if (projectIndex < 0
+                || projectIndex >= projects.size()) {
+            return;
+        }
+
+        selectedProjectIndex =
+                projectIndex;
+    }
     public void selectNextProject() {
         if (selectedProjectIndex
                 < projects.size() - 1) {
