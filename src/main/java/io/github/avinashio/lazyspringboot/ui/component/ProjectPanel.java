@@ -119,11 +119,9 @@ public class ProjectPanel {
                             : "   ";
 
             lines.add(
-                    prefix
-                            + statusIcon(project)
-                            + " "
-                            + project.name()
-                            + badges(project));
+                    projectLine(
+                            prefix,
+                            project));
         }
 
         return lines;
@@ -149,19 +147,33 @@ public class ProjectPanel {
                 0);
     }
 
-    private String statusIcon(
+    private String projectLine(
+            String prefix,
+            SpringProject project) {
+
+        ProjectProcessStatus processStatus =
+                processStatus(
+                        project);
+
+        return prefix
+                + statusFormatter.icon(
+                processStatus)
+                + " "
+                + project.name()
+                + badges(
+                project);
+    }
+
+    private ProjectProcessStatus processStatus(
             SpringProject project) {
 
         return getProjectProcessUseCase
                 .get(project)
                 .map(
                         process ->
-                                statusFormatter.icon(
-                                        process.status()))
-                .orElseGet(
-                        () ->
-                                statusFormatter.icon(
-                                        ProjectProcessStatus.STOPPED));
+                                process.status())
+                .orElse(
+                        ProjectProcessStatus.STOPPED);
     }
 
     private String badges(

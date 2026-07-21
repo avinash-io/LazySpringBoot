@@ -42,15 +42,19 @@ public class StatusBar {
 
             case PROJECTS ->
                     " ↑↓ Navigate"
+                            + "    Enter Start"
+                            + "    x Stop"
+                            + "    R Restart"
+                            + "    l Logs"
                             + "    / Search"
                             + "    s Sort"
-                            + "    a Project Actions"
-                            + "    c Create"
+                            + "    a Actions"
+                            + "    n Create"
                             + "    w Workspace"
                             + "    r Refresh"
                             + "    u Undo"
-                            + "    Ctrl+P Command Palette"
-                            + "    ←→ Switch Panel"
+                            + "    Ctrl+P Commands"
+                            + "    ←→ Panel"
                             + "    q Quit";
 
             case DEPENDENCIES ->

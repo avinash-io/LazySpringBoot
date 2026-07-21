@@ -8,6 +8,7 @@ import io.github.avinashio.lazyspringboot.ui.component.TextFormatter;
 import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
 import io.github.avinashio.lazyspringboot.ui.service.ProjectFilterService;
 import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
+import io.github.avinashio.lazyspringboot.ui.state.ProjectSortState;
 import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.io.PrintWriter;
@@ -15,15 +16,18 @@ import java.util.List;
 import org.jline.terminal.Terminal;
 import org.jline.utils.InfoCmp;
 import org.springframework.stereotype.Component;
-import io.github.avinashio.lazyspringboot.ui.state.ProjectSortState;
-
 
 @Component
 public class MainScreen {
 
-    private static final int MINIMUM_TERMINAL_WIDTH = 80;
-    private static final int PROJECT_PANEL_PERCENTAGE = 25;
-    private static final int DEPENDENCY_PANEL_PERCENTAGE = 35;
+    private static final int MINIMUM_TERMINAL_WIDTH =
+            80;
+
+    private static final int PROJECT_PANEL_PERCENTAGE =
+            25;
+
+    private static final int DEPENDENCY_PANEL_PERCENTAGE =
+            35;
 
     private final Terminal terminal;
 
@@ -37,11 +41,14 @@ public class MainScreen {
 
     private final DependencyPanel dependencyPanel;
 
-    private final ProjectFilterService projectFilterService;
+    private final ProjectFilterService
+            projectFilterService;
 
-    private final TextInputController textInputController;
+    private final TextInputController
+            textInputController;
 
-    private final ProjectSortState projectSortState;
+    private final ProjectSortState
+            projectSortState;
 
     public MainScreen(
             Terminal terminal,
@@ -51,7 +58,8 @@ public class MainScreen {
             StatusBar statusBar,
             TextFormatter textFormatter,
             ProjectFilterService projectFilterService,
-            TextInputController textInputController, ProjectSortState projectSortState) {
+            TextInputController textInputController,
+            ProjectSortState projectSortState) {
 
         this.terminal =
                 terminal;
@@ -76,7 +84,9 @@ public class MainScreen {
 
         this.textInputController =
                 textInputController;
-        this.projectSortState = projectSortState;
+
+        this.projectSortState =
+                projectSortState;
     }
 
     public void render(
@@ -223,14 +233,16 @@ public class MainScreen {
                         detailsTitle,
                         detailPanelWidth));
 
-        writer.print("┐");
+        writer.print(
+                "┐");
     }
 
     private String projectTitle(
             UiState state) {
 
         int totalProjects =
-                state.projects().size();
+                state.projects()
+                        .size();
 
         String count;
 
@@ -297,7 +309,8 @@ public class MainScreen {
 
             writer.println();
 
-            writer.print("│");
+            writer.print(
+                    "│");
 
             writer.print(
                     textFormatter.fit(
@@ -306,7 +319,8 @@ public class MainScreen {
                                     row),
                             projectPanelWidth - 1));
 
-            writer.print("│");
+            writer.print(
+                    "│");
 
             writer.print(
                     textFormatter.fit(
@@ -315,7 +329,8 @@ public class MainScreen {
                                     row),
                             dependencyPanelWidth - 1));
 
-            writer.print("│");
+            writer.print(
+                    "│");
 
             writer.print(
                     textFormatter.fit(
@@ -324,7 +339,8 @@ public class MainScreen {
                                     row),
                             detailPanelWidth - 1));
 
-            writer.print("│");
+            writer.print(
+                    "│");
         }
     }
 
@@ -347,17 +363,20 @@ public class MainScreen {
 
         writer.println();
 
-        writer.print("├");
+        writer.print(
+                "├");
 
         writer.print(
                 "─".repeat(
                         width - 2));
 
-        writer.print("┤");
+        writer.print(
+                "┤");
 
         writer.println();
 
-        writer.print("│");
+        writer.print(
+                "│");
 
         writer.print(
                 textFormatter.fit(
@@ -365,17 +384,20 @@ public class MainScreen {
                                 state),
                         width - 2));
 
-        writer.print("│");
+        writer.print(
+                "│");
 
         writer.println();
 
-        writer.print("└");
+        writer.print(
+                "└");
 
         writer.print(
                 "─".repeat(
                         width - 2));
 
-        writer.print("┘");
+        writer.print(
+                "┘");
     }
 
     private void renderTerminalTooSmall(

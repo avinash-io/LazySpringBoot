@@ -115,6 +115,28 @@ class ProjectPanelTest {
     }
 
     @Test
+    void shouldRenderCompactProjectStatus() {
+
+        uiState.setProjects(
+                List.of(
+                        project(
+                                "demo")));
+
+        List<String> lines =
+                projectPanel.render(
+                        uiState,
+                        10);
+
+        assertThat(lines)
+                .singleElement()
+                .asString()
+                .contains(
+                        "[ ] demo")
+                .doesNotContain(
+                        "STOPPED");
+    }
+
+    @Test
     void shouldRenderMessageWhenNoProjectsExist() {
 
         List<String> lines =

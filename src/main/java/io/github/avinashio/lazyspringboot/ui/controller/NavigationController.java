@@ -49,6 +49,9 @@ public class NavigationController {
     private final ProjectSortController
             projectSortController;
 
+    private final ProcessController
+            processController;
+
     public NavigationController(
             UiState uiState,
             DependencyNavigation dependencyNavigation,
@@ -61,7 +64,7 @@ public class NavigationController {
             ProjectRefreshController projectRefreshController,
             WorkspaceController workspaceController,
             TextInputController textInputController,
-            ProjectSortController projectSortController) {
+            ProjectSortController projectSortController, ProcessController processController) {
 
         this.uiState =
                 uiState;
@@ -98,6 +101,7 @@ public class NavigationController {
 
         this.projectSortController =
                 projectSortController;
+        this.processController = processController;
     }
 
     public boolean handle(
@@ -180,12 +184,20 @@ public class NavigationController {
             case 's' ->
                     handleSort();
 
+            case 'x' ->
+                    handleStopProject();
+
+            case 'R' ->
+                    handleRestartProject();
+
+            case 'l' ->
+                    handleProjectLogs();
+
             default -> {
                 // No action.
             }
         }
     }
-
     private void handleSort() {
 
         if (uiState.panelFocus()
@@ -324,13 +336,90 @@ public class NavigationController {
 
     private void handleEnter() {
 
+        switch (uiState.panelFocus()) {
+
+            case PROJECTS ->
+                    handleStartProject();
+
+            case DEPENDENCIES ->
+                    uiState.startDependencyConfirmation();
+
+            case PROJECT_DETAILS -> {
+                // No action.
+            }
+        }
+    }
+
+    private void handleStartProject() {
+
         if (uiState.panelFocus()
-                != PanelFocus.DEPENDENCIES) {
+                != PanelFocus.PROJECTS) {
 
             return;
         }
 
-        uiState.startDependencyConfirmation();
+        if (uiState.selectedProject()
+                == null) {
+
+            return;
+        }
+
+        processController.start(
+                uiState.selectedProject());
+    }
+
+    private void handleStopProject() {
+
+        if (uiState.panelFocus()
+                != PanelFocus.PROJECTS) {
+
+            return;
+        }
+
+        if (uiState.selectedProject()
+                == null) {
+
+            return;
+        }
+
+        processController.stop(
+                uiState.selectedProject());
+    }
+
+    private void handleRestartProject() {
+
+        if (uiState.panelFocus()
+                != PanelFocus.PROJECTS) {
+
+            return;
+        }
+
+        if (uiState.selectedProject()
+                == null) {
+
+            return;
+        }
+
+        processController.restart(
+                uiState.selectedProject());
+    }
+
+    private void handleProjectLogs() {
+
+        if (uiState.panelFocus()
+                != PanelFocus.PROJECTS) {
+
+            return;
+        }
+
+        if (uiState.selectedProject()
+                == null) {
+
+            return;
+        }
+
+        processController.showLogs(
+                uiState.selectedProject());
     }
 
     private SpringProjectSelection currentProjectSelection() {
