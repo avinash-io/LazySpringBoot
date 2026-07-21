@@ -9,6 +9,9 @@ import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import org.springframework.stereotype.Component;
 
+import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
+import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
+
 @Component
 public class NavigationController {
 
@@ -30,6 +33,8 @@ public class NavigationController {
 
     private final WorkspaceController workspaceController;
 
+    private final TextInputController textInputController;
+
     public NavigationController(
             UiState uiState,
             DependencyNavigation dependencyNavigation,
@@ -39,7 +44,7 @@ public class NavigationController {
             DependencyUndoService dependencyUndoService,
             CommandPaletteController commandPaletteController,
             ProjectRefreshController projectRefreshController,
-            WorkspaceController workspaceController) {
+            WorkspaceController workspaceController, TextInputController textInputController) {
 
         this.uiState = uiState;
         this.dependencyNavigation =
@@ -58,6 +63,7 @@ public class NavigationController {
                 projectRefreshController;
         this.workspaceController = workspaceController;
 
+        this.textInputController = textInputController;
     }
 
     public boolean handle(
@@ -235,7 +241,8 @@ public class NavigationController {
             return;
         }
 
-        uiState.startDependencySearch();
+        textInputController.start(
+                TextInputPurpose.DEPENDENCY_SEARCH);
 
         dependencyNavigation.selectFirstVisible();
     }
