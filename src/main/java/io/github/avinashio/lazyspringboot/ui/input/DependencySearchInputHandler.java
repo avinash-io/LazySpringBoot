@@ -3,6 +3,9 @@ package io.github.avinashio.lazyspringboot.ui.input;
 import io.github.avinashio.lazyspringboot.ui.dependency.DependencyNavigation;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import org.springframework.stereotype.Component;
+import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
+import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
+
 
 @Component
 public class DependencySearchInputHandler
@@ -10,15 +13,19 @@ public class DependencySearchInputHandler
 
     private final UiState uiState;
 
+    private final TextInputController
+            textInputController;
+
     private final DependencyNavigation
             dependencyNavigation;
 
     public DependencySearchInputHandler(
-            UiState uiState,
+            UiState uiState, TextInputController textInputController,
             DependencyNavigation dependencyNavigation) {
 
         this.uiState =
                 uiState;
+        this.textInputController = textInputController;
 
         this.dependencyNavigation =
                 dependencyNavigation;
@@ -28,19 +35,19 @@ public class DependencySearchInputHandler
     public boolean handle(
             KeyEvent keyEvent) {
 
-        if (!uiState.dependencySearchActive()) {
+        if (!textInputController.active(
+                TextInputPurpose.DEPENDENCY_SEARCH)) {
             return false;
         }
 
         switch (keyEvent.type()) {
 
             case ESCAPE ->
-                    uiState.stopDependencySearch();
+                    textInputController.stop();
 
             case BACKSPACE -> {
 
-                uiState
-                        .removeLastDependencySearchCharacter();
+                textInputController.backspace();
 
                 dependencyNavigation
                         .selectFirstVisible();
@@ -103,7 +110,7 @@ public class DependencySearchInputHandler
     private void appendCharacter(
             char character) {
 
-        uiState.appendDependencySearchCharacter(
+        textInputController.append(
                 character);
 
         dependencyNavigation
