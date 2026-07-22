@@ -112,7 +112,13 @@ public class ProjectProcessManager {
 
         managedProcess.requestStop();
 
-        process.destroy();
+        ProcessHandle handle =
+                process.toHandle();
+
+        handle.descendants()
+                .forEach(ProcessHandle::destroy);
+
+        handle.destroy();
 
         try {
 
@@ -129,7 +135,10 @@ public class ProjectProcessManager {
                     "Process did not stop gracefully; "
                             + "forcing termination");
 
-            process.destroyForcibly();
+            handle.descendants()
+                    .forEach(ProcessHandle::destroyForcibly);
+
+            handle.destroyForcibly();
 
             process.waitFor();
 
@@ -161,6 +170,7 @@ public class ProjectProcessManager {
 
     public boolean stop(
             SpringProject project) {
+
         ManagedProjectProcess managedProcess =
                 processes.get(
                         projectKey(project));
@@ -176,11 +186,21 @@ public class ProjectProcessManager {
             return false;
         }
 
-        managedProcess.requestStop();
+        try {
 
-        process.destroy();
+            stopAndWait(
+                    managedProcess);
 
-        return true;
+            return true;
+
+        } catch (IOException exception) {
+
+            managedProcess.addOutput(
+                    "Failed to stop process: "
+                            + exception.getMessage());
+
+            return false;
+        }
     }
 
     private void monitorProcess(
@@ -288,8 +308,14 @@ public class ProjectProcessManager {
             ManagedProjectProcess managedProcess) {
         managedProcess.requestStop();
 
-        managedProcess
-                .process()
-                .destroy();
+        ProcessHandle handle =
+                managedProcess
+                        .process()
+                        .toHandle();
+
+        handle.descendants()
+                .forEach(ProcessHandle::destroy);
+
+        handle.destroy();
     }
 }

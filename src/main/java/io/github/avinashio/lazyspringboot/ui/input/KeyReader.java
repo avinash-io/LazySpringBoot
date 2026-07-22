@@ -153,6 +153,14 @@ public class KeyReader {
                             reader,
                             sequenceValue);
 
+            case 'H' ->
+                    KeyEvent.of(
+                            KeyType.HOME);
+
+            case 'F' ->
+                    KeyEvent.of(
+                            KeyType.END);
+
             default ->
                     KeyEvent.of(
                             KeyType.UNKNOWN);
@@ -184,6 +192,7 @@ public class KeyReader {
 
     private KeyEvent readCharacter(
             int input) {
+
         if (isPrintable(input)) {
             return KeyEvent.character(
                     (char) input);

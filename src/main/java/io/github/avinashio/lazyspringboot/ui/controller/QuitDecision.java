@@ -4,7 +4,7 @@ public enum QuitDecision {
 
     CONTINUE,
 
-    WARNING,
+    OPEN_POPUP,
 
     QUIT
 }

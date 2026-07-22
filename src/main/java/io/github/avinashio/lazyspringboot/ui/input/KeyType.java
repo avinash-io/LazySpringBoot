@@ -6,6 +6,8 @@ public enum KeyType {
     LEFT,
     RIGHT,
     PAGE_UP,
+    HOME,
+    END,
     PAGE_DOWN,
     GO_TO_TOP,
     GO_TO_BOTTOM,

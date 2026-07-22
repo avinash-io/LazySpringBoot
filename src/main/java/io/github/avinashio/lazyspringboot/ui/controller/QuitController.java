@@ -1,140 +1,262 @@
 package io.github.avinashio.lazyspringboot.ui.controller;
 
 import io.github.avinashio.lazyspringboot.application.process.GetProjectProcessUseCase;
+import io.github.avinashio.lazyspringboot.application.process.StopProjectProcessUseCase;
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcess;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
-import io.github.avinashio.lazyspringboot.ui.input.KeyEvent;
-import io.github.avinashio.lazyspringboot.ui.input.KeyType;
+import io.github.avinashio.lazyspringboot.ui.state.QuitFocus;
+import io.github.avinashio.lazyspringboot.ui.state.QuitOption;
+import io.github.avinashio.lazyspringboot.ui.state.QuitState;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import org.springframework.stereotype.Controller;
 
 @Controller
 public class QuitController {
+
+    private final QuitState quitState;
 
     private final UiState uiState;
 
     private final GetProjectProcessUseCase
             getProjectProcessUseCase;
 
-    private boolean confirmationPending;
+    private final StopProjectProcessUseCase
+            stopProjectProcessUseCase;
+
+    private final ProjectRefreshController
+            projectRefreshController;
 
     public QuitController(
+            QuitState quitState,
             UiState uiState,
-            GetProjectProcessUseCase getProjectProcessUseCase) {
+            GetProjectProcessUseCase
+                    getProjectProcessUseCase,
+            StopProjectProcessUseCase
+                    stopProjectProcessUseCase,
+            ProjectRefreshController
+                    projectRefreshController) {
+
+        this.quitState =
+                quitState;
 
         this.uiState =
                 uiState;
 
         this.getProjectProcessUseCase =
                 getProjectProcessUseCase;
+
+        this.stopProjectProcessUseCase =
+                stopProjectProcessUseCase;
+
+        this.projectRefreshController =
+                projectRefreshController;
     }
 
     public QuitDecision requestQuit() {
 
-        if (confirmationPending) {
+        List<SpringProject> runningProjects =
+                runningProjects();
+
+        if (runningProjects.isEmpty()) {
             return QuitDecision.QUIT;
         }
 
-        int activeProjectCount =
-                activeProjectCount();
+        quitState.open(
+                runningProjects.stream()
+                        .map(SpringProject::name)
+                        .toList());
 
-        if (activeProjectCount == 0) {
-            return QuitDecision.QUIT;
-        }
-
-        confirmationPending = true;
-
-        uiState.showWarningMessage(
-                buildWarningMessage(
-                        activeProjectCount));
-
-        return QuitDecision.WARNING;
+        return QuitDecision.OPEN_POPUP;
     }
 
-    public QuitDecision handleConfirmation(
-            KeyEvent keyEvent) {
+    public boolean active() {
 
-        if (!confirmationPending) {
-            return QuitDecision.CONTINUE;
-        }
-
-        if (keyEvent.type()
-                == KeyType.ESCAPE) {
-
-            cancel();
-
-            return QuitDecision.CONTINUE;
-        }
-
-        if (keyEvent.type()
-                != KeyType.CHARACTER
-                || !keyEvent.hasCharacter()) {
-
-            return QuitDecision.CONTINUE;
-        }
-
-        char character =
-                keyEvent.character();
-
-        if (character == 'q'
-                || character == 'y') {
-
-            return QuitDecision.QUIT;
-        }
-
-        if (character == 'n') {
-
-            cancel();
-        }
-
-        return QuitDecision.CONTINUE;
+        return quitState.active();
     }
 
-    public boolean confirmationPending() {
-        return confirmationPending;
+    public QuitState state() {
+
+        return quitState;
+    }
+
+    public void moveNext() {
+
+        quitState.moveNext();
+    }
+
+    public void movePrevious() {
+
+        quitState.movePrevious();
     }
 
     public void cancel() {
 
-        confirmationPending = false;
-
-        uiState.clearMessage();
+        quitState.close();
     }
 
-    private int activeProjectCount() {
+    public QuitDecision executeSelection() {
 
-        int count = 0;
+        return switch (
+                quitState.selectedOption()) {
+
+            case STOP_RUNNING -> {
+
+                if (stopRunningProjects()) {
+
+                    quitState.showReadyToQuit();
+                }
+
+                yield QuitDecision.CONTINUE;
+            }
+
+            case QUIT_ANYWAY -> {
+
+                quitState.close();
+
+                yield QuitDecision.QUIT;
+            }
+
+            case QUIT -> {
+
+                quitState.close();
+
+                yield QuitDecision.QUIT;
+            }
+
+            case CANCEL -> {
+
+                quitState.close();
+
+                yield QuitDecision.CONTINUE;
+            }
+        };
+    }
+
+    private boolean stopRunningProjects() {
+
+        Set<String> selectedProjects =
+                quitState.selectedRunningProjects();
+
+        if (selectedProjects.isEmpty()) {
+
+            uiState.showWarningMessage(
+                    "Select at least one project.");
+
+            return false;
+        }
+
+        for (SpringProject project :
+                runningProjects()) {
+
+            if (!selectedProjects.contains(
+                    project.name())) {
+
+                continue;
+            }
+
+            stopProjectProcessUseCase.stop(
+                    project);
+        }
+
+        try {
+
+            projectRefreshController.refresh();
+
+            return true;
+
+        } catch (IOException exception) {
+
+            uiState.showErrorMessage(
+                    "Failed to refresh projects.");
+
+            return false;
+        }
+    }
+
+    private List<SpringProject> runningProjects() {
+
+        List<SpringProject> runningProjects =
+                new ArrayList<>();
 
         for (SpringProject project :
                 uiState.projects()) {
 
-            boolean active =
+            boolean running =
                     getProjectProcessUseCase
                             .get(project)
                             .map(ProjectProcess::running)
                             .orElse(false);
 
-            if (active) {
-                count++;
+            if (running) {
+
+                runningProjects.add(
+                        project);
             }
         }
 
-        return count;
+        return runningProjects;
     }
 
-    private String buildWarningMessage(
-            int activeProjectCount) {
+    public void focusNext() {
 
-        String projectLabel =
-                activeProjectCount == 1
-                        ? "project is"
-                        : "projects are";
+        if (quitState.focus()
+                == QuitFocus.PROJECTS) {
 
-        return activeProjectCount
-                + " "
-                + projectLabel
-                + " still running. "
-                + "Press q/y to quit anyway "
-                + "or Esc/n to cancel.";
+            quitState.selectNextProject();
+
+            return;
+        }
+
+        quitState.moveNext();
+    }
+
+    public void focusPrevious() {
+
+        if (quitState.focus()
+                == QuitFocus.PROJECTS) {
+
+            quitState.selectPreviousProject();
+
+            return;
+        }
+
+        quitState.movePrevious();
+    }
+
+    public void focusFirst() {
+
+        if (quitState.focus()
+                == QuitFocus.PROJECTS) {
+
+            quitState.selectFirstProject();
+
+            return;
+        }
+
+        while (quitState.selectedOptionIndex() > 0) {
+
+            quitState.movePrevious();
+        }
+    }
+
+    public void focusLast() {
+
+        if (quitState.focus()
+                == QuitFocus.PROJECTS) {
+
+            quitState.selectLastProject();
+
+            return;
+        }
+
+        while (quitState.selectedOptionIndex()
+                < quitState.options().size() - 1) {
+
+            quitState.moveNext();
+        }
     }
 }

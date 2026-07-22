@@ -6,12 +6,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.github.avinashio.lazyspringboot.application.process.GetProjectProcessUseCase;
+import io.github.avinashio.lazyspringboot.application.process.StopProjectProcessUseCase;
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcess;
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcessStatus;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
-import io.github.avinashio.lazyspringboot.ui.input.KeyEvent;
-import io.github.avinashio.lazyspringboot.ui.input.KeyType;
-import io.github.avinashio.lazyspringboot.ui.state.UiMessageType;
+import io.github.avinashio.lazyspringboot.ui.state.QuitOption;
+import io.github.avinashio.lazyspringboot.ui.state.QuitState;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.util.List;
 import java.util.Optional;
@@ -20,59 +20,46 @@ import org.junit.jupiter.api.Test;
 class QuitControllerTest {
 
     @Test
-    void shouldQuitImmediatelyWhenNoProjectsAreRunning() {
-
-        UiState uiState =
-                new UiState();
-
-        GetProjectProcessUseCase
-                getProjectProcessUseCase =
-                mock(
-                        GetProjectProcessUseCase.class);
+    void shouldQuitImmediatelyWhenNothingIsRunning() {
 
         QuitController controller =
-                new QuitController(
-                        uiState,
-                        getProjectProcessUseCase);
+                controller(
+                        new UiState());
 
-        QuitDecision decision =
-                controller.requestQuit();
-
-        assertThat(decision)
+        assertThat(
+                controller.requestQuit())
                 .isEqualTo(
                         QuitDecision.QUIT);
 
         assertThat(
-                controller
-                        .confirmationPending())
+                controller.active())
                 .isFalse();
-
-        assertThat(
-                uiState.message())
-                .isNull();
     }
 
     @Test
-    void shouldRequestConfirmationWhenProjectIsRunning() {
+    void shouldOpenPopupWhenProjectIsRunning() {
 
         UiState uiState =
                 new UiState();
-
-        GetProjectProcessUseCase
-                getProjectProcessUseCase =
-                mock(
-                        GetProjectProcessUseCase.class);
 
         SpringProject project =
                 mock(
                         SpringProject.class);
 
+        when(project.name())
+                .thenReturn(
+                        "demo");
+
         uiState.setProjects(
                 List.of(
                         project));
 
+        GetProjectProcessUseCase getProcess =
+                mock(
+                        GetProjectProcessUseCase.class);
+
         when(
-                getProjectProcessUseCase.get(
+                getProcess.get(
                         project))
                 .thenReturn(
                         Optional.of(
@@ -80,465 +67,470 @@ class QuitControllerTest {
                                         ProjectProcessStatus.RUNNING)));
 
         QuitController controller =
-                new QuitController(
+                controller(
                         uiState,
-                        getProjectProcessUseCase);
-
-        QuitDecision decision =
-                controller.requestQuit();
-
-        assertThat(decision)
-                .isEqualTo(
-                        QuitDecision.WARNING);
+                        getProcess);
 
         assertThat(
-                controller
-                        .confirmationPending())
+                controller.requestQuit())
+                .isEqualTo(
+                        QuitDecision.OPEN_POPUP);
+
+        assertThat(
+                controller.active())
                 .isTrue();
 
         assertThat(
-                uiState.message())
-                .isNotNull();
-
-        assertThat(
-                uiState.message()
-                        .type())
-                .isEqualTo(
-                        UiMessageType.WARNING);
-
-        assertThat(
-                uiState.message()
-                        .text())
-                .isEqualTo(
-                        "1 project is still running. "
-                                + "Press q/y to quit anyway "
-                                + "or Esc/n to cancel.");
+                controller.state()
+                        .runningProjects())
+                .containsExactly(
+                        "demo");
     }
 
     @Test
-    void shouldRequestConfirmationWhenProjectIsStarting() {
+    void shouldMoveSelection() {
 
-        UiState uiState =
-                new UiState();
+        QuitState state =
+                new QuitState();
 
-        GetProjectProcessUseCase
-                getProjectProcessUseCase =
-                mock(
-                        GetProjectProcessUseCase.class);
+        QuitController controller =
+                controller(
+                        state,
+                        new UiState());
 
-        SpringProject project =
-                mock(
-                        SpringProject.class);
-
-        uiState.setProjects(
+        state.open(
                 List.of(
-                        project));
-
-        when(
-                getProjectProcessUseCase.get(
-                        project))
-                .thenReturn(
-                        Optional.of(
-                                process(
-                                        ProjectProcessStatus.STARTING)));
-
-        QuitController controller =
-                new QuitController(
-                        uiState,
-                        getProjectProcessUseCase);
-
-        QuitDecision decision =
-                controller.requestQuit();
-
-        assertThat(decision)
-                .isEqualTo(
-                        QuitDecision.WARNING);
+                        "demo"));
 
         assertThat(
-                controller
-                        .confirmationPending())
-                .isTrue();
+                state.selectedOption())
+                .isEqualTo(
+                        QuitOption.STOP_RUNNING);
+
+        controller.moveNext();
+
+        assertThat(
+                state.selectedOption())
+                .isEqualTo(
+                        QuitOption.QUIT_ANYWAY);
+
+        controller.movePrevious();
+
+        assertThat(
+                state.selectedOption())
+                .isEqualTo(
+                        QuitOption.STOP_RUNNING);
     }
 
     @Test
-    void shouldShowNumberOfActiveProjectsInWarning() {
+    void shouldCancelPopup() {
 
-        UiState uiState =
-                new UiState();
+        QuitState state =
+                new QuitState();
 
-        GetProjectProcessUseCase
-                getProjectProcessUseCase =
-                mock(
-                        GetProjectProcessUseCase.class);
+        QuitController controller =
+                controller(
+                        state,
+                        new UiState());
 
-        SpringProject firstProject =
-                mock(
-                        SpringProject.class);
-
-        SpringProject secondProject =
-                mock(
-                        SpringProject.class);
-
-        SpringProject thirdProject =
-                mock(
-                        SpringProject.class);
-
-        uiState.setProjects(
+        state.open(
                 List.of(
-                        firstProject,
-                        secondProject,
-                        thirdProject));
+                        "demo"));
 
-        when(
-                getProjectProcessUseCase.get(
-                        firstProject))
-                .thenReturn(
-                        Optional.of(
-                                process(
-                                        ProjectProcessStatus.RUNNING)));
-
-        when(
-                getProjectProcessUseCase.get(
-                        secondProject))
-                .thenReturn(
-                        Optional.of(
-                                process(
-                                        ProjectProcessStatus.STARTING)));
-
-        when(
-                getProjectProcessUseCase.get(
-                        thirdProject))
-                .thenReturn(
-                        Optional.empty());
-
-        QuitController controller =
-                new QuitController(
-                        uiState,
-                        getProjectProcessUseCase);
-
-        QuitDecision decision =
-                controller.requestQuit();
-
-        assertThat(decision)
-                .isEqualTo(
-                        QuitDecision.WARNING);
+        controller.cancel();
 
         assertThat(
-                uiState.message()
-                        .text())
-                .isEqualTo(
-                        "2 projects are still running. "
-                                + "Press q/y to quit anyway "
-                                + "or Esc/n to cancel.");
+                state.active())
+                .isFalse();
     }
 
     @Test
-    void shouldQuitWhenQConfirmsPendingQuit() {
+    void shouldQuitWhenQuitAnywaySelected() {
+
+        QuitState state =
+                new QuitState();
+
+        state.open(
+                List.of(
+                        "demo"));
+
+        state.moveNext();
 
         QuitController controller =
-                controllerWithRunningProject();
+                controller(
+                        state,
+                        new UiState());
 
-        controller.requestQuit();
-
-        QuitDecision decision =
-                controller.handleConfirmation(
-                        character(
-                                'q'));
-
-        assertThat(decision)
+        assertThat(
+                controller.executeSelection())
                 .isEqualTo(
                         QuitDecision.QUIT);
     }
 
     @Test
-    void shouldQuitWhenYConfirmsPendingQuit() {
+    void shouldQuitWhenReadyToQuitSelected() {
+
+        QuitState state =
+                new QuitState();
+
+        state.showReadyToQuit();
 
         QuitController controller =
-                controllerWithRunningProject();
+                controller(
+                        state,
+                        new UiState());
 
-        controller.requestQuit();
-
-        QuitDecision decision =
-                controller.handleConfirmation(
-                        character(
-                                'y'));
-
-        assertThat(decision)
+        assertThat(
+                controller.executeSelection())
                 .isEqualTo(
                         QuitDecision.QUIT);
     }
 
     @Test
-    void shouldCancelPendingQuitWhenEscapeIsPressed() {
+    void shouldCheckEveryProject() {
 
         UiState uiState =
                 new UiState();
 
-        QuitController controller =
-                controllerWithRunningProject(
-                        uiState);
-
-        controller.requestQuit();
-
-        assertThat(
-                uiState.message())
-                .isNotNull();
-
-        QuitDecision decision =
-                controller.handleConfirmation(
-                        new KeyEvent(
-                                KeyType.ESCAPE,
-                                null));
-
-        assertThat(decision)
-                .isEqualTo(
-                        QuitDecision.CONTINUE);
-
-        assertThat(
-                controller
-                        .confirmationPending())
-                .isFalse();
-
-        assertThat(
-                uiState.message())
-                .isNull();
-    }
-
-    @Test
-    void shouldCancelPendingQuitWhenNIsPressed() {
-
-        UiState uiState =
-                new UiState();
-
-        QuitController controller =
-                controllerWithRunningProject(
-                        uiState);
-
-        controller.requestQuit();
-
-        QuitDecision decision =
-                controller.handleConfirmation(
-                        character(
-                                'n'));
-
-        assertThat(decision)
-                .isEqualTo(
-                        QuitDecision.CONTINUE);
-
-        assertThat(
-                controller
-                        .confirmationPending())
-                .isFalse();
-
-        assertThat(
-                uiState.message())
-                .isNull();
-    }
-
-    @Test
-    void shouldWarnAgainAfterQuitIsCancelled() {
-
-        UiState uiState =
-                new UiState();
-
-        QuitController controller =
-                controllerWithRunningProject(
-                        uiState);
-
-        QuitDecision firstDecision =
-                controller.requestQuit();
-
-        assertThat(firstDecision)
-                .isEqualTo(
-                        QuitDecision.WARNING);
-
-        controller.handleConfirmation(
-                new KeyEvent(
-                        KeyType.ESCAPE,
-                        null));
-
-        QuitDecision secondDecision =
-                controller.requestQuit();
-
-        assertThat(secondDecision)
-                .isEqualTo(
-                        QuitDecision.WARNING);
-
-        assertThat(
-                controller
-                        .confirmationPending())
-                .isTrue();
-
-        assertThat(
-                uiState.message())
-                .isNotNull();
-    }
-
-    @Test
-    void shouldIgnoreUnrelatedKeyWhileConfirmationIsPending() {
-
-        QuitController controller =
-                controllerWithRunningProject();
-
-        controller.requestQuit();
-
-        QuitDecision decision =
-                controller.handleConfirmation(
-                        character(
-                                'x'));
-
-        assertThat(decision)
-                .isEqualTo(
-                        QuitDecision.CONTINUE);
-
-        assertThat(
-                controller
-                        .confirmationPending())
-                .isTrue();
-    }
-
-    @Test
-    void shouldIgnoreConfirmationWhenNoConfirmationIsPending() {
-
-        UiState uiState =
-                new UiState();
-
-        GetProjectProcessUseCase
-                getProjectProcessUseCase =
-                mock(
-                        GetProjectProcessUseCase.class);
-
-        QuitController controller =
-                new QuitController(
-                        uiState,
-                        getProjectProcessUseCase);
-
-        QuitDecision decision =
-                controller.handleConfirmation(
-                        character(
-                                'q'));
-
-        assertThat(decision)
-                .isEqualTo(
-                        QuitDecision.CONTINUE);
-
-        assertThat(
-                controller
-                        .confirmationPending())
-                .isFalse();
-    }
-
-    @Test
-    void shouldCheckEveryProjectForActiveProcess() {
-
-        UiState uiState =
-                new UiState();
-
-        GetProjectProcessUseCase
-                getProjectProcessUseCase =
-                mock(
-                        GetProjectProcessUseCase.class);
-
-        SpringProject firstProject =
+        SpringProject first =
                 mock(
                         SpringProject.class);
 
-        SpringProject secondProject =
+        SpringProject second =
                 mock(
                         SpringProject.class);
 
         uiState.setProjects(
                 List.of(
-                        firstProject,
-                        secondProject));
+                        first,
+                        second));
+
+        GetProjectProcessUseCase getProcess =
+                mock(
+                        GetProjectProcessUseCase.class);
 
         when(
-                getProjectProcessUseCase.get(
-                        firstProject))
+                getProcess.get(
+                        first))
                 .thenReturn(
                         Optional.empty());
 
         when(
-                getProjectProcessUseCase.get(
-                        secondProject))
+                getProcess.get(
+                        second))
                 .thenReturn(
                         Optional.of(
                                 process(
                                         ProjectProcessStatus.RUNNING)));
 
         QuitController controller =
-                new QuitController(
+                controller(
                         uiState,
-                        getProjectProcessUseCase);
+                        getProcess);
+
+        when(first.name())
+                .thenReturn(
+                        "first");
+
+        when(second.name())
+                .thenReturn(
+                        "second");
 
         controller.requestQuit();
 
-        verify(
-                getProjectProcessUseCase)
-                .get(
-                        firstProject);
-
-        verify(
-                getProjectProcessUseCase)
-                .get(
-                        secondProject);
+        verify(getProcess).get(first);
+        verify(getProcess).get(second);
     }
 
-    private QuitController
-    controllerWithRunningProject() {
-
-        return controllerWithRunningProject(
-                new UiState());
-    }
-
-    private QuitController
-    controllerWithRunningProject(
+    private QuitController controller(
             UiState uiState) {
 
-        GetProjectProcessUseCase
-                getProjectProcessUseCase =
-                mock(
-                        GetProjectProcessUseCase.class);
-
-        SpringProject project =
-                mock(
-                        SpringProject.class);
-
-        uiState.setProjects(
-                List.of(
-                        project));
-
-        when(
-                getProjectProcessUseCase.get(
-                        project))
-                .thenReturn(
-                        Optional.of(
-                                process(
-                                        ProjectProcessStatus.RUNNING)));
-
-        return new QuitController(
+        return controller(
+                new QuitState(),
                 uiState,
-                getProjectProcessUseCase);
+                mock(
+                        GetProjectProcessUseCase.class));
     }
 
-    private KeyEvent character(
-            char character) {
+    private QuitController controller(
+            UiState uiState,
+            GetProjectProcessUseCase
+                    getProcess) {
 
-        return new KeyEvent(
-                KeyType.CHARACTER,
-                character);
+        return controller(
+                new QuitState(),
+                uiState,
+                getProcess);
+    }
+
+    private QuitController controller(
+            QuitState state,
+            UiState uiState) {
+
+        return controller(
+                state,
+                uiState,
+                mock(
+                        GetProjectProcessUseCase.class));
+    }
+
+    private QuitController controller(
+            QuitState state,
+            UiState uiState,
+            GetProjectProcessUseCase
+                    getProcess) {
+
+        return new QuitController(
+                state,
+                uiState,
+                getProcess,
+                mock(
+                        StopProjectProcessUseCase.class),
+                mock(
+                        ProjectRefreshController.class));
     }
 
     private ProjectProcess process(
             ProjectProcessStatus status) {
 
         return new ProjectProcess(
-                "test-app",
+                "demo",
                 status,
                 List.of(),
                 null,
-                12345L,
+                1L,
                 null,
                 null);
+    }
+
+    @Test
+    void shouldReturnContinueAfterCancel() {
+
+        QuitState state =
+                new QuitState();
+
+        state.open(
+                List.of("demo"));
+
+        QuitController controller =
+                controller(
+                        state,
+                        new UiState());
+
+        controller.cancel();
+
+        assertThat(
+                controller.active())
+                .isFalse();
+    }
+
+    @Test
+    void shouldOpenPopupWithRunningProjectNames() {
+
+        UiState uiState =
+                new UiState();
+
+        SpringProject project =
+                mock(
+                        SpringProject.class);
+
+        when(project.name())
+                .thenReturn(
+                        "demo-project");
+
+        uiState.setProjects(
+                List.of(project));
+
+        GetProjectProcessUseCase getProcess =
+                mock(
+                        GetProjectProcessUseCase.class);
+
+        when(
+                getProcess.get(project))
+                .thenReturn(
+                        Optional.of(
+                                process(
+                                        ProjectProcessStatus.RUNNING)));
+
+        QuitController controller =
+                controller(
+                        uiState,
+                        getProcess);
+
+        controller.requestQuit();
+
+        assertThat(
+                controller.state()
+                        .runningProjects())
+                .containsExactly(
+                        "demo-project");
+    }
+
+    @Test
+    void shouldStopRunningProjectsAndShowReadyToQuit()
+            throws Exception {
+
+        QuitState state =
+                new QuitState();
+
+        UiState uiState =
+                new UiState();
+
+        SpringProject project =
+                mock(
+                        SpringProject.class);
+
+        when(project.name())
+                .thenReturn(
+                        "demo");
+
+        uiState.setProjects(
+                List.of(project));
+
+        GetProjectProcessUseCase getProcess =
+                mock(
+                        GetProjectProcessUseCase.class);
+
+        when(getProcess.get(project))
+                .thenReturn(
+                        Optional.of(
+                                process(
+                                        ProjectProcessStatus.RUNNING)));
+
+        StopProjectProcessUseCase stopProcess =
+                mock(
+                        StopProjectProcessUseCase.class);
+
+        ProjectRefreshController refreshController =
+                mock(
+                        ProjectRefreshController.class);
+
+        QuitController controller =
+                new QuitController(
+                        state,
+                        uiState,
+                        getProcess,
+                        stopProcess,
+                        refreshController);
+
+        controller.requestQuit();
+
+        assertThat(
+                state.selectedOption())
+                .isEqualTo(
+                        QuitOption.STOP_RUNNING);
+
+        assertThat(
+                controller.executeSelection())
+                .isEqualTo(
+                        QuitDecision.CONTINUE);
+
+        verify(stopProcess)
+                .stop(project);
+
+        verify(refreshController)
+                .refresh();
+
+        assertThat(
+                state.readyToQuitPhase())
+                .isTrue();
+    }
+
+    @Test
+    void shouldMoveToNextProjectWhenProjectFocused() {
+
+        QuitState state =
+                new QuitState();
+
+        state.open(
+                List.of(
+                        "project-1",
+                        "project-2"));
+
+        QuitController controller =
+                controller(
+                        state,
+                        new UiState());
+
+        controller.focusNext();
+
+        assertThat(
+                state.selectedRunningProjectIndex())
+                .isEqualTo(1);
+    }
+
+    @Test
+    void shouldMoveToPreviousProjectWhenProjectFocused() {
+
+        QuitState state =
+                new QuitState();
+
+        state.open(
+                List.of(
+                        "project-1",
+                        "project-2"));
+
+        state.selectNextProject();
+
+        QuitController controller =
+                controller(
+                        state,
+                        new UiState());
+
+        controller.focusPrevious();
+
+        assertThat(
+                state.selectedRunningProjectIndex())
+                .isZero();
+    }
+
+    @Test
+    void shouldMoveToNextActionWhenActionsFocused() {
+
+        QuitState state =
+                new QuitState();
+
+        state.open(
+                List.of("project"));
+
+        state.focusActions();
+
+        QuitController controller =
+                controller(
+                        state,
+                        new UiState());
+
+        controller.focusNext();
+
+        assertThat(
+                state.selectedOption())
+                .isEqualTo(
+                        QuitOption.QUIT_ANYWAY);
+    }
+
+    @Test
+    void shouldMoveToPreviousActionWhenActionsFocused() {
+
+        QuitState state =
+                new QuitState();
+
+        state.open(
+                List.of("project"));
+
+        state.focusActions();
+
+        state.moveNext();
+
+        QuitController controller =
+                controller(
+                        state,
+                        new UiState());
+
+        controller.focusPrevious();
+
+        assertThat(
+                state.selectedOption())
+                .isEqualTo(
+                        QuitOption.STOP_RUNNING);
     }
 }

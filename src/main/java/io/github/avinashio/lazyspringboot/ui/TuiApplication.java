@@ -15,17 +15,8 @@ import io.github.avinashio.lazyspringboot.ui.controller.QuitController;
 import io.github.avinashio.lazyspringboot.ui.controller.QuitDecision;
 import io.github.avinashio.lazyspringboot.ui.controller.StartupController;
 import io.github.avinashio.lazyspringboot.ui.controller.WorkspaceController;
-import io.github.avinashio.lazyspringboot.ui.input.InputDispatcher;
-import io.github.avinashio.lazyspringboot.ui.input.KeyEvent;
-import io.github.avinashio.lazyspringboot.ui.input.KeyReader;
-import io.github.avinashio.lazyspringboot.ui.input.KeyType;
-import io.github.avinashio.lazyspringboot.ui.screen.CommandPaletteScreen;
-import io.github.avinashio.lazyspringboot.ui.screen.ConfirmationScreen;
-import io.github.avinashio.lazyspringboot.ui.screen.CreateProjectScreen;
-import io.github.avinashio.lazyspringboot.ui.screen.MainScreen;
-import io.github.avinashio.lazyspringboot.ui.screen.ProjectActionOutputScreen;
-import io.github.avinashio.lazyspringboot.ui.screen.ProjectActionsScreen;
-import io.github.avinashio.lazyspringboot.ui.screen.WorkspaceScreen;
+import io.github.avinashio.lazyspringboot.ui.input.*;
+import io.github.avinashio.lazyspringboot.ui.screen.*;
 import io.github.avinashio.lazyspringboot.ui.state.InputMode;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.io.IOException;
@@ -33,7 +24,9 @@ import org.jline.terminal.Terminal;
 import org.jline.utils.InfoCmp;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -106,6 +99,15 @@ public class TuiApplication
     private final WorkspaceScreen
             workspaceScreen;
 
+    private final QuitConfirmationScreen
+            quitConfirmationScreen;
+
+    private final QuitInputHandler
+            quitInputHandler;
+
+    private final ConfigurableApplicationContext
+            applicationContext;
+
     public TuiApplication(
             QuitController quitController,
             Terminal terminal,
@@ -132,7 +134,9 @@ public class TuiApplication
             CommandPaletteScreen commandPaletteScreen,
             StartupController startupController,
             WorkspaceController workspaceController,
-            WorkspaceScreen workspaceScreen) {
+            WorkspaceScreen workspaceScreen,
+            QuitConfirmationScreen quitConfirmationScreen,
+            QuitInputHandler quitInputHandler, ConfigurableApplicationContext applicationContext) {
 
         this.quitController =
                 quitController;
@@ -193,6 +197,9 @@ public class TuiApplication
 
         this.workspaceScreen =
                 workspaceScreen;
+        this.quitConfirmationScreen = quitConfirmationScreen;
+        this.quitInputHandler = quitInputHandler;
+        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -233,7 +240,17 @@ public class TuiApplication
                     originalAttributes);
 
             terminal.flush();
+
+            terminal.writer()
+                    .println();
+
+            terminal.writer()
+                    .flush();
         }
+
+        System.exit(
+                SpringApplication.exit(
+                        applicationContext));
     }
 
     private void render() {
@@ -319,6 +336,17 @@ public class TuiApplication
             return;
         }
 
+        if (quitController.active()) {
+
+            mainScreen.render(
+                    uiState);
+
+            quitConfirmationScreen.render(
+                    quitController.state());
+
+            return;
+        }
+
         mainScreen.render(
                 uiState);
     }
@@ -339,13 +367,11 @@ public class TuiApplication
                 continue;
             }
 
-            if (quitController
-                    .confirmationPending()) {
+            if (quitController.active()) {
 
                 QuitDecision decision =
-                        quitController
-                                .handleConfirmation(
-                                        keyEvent);
+                        quitInputHandler.handle(
+                                keyEvent);
 
                 if (decision
                         == QuitDecision.QUIT) {
@@ -362,8 +388,7 @@ public class TuiApplication
                     keyEvent)) {
 
                 QuitDecision decision =
-                        quitController
-                                .requestQuit();
+                        quitController.requestQuit();
 
                 if (decision
                         == QuitDecision.QUIT) {
