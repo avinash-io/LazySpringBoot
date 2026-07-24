@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.time.Instant;
 import org.springframework.stereotype.Component;
 import io.github.avinashio.lazyspringboot.ui.runtime.StatusProvider;
+import io.github.avinashio.lazyspringboot.ui.runtime.UptimeProvider;
 
 @Component
 public class ProjectRuntimeInfoFactory {
@@ -19,13 +20,17 @@ public class ProjectRuntimeInfoFactory {
     private final StatusProvider
             statusProvider;
 
+    private final UptimeProvider
+            uptimeProvider;
+
     public ProjectRuntimeInfoFactory(
             GetProjectProcessUseCase getProjectProcessUseCase,
-            StatusProvider statusProvider) {
+            StatusProvider statusProvider, UptimeProvider uptimeProvider) {
 
         this.getProjectProcessUseCase =
                 getProjectProcessUseCase;
         this.statusProvider = statusProvider;
+        this.uptimeProvider = uptimeProvider;
     }
 
     public ProjectRuntimeInfo create(
@@ -46,36 +51,8 @@ public class ProjectRuntimeInfoFactory {
 
         return new ProjectRuntimeInfo(
                 statusProvider.status(process),
-                "-",
-                uptime(process));
+                uptimeProvider.unavailable(),
+                uptimeProvider.uptime(process));
     }
 
-    private String uptime(
-            ProjectProcess process) {
-
-        if (!process.hasStartTime()) {
-
-            return "-";
-        }
-
-        Duration duration =
-                Duration.between(
-                        process.startedAt(),
-                        Instant.now());
-
-        long hours =
-                duration.toHours();
-
-        long minutes =
-                duration.toMinutesPart();
-
-        long seconds =
-                duration.toSecondsPart();
-
-        return String.format(
-                "%02d:%02d:%02d",
-                hours,
-                minutes,
-                seconds);
-    }
 }

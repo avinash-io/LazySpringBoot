@@ -10,6 +10,7 @@ import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.service.WorkspaceService;
 import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
 import io.github.avinashio.lazyspringboot.ui.runtime.StatusProvider;
+import io.github.avinashio.lazyspringboot.ui.runtime.UptimeProvider;
 import io.github.avinashio.lazyspringboot.ui.service.ProjectFilterService;
 import io.github.avinashio.lazyspringboot.ui.service.ProjectSortService;
 import io.github.avinashio.lazyspringboot.ui.service.VisibleProjectService;
@@ -60,7 +61,8 @@ class ProjectPanelTest {
                 new ProjectRuntimeInfoFactory(
                         mock(
                                 GetProjectProcessUseCase.class),
-                        new StatusProvider());
+                        new StatusProvider(),
+                        new UptimeProvider());
 
         projectPanel =
                 new ProjectPanel(
