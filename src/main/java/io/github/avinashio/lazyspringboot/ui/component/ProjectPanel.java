@@ -29,6 +29,40 @@ public class ProjectPanel {
     private final ProjectRuntimeInfoFactory
             projectRuntimeInfoFactory;
 
+    private static final int
+            SELECTION_WIDTH = 2;
+
+    private static final int
+            NAME_WIDTH = 24;
+
+    private static final int
+            STATUS_WIDTH = 10;
+
+    private static final int
+            PORT_WIDTH = 6;
+
+    private static final int
+            UPTIME_WIDTH = 8;
+
+    private static final String
+            HEADER_FORMAT =
+            "%-" + SELECTION_WIDTH + "s"
+                    + "%-" + NAME_WIDTH + "s "
+                    + "%-" + STATUS_WIDTH + "s "
+                    + "%-" + PORT_WIDTH + "s "
+                    + "%-" + UPTIME_WIDTH + "s";
+
+    private static final String
+            PROJECT_ROW_FORMAT =
+            "%s%-" + NAME_WIDTH + "s "
+                    + "%-" + STATUS_WIDTH + "s "
+                    + "%-" + PORT_WIDTH + "s "
+                    + "%-" + UPTIME_WIDTH + "s%s";
+
+    private static final char
+            SEPARATOR_CHARACTER =
+            '─';
+
     public ProjectPanel(
             StatusFormatter statusFormatter,
             ProjectBadgeFormatter projectBadgeFormatter,
@@ -103,14 +137,17 @@ public class ProjectPanel {
 
         lines.add(
                 String.format(
-                        "%-25s %-10s %-6s %-8s",
+                        HEADER_FORMAT,
+                        "",
                         "NAME",
                         "STATUS",
                         "PORT",
                         "UPTIME"));
 
         lines.add(
-                "────────────────────────────────────────────────────");
+                separator(
+                        lines.getFirst()
+                                .length()));
 
         for (int visibleIndex = start;
              visibleIndex < end;
@@ -137,6 +174,17 @@ public class ProjectPanel {
         }
 
         return lines;
+    }
+
+    private String separator(
+            int width) {
+
+        return String.valueOf(
+                        SEPARATOR_CHARACTER)
+                .repeat(
+                        Math.max(
+                                width,
+                                1));
     }
 
     private int selectedVisibleIndex(
@@ -167,14 +215,35 @@ public class ProjectPanel {
                 projectRuntimeInfoFactory.create(
                         project);
 
+        String name =
+                project.name()
+                        + badges(project);
+
         return String.format(
-                "%s%-22s %-10s %-6s %-8s%s",
+                PROJECT_ROW_FORMAT,
                 prefix,
-                project.name(),
-                runtime.status(),
+                fitName(
+                        name),
+                statusFormatter.label(
+                        runtime.status()),
                 runtime.port(),
                 runtime.uptime(),
-                badges(project));
+                "");
+    }
+
+    private String fitName(
+            String name) {
+
+        if (name.length()
+                <= NAME_WIDTH) {
+
+            return name;
+        }
+
+        return name.substring(
+                0,
+                NAME_WIDTH - 1)
+                + "…";
     }
 
     private String badges(
@@ -188,6 +257,6 @@ public class ProjectPanel {
             return "";
         }
 
-        return "  " + badges;
+        return " " + badges;
     }
 }

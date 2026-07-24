@@ -10,7 +10,9 @@ public class StatusFormatter {
 
     public StatusFormatter(
             Spinner spinner) {
-        this.spinner = spinner;
+
+        this.spinner =
+                spinner;
     }
 
     public String format(
@@ -18,7 +20,26 @@ public class StatusFormatter {
 
         return icon(status)
                 + " "
-                + status.name();
+                + label(status);
+    }
+
+    public String label(
+            ProjectProcessStatus status) {
+
+        return switch (status) {
+
+            case STARTING ->
+                    "STARTING";
+
+            case RUNNING ->
+                    "RUNNING";
+
+            case STOPPED ->
+                    "STOPPED";
+
+            case FAILED ->
+                    "FAILED";
+        };
     }
 
     public String icon(
@@ -43,6 +64,7 @@ public class StatusFormatter {
     }
 
     public String stopped() {
+
         return format(
                 ProjectProcessStatus.STOPPED);
     }

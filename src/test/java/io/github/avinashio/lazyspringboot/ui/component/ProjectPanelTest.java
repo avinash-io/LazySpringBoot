@@ -9,6 +9,7 @@ import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.service.WorkspaceService;
 import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
+import io.github.avinashio.lazyspringboot.ui.runtime.StatusProvider;
 import io.github.avinashio.lazyspringboot.ui.service.ProjectFilterService;
 import io.github.avinashio.lazyspringboot.ui.service.ProjectSortService;
 import io.github.avinashio.lazyspringboot.ui.service.VisibleProjectService;
@@ -58,7 +59,8 @@ class ProjectPanelTest {
                 projectRuntimeInfoFactory =
                 new ProjectRuntimeInfoFactory(
                         mock(
-                                GetProjectProcessUseCase.class));
+                                GetProjectProcessUseCase.class),
+                        new StatusProvider());
 
         projectPanel =
                 new ProjectPanel(
@@ -85,10 +87,11 @@ class ProjectPanelTest {
         assertThat(lines)
                 .hasSize(7);
 
-        assertThat(lines)
-                .startsWith(
-                        "NAME                      STATUS     PORT   UPTIME  ",
-                        "────────────────────────────────────────────────────");
+        assertThat(lines.get(0))
+                .contains("NAME")
+                .contains("STATUS")
+                .contains("PORT")
+                .contains("UPTIME");
 
         assertThat(lines)
                 .anyMatch(

@@ -8,6 +8,7 @@ import io.github.avinashio.lazyspringboot.ui.model.ProjectRuntimeInfo;
 import java.time.Duration;
 import java.time.Instant;
 import org.springframework.stereotype.Component;
+import io.github.avinashio.lazyspringboot.ui.runtime.StatusProvider;
 
 @Component
 public class ProjectRuntimeInfoFactory {
@@ -15,11 +16,16 @@ public class ProjectRuntimeInfoFactory {
     private final GetProjectProcessUseCase
             getProjectProcessUseCase;
 
+    private final StatusProvider
+            statusProvider;
+
     public ProjectRuntimeInfoFactory(
-            GetProjectProcessUseCase getProjectProcessUseCase) {
+            GetProjectProcessUseCase getProjectProcessUseCase,
+            StatusProvider statusProvider) {
 
         this.getProjectProcessUseCase =
                 getProjectProcessUseCase;
+        this.statusProvider = statusProvider;
     }
 
     public ProjectRuntimeInfo create(
@@ -30,7 +36,7 @@ public class ProjectRuntimeInfoFactory {
                 .map(this::create)
                 .orElse(
                         new ProjectRuntimeInfo(
-                                ProjectProcessStatus.STOPPED,
+                                statusProvider.stopped(),
                                 "-",
                                 "-"));
     }
@@ -39,7 +45,7 @@ public class ProjectRuntimeInfoFactory {
             ProjectProcess process) {
 
         return new ProjectRuntimeInfo(
-                process.status(),
+                statusProvider.status(process),
                 "-",
                 uptime(process));
     }
