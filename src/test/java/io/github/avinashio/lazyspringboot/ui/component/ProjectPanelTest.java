@@ -9,6 +9,8 @@ import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.service.WorkspaceService;
 import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
+import io.github.avinashio.lazyspringboot.ui.runtime.PortProvider;
+import io.github.avinashio.lazyspringboot.ui.runtime.SpringBootLogParser;
 import io.github.avinashio.lazyspringboot.ui.runtime.StatusProvider;
 import io.github.avinashio.lazyspringboot.ui.runtime.UptimeProvider;
 import io.github.avinashio.lazyspringboot.ui.service.ProjectFilterService;
@@ -24,7 +26,6 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import io.github.avinashio.lazyspringboot.ui.service.ProjectRuntimeInfoFactory;
-import io.github.avinashio.lazyspringboot.application.process.GetProjectProcessUseCase;
 import io.github.avinashio.lazyspringboot.application.process.GetProjectProcessUseCase;
 
 class ProjectPanelTest {
@@ -62,7 +63,8 @@ class ProjectPanelTest {
                         mock(
                                 GetProjectProcessUseCase.class),
                         new StatusProvider(),
-                        new UptimeProvider());
+                        new UptimeProvider(),
+                        new PortProvider(new SpringBootLogParser()));
 
         projectPanel =
                 new ProjectPanel(
