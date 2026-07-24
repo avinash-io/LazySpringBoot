@@ -70,7 +70,8 @@ class ProjectPanelTest {
                 new ProjectPanel(
                         new StatusFormatter(
                                 mock(
-                                        Spinner.class)),
+                                        Spinner.class),
+                                new TerminalStyle()),
                         new ProjectBadgeFormatter(),
                         visibleProjectService,
                         textInputController,

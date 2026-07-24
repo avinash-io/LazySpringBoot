@@ -1,6 +1,7 @@
 package io.github.avinashio.lazyspringboot.ui.runtime;
 
 import io.github.avinashio.lazyspringboot.domain.process.ProjectProcess;
+import io.github.avinashio.lazyspringboot.domain.process.ProjectProcessStatus;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,6 +19,12 @@ public class PortProvider {
 
     public String port(
             ProjectProcess process) {
+
+        if (process.status()
+                != ProjectProcessStatus.RUNNING) {
+
+            return unavailable();
+        }
 
         String port =
                 logParser.findPort(

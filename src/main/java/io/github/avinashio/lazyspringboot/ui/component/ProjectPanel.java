@@ -224,7 +224,7 @@ public class ProjectPanel {
                 prefix,
                 fitName(
                         name),
-                statusFormatter.label(
+                statusFormatter.format(
                         runtime.status()),
                 runtime.port(),
                 runtime.uptime(),

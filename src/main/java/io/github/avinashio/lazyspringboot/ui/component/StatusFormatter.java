@@ -8,11 +8,14 @@ public class StatusFormatter {
 
     private final Spinner spinner;
 
-    public StatusFormatter(
-            Spinner spinner) {
+    private final TerminalStyle terminalStyle;
 
-        this.spinner =
-                spinner;
+    public StatusFormatter(
+            Spinner spinner,
+            TerminalStyle terminalStyle) {
+
+        this.spinner = spinner;
+        this.terminalStyle = terminalStyle;
     }
 
     public String format(
@@ -20,7 +23,7 @@ public class StatusFormatter {
 
         return icon(status)
                 + " "
-                + label(status);
+                + coloredLabel(status);
     }
 
     public String label(
@@ -28,17 +31,10 @@ public class StatusFormatter {
 
         return switch (status) {
 
-            case STARTING ->
-                    "STARTING";
-
-            case RUNNING ->
-                    "RUNNING";
-
-            case STOPPED ->
-                    "STOPPED";
-
-            case FAILED ->
-                    "FAILED";
+            case STARTING -> "STARTING";
+            case RUNNING -> "RUNNING";
+            case STOPPED -> "STOPPED";
+            case FAILED -> "FAILED";
         };
     }
 
@@ -48,9 +44,7 @@ public class StatusFormatter {
         return switch (status) {
 
             case STARTING ->
-                    "["
-                            + spinner.nextFrame()
-                            + "]";
+                    "[" + spinner.nextFrame() + "]";
 
             case RUNNING ->
                     "[✓]";
@@ -65,7 +59,27 @@ public class StatusFormatter {
 
     public String stopped() {
 
-        return format(
-                ProjectProcessStatus.STOPPED);
+        return format(ProjectProcessStatus.STOPPED);
+    }
+
+    private String coloredLabel(
+            ProjectProcessStatus status) {
+
+        String label = label(status);
+
+        return switch (status) {
+
+            case RUNNING ->
+                    terminalStyle.running(label);
+
+            case STARTING ->
+                    terminalStyle.starting(label);
+
+            case FAILED ->
+                    terminalStyle.failed(label);
+
+            case STOPPED ->
+                    terminalStyle.stopped(label);
+        };
     }
 }
