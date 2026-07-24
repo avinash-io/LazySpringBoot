@@ -1,7 +1,5 @@
 package io.github.avinashio.lazyspringboot.ui.component;
 
-import io.github.avinashio.lazyspringboot.application.process.GetProjectProcessUseCase;
-import io.github.avinashio.lazyspringboot.domain.process.ProjectProcessStatus;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
 import io.github.avinashio.lazyspringboot.ui.service.VisibleProjectService;
@@ -10,11 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
+import io.github.avinashio.lazyspringboot.ui.model.ProjectRuntimeInfo;
+import io.github.avinashio.lazyspringboot.ui.service.ProjectRuntimeInfoFactory;
+
 @Component
 public class ProjectPanel {
-
-    private final GetProjectProcessUseCase
-            getProjectProcessUseCase;
 
     private final StatusFormatter
             statusFormatter;
@@ -28,15 +26,18 @@ public class ProjectPanel {
     private final TextInputController
             textInputController;
 
+    private final ProjectRuntimeInfoFactory
+            projectRuntimeInfoFactory;
+
     public ProjectPanel(
-            GetProjectProcessUseCase getProjectProcessUseCase,
             StatusFormatter statusFormatter,
             ProjectBadgeFormatter projectBadgeFormatter,
             VisibleProjectService visibleProjectService,
-            TextInputController textInputController) {
+            TextInputController textInputController,
+            ProjectRuntimeInfoFactory projectRuntimeInfoFactory) {
 
-        this.getProjectProcessUseCase =
-                getProjectProcessUseCase;
+        this.projectRuntimeInfoFactory =
+                projectRuntimeInfoFactory;
 
         this.statusFormatter =
                 statusFormatter;
@@ -100,6 +101,17 @@ public class ProjectPanel {
                         start + visibleHeight,
                         visibleProjects.size());
 
+        lines.add(
+                String.format(
+                        "%-25s %-10s %-6s %-8s",
+                        "NAME",
+                        "STATUS",
+                        "PORT",
+                        "UPTIME"));
+
+        lines.add(
+                "────────────────────────────────────────────────────");
+
         for (int visibleIndex = start;
              visibleIndex < end;
              visibleIndex++) {
@@ -151,29 +163,18 @@ public class ProjectPanel {
             String prefix,
             SpringProject project) {
 
-        ProjectProcessStatus processStatus =
-                processStatus(
+        ProjectRuntimeInfo runtime =
+                projectRuntimeInfoFactory.create(
                         project);
 
-        return prefix
-                + statusFormatter.icon(
-                processStatus)
-                + " "
-                + project.name()
-                + badges(
-                project);
-    }
-
-    private ProjectProcessStatus processStatus(
-            SpringProject project) {
-
-        return getProjectProcessUseCase
-                .get(project)
-                .map(
-                        process ->
-                                process.status())
-                .orElse(
-                        ProjectProcessStatus.STOPPED);
+        return String.format(
+                "%s%-22s %-10s %-6s %-8s%s",
+                prefix,
+                project.name(),
+                runtime.status(),
+                runtime.port(),
+                runtime.uptime(),
+                badges(project));
     }
 
     private String badges(

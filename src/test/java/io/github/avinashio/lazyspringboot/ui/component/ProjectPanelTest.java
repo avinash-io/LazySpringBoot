@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import io.github.avinashio.lazyspringboot.application.process.GetProjectProcessUseCase;
 import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
 import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
@@ -22,6 +21,9 @@ import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import io.github.avinashio.lazyspringboot.ui.service.ProjectRuntimeInfoFactory;
+import io.github.avinashio.lazyspringboot.application.process.GetProjectProcessUseCase;
+import io.github.avinashio.lazyspringboot.application.process.GetProjectProcessUseCase;
 
 class ProjectPanelTest {
 
@@ -52,16 +54,21 @@ class ProjectPanelTest {
                         projectSortState(),
                         textInputController);
 
+        ProjectRuntimeInfoFactory
+                projectRuntimeInfoFactory =
+                new ProjectRuntimeInfoFactory(
+                        mock(
+                                GetProjectProcessUseCase.class));
+
         projectPanel =
                 new ProjectPanel(
-                        mock(
-                                GetProjectProcessUseCase.class),
                         new StatusFormatter(
                                 mock(
                                         Spinner.class)),
                         new ProjectBadgeFormatter(),
                         visibleProjectService,
-                        textInputController);
+                        textInputController,
+                        projectRuntimeInfoFactory);
     }
 
     @Test
@@ -76,7 +83,12 @@ class ProjectPanelTest {
                         10);
 
         assertThat(lines)
-                .hasSize(5);
+                .hasSize(7);
+
+        assertThat(lines)
+                .startsWith(
+                        "NAME                      STATUS     PORT   UPTIME  ",
+                        "────────────────────────────────────────────────────");
 
         assertThat(lines)
                 .anyMatch(
@@ -128,12 +140,11 @@ class ProjectPanelTest {
                         10);
 
         assertThat(lines)
-                .singleElement()
-                .asString()
-                .contains(
-                        "[ ] demo")
-                .doesNotContain(
-                        "STOPPED");
+                .hasSize(3);
+
+        assertThat(lines.get(2))
+                .contains("demo")
+                .contains("STOPPED");
     }
 
     @Test
@@ -164,9 +175,9 @@ class ProjectPanelTest {
                         10);
 
         assertThat(lines)
-                .hasSize(1);
+                .hasSize(3);
 
-        assertThat(lines.getFirst())
+        assertThat(lines.get(2))
                 .contains(
                         "project-three");
     }
@@ -189,7 +200,7 @@ class ProjectPanelTest {
                         10);
 
         assertThat(lines)
-                .hasSize(5);
+                .hasSize(7);
     }
 
     @Test
@@ -223,7 +234,7 @@ class ProjectPanelTest {
                         3);
 
         assertThat(lines)
-                .hasSize(3);
+                .hasSize(5);
 
         assertThat(lines)
                 .anyMatch(
@@ -271,7 +282,7 @@ class ProjectPanelTest {
                         3);
 
         assertThat(lines)
-                .hasSize(3);
+                .hasSize(5);
 
         assertThat(lines)
                 .anyMatch(
@@ -316,7 +327,7 @@ class ProjectPanelTest {
                         3);
 
         assertThat(lines)
-                .hasSize(3);
+                .hasSize(5);
 
         assertThat(lines)
                 .anyMatch(
@@ -373,7 +384,7 @@ class ProjectPanelTest {
                         2);
 
         assertThat(lines)
-                .hasSize(2);
+                .hasSize(4);
 
         assertThat(lines)
                 .anyMatch(
