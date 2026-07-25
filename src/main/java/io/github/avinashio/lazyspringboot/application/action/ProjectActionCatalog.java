@@ -30,6 +30,9 @@ public class ProjectActionCatalog {
                         ProjectAction.TEST,
                         true),
                 new ActionItem(
+                        ProjectAction.INSTALL,
+                        true),
+                new ActionItem(
                         ProjectAction.RUN,
                         true));
     }
@@ -41,6 +44,9 @@ public class ProjectActionCatalog {
                         true),
                 new ActionItem(
                         ProjectAction.TEST,
+                        true),
+                new ActionItem(
+                        ProjectAction.INSTALL,
                         true),
                 new ActionItem(
                         ProjectAction.VIEW_LOGS,

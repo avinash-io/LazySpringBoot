@@ -50,6 +50,11 @@ public class ProjectCommandResolver {
                 command.add("package");
             }
 
+            case INSTALL -> {
+                command.add("clean");
+                command.add("install");
+            }
+
             case TEST ->
                     command.add(
                             "test");

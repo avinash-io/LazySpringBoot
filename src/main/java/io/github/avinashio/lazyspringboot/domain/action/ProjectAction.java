@@ -2,6 +2,7 @@ package io.github.avinashio.lazyspringboot.domain.action;
 
 public enum ProjectAction {
     BUILD("Build"),
+    INSTALL("Install"),
     TEST("Test"),
     RUN("Run"),
     VIEW_LOGS("View Logs"),
