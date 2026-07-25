@@ -48,8 +48,21 @@ public class UiState {
     private final OutputViewport outputViewport =
             new OutputViewport();
 
+    private Screen screen =
+            Screen.DASHBOARD;
+
     public List<SpringProject> projects() {
         return projects;
+    }
+
+    public Screen screen() {
+        return screen;
+    }
+
+    public void showScreen(
+            Screen screen) {
+
+        this.screen = screen;
     }
 
     public void setProjects(

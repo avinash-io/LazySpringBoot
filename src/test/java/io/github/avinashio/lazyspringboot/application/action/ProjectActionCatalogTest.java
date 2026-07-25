@@ -32,6 +32,7 @@ class ProjectActionCatalogTest {
                 .containsExactly(
                         ProjectAction.BUILD,
                         ProjectAction.TEST,
+                        ProjectAction.INSTALL,
                         ProjectAction.RUN);
     }
 
@@ -51,6 +52,7 @@ class ProjectActionCatalogTest {
                 .containsExactly(
                         ProjectAction.BUILD,
                         ProjectAction.TEST,
+                        ProjectAction.INSTALL,
                         ProjectAction.VIEW_LOGS,
                         ProjectAction.RESTART,
                         ProjectAction.STOP);
@@ -72,6 +74,7 @@ class ProjectActionCatalogTest {
                 .containsExactly(
                         ProjectAction.BUILD,
                         ProjectAction.TEST,
+                        ProjectAction.INSTALL,
                         ProjectAction.VIEW_LOGS,
                         ProjectAction.RESTART,
                         ProjectAction.STOP);
@@ -93,6 +96,7 @@ class ProjectActionCatalogTest {
                 .containsExactly(
                         ProjectAction.BUILD,
                         ProjectAction.TEST,
+                        ProjectAction.INSTALL,
                         ProjectAction.RUN);
     }
 
@@ -113,6 +117,7 @@ class ProjectActionCatalogTest {
                 .containsExactly(
                         ProjectAction.BUILD,
                         ProjectAction.TEST,
+                        ProjectAction.INSTALL,
                         ProjectAction.RUN);
     }
 
