@@ -2,14 +2,11 @@ package io.github.avinashio.lazyspringboot.ui.screen;
 
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.ui.command.CommandPaletteController;
-import io.github.avinashio.lazyspringboot.ui.controller.CreateProjectController;
-import io.github.avinashio.lazyspringboot.ui.controller.ProcessController;
-import io.github.avinashio.lazyspringboot.ui.controller.ProjectActionController;
-import io.github.avinashio.lazyspringboot.ui.controller.QuitController;
-import io.github.avinashio.lazyspringboot.ui.controller.WorkspaceController;
+import io.github.avinashio.lazyspringboot.ui.controller.*;
 import io.github.avinashio.lazyspringboot.ui.state.Screen;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import org.springframework.stereotype.Component;
+
 
 @Component
 public class ScreenRenderer {
@@ -44,6 +41,16 @@ public class ScreenRenderer {
 
     private final ProjectActionController projectActionController;
 
+    private final ProjectManagerController projectManagerController;
+
+    private final ProjectManagerScreen projectManagerScreen;
+
+    private final ProjectDetailsController
+            projectDetailsController;
+
+    private final ProjectDetailsScreen
+            projectDetailsScreen;
+
     public ScreenRenderer(
             DashboardScreen dashboardScreen,
             WorkspaceWelcomeScreen workspaceWelcomeScreen,
@@ -59,7 +66,7 @@ public class ScreenRenderer {
             WorkspaceController workspaceController,
             QuitController quitController,
             ProcessController processController,
-            ProjectActionController projectActionController) {
+            ProjectActionController projectActionController, ProjectManagerController projectManagerController, ProjectManagerScreen projectManagerScreen, ProjectDetailsController projectDetailsController, ProjectDetailsScreen projectDetailsScreen) {
 
         this.dashboardScreen =
                 dashboardScreen;
@@ -105,6 +112,10 @@ public class ScreenRenderer {
 
         this.projectActionController =
                 projectActionController;
+        this.projectManagerController = projectManagerController;
+        this.projectManagerScreen = projectManagerScreen;
+        this.projectDetailsController = projectDetailsController;
+        this.projectDetailsScreen = projectDetailsScreen;
     }
 
     public void render(
@@ -157,6 +168,26 @@ public class ScreenRenderer {
                     uiState);
 
             workspaceScreen.render();
+
+            return;
+        }
+
+        if (projectManagerController.isOpen()) {
+
+            renderBaseScreen(
+                    uiState);
+
+            projectManagerScreen.render();
+
+            return;
+        }
+
+        if (projectDetailsController.isOpen()) {
+
+            renderBaseScreen(
+                    uiState);
+
+            projectDetailsScreen.render();
 
             return;
         }

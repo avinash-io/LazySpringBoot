@@ -53,6 +53,8 @@ public class NavigationController {
     private final ProcessController
             processController;
 
+    private final ProjectManagerController projectManagerController;
+
     public NavigationController(
             UiState uiState,
             DependencyNavigation dependencyNavigation,
@@ -65,7 +67,7 @@ public class NavigationController {
             ProjectRefreshController projectRefreshController,
             WorkspaceController workspaceController,
             TextInputController textInputController,
-            ProjectSortController projectSortController, ProcessController processController) {
+            ProjectSortController projectSortController, ProcessController processController, ProjectManagerController projectManagerController) {
 
         this.uiState =
                 uiState;
@@ -103,6 +105,8 @@ public class NavigationController {
         this.projectSortController =
                 projectSortController;
         this.processController = processController;
+
+        this.projectManagerController = projectManagerController;
     }
 
     public boolean handle(
@@ -193,6 +197,9 @@ public class NavigationController {
 
             case 'l' ->
                     handleProjectLogs();
+
+            case 'p' ->
+                    projectManagerController.open();
 
             default -> {
                 // No action.

@@ -1,7 +1,9 @@
 package io.github.avinashio.lazyspringboot.ui.controller;
 
 import io.github.avinashio.lazyspringboot.application.workspace.RefreshWorkspaceUseCase;
+import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.service.WorkspaceService;
+import io.github.avinashio.lazyspringboot.ui.service.ClipboardService;
 import io.github.avinashio.lazyspringboot.ui.state.WorkspaceState;
 import java.io.IOException;
 import java.nio.file.Path;

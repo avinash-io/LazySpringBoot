@@ -47,8 +47,9 @@ public class WorkspaceService {
 
     public Path workspace() {
 
-        return Path.of(
-                configuration.workspace());
+        return Path.of("")
+                .toAbsolutePath()
+                .normalize();
     }
 
     public ProjectSortMode projectSortMode() {

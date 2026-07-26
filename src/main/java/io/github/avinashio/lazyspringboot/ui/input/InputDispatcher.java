@@ -34,6 +34,12 @@ public class InputDispatcher {
     private final WorkspaceInputHandler
             workspaceInputHandler;
 
+    private final ProjectManagerInputHandler
+            projectManagerInputHandler;
+
+    private final ProjectDetailsInputHandler
+            projectDetailsInputHandler;
+
     public InputDispatcher(
             DependencyConfirmationInputHandler
                     dependencyConfirmationInputHandler,
@@ -49,7 +55,7 @@ public class InputDispatcher {
                     projectSearchInputHandler,
             CommandPaletteController commandPaletteController,
             NavigationController navigationController,
-            WorkspaceInputHandler workspaceInputHandler) {
+            WorkspaceInputHandler workspaceInputHandler, ProjectManagerInputHandler projectManagerInputHandler, ProjectDetailsInputHandler projectDetailsInputHandler) {
 
         this.dependencyConfirmationInputHandler =
                 dependencyConfirmationInputHandler;
@@ -77,6 +83,8 @@ public class InputDispatcher {
 
         this.workspaceInputHandler =
                 workspaceInputHandler;
+        this.projectManagerInputHandler = projectManagerInputHandler;
+        this.projectDetailsInputHandler = projectDetailsInputHandler;
     }
 
     public void handle(
@@ -101,6 +109,17 @@ public class InputDispatcher {
         }
 
         if (workspaceInputHandler.handle(
+                keyEvent)) {
+            return;
+        }
+
+        if (projectManagerInputHandler.handle(
+                keyEvent)) {
+
+            return;
+        }
+
+        if (projectDetailsInputHandler.handle(
                 keyEvent)) {
             return;
         }
