@@ -18,6 +18,7 @@ import io.github.avinashio.lazyspringboot.ui.controller.WorkspaceController;
 import io.github.avinashio.lazyspringboot.ui.input.*;
 import io.github.avinashio.lazyspringboot.ui.screen.*;
 import io.github.avinashio.lazyspringboot.ui.state.InputMode;
+import io.github.avinashio.lazyspringboot.ui.state.Screen;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.io.IOException;
 import org.jline.terminal.Terminal;
@@ -43,8 +44,6 @@ public class TuiApplication
     private static final long
             PROJECT_REFRESH_INTERVAL_MILLIS = 2_000;
 
-    private final QuitController quitController;
-
     private final ProjectRefreshController
             projectRefreshController;
 
@@ -54,53 +53,15 @@ public class TuiApplication
 
     private final KeyReader keyReader;
 
-    private final MainScreen mainScreen;
-
     private final UiState uiState;
-
-    private final ConfirmationScreen
-            confirmationScreen;
-
-    private final ProjectActionsScreen
-            projectActionsScreen;
-
-    private final ProjectActionOutputScreen
-            projectActionOutputScreen;
 
     private final GetProjectProcessUseCase
             getProjectProcessUseCase;
-
-    private final ProcessController
-            processController;
-
-    private final ProjectActionController
-            projectActionController;
-
-    private final CreateProjectController
-            createProjectController;
-
-    private final CreateProjectScreen
-            createProjectScreen;
 
     private final InputDispatcher inputDispatcher;
 
     private final StartupController
             startupController;
-
-    private final CommandPaletteController
-            commandPaletteController;
-
-    private final CommandPaletteScreen
-            commandPaletteScreen;
-
-    private final WorkspaceController
-            workspaceController;
-
-    private final WorkspaceScreen
-            workspaceScreen;
-
-    private final QuitConfirmationScreen
-            quitConfirmationScreen;
 
     private final QuitInputHandler
             quitInputHandler;
@@ -108,38 +69,33 @@ public class TuiApplication
     private final ConfigurableApplicationContext
             applicationContext;
 
+    private final QuitController
+            quitController;
+
+    private final ScreenRenderer
+            screenRenderer;
+
+    private final CommandPaletteController
+            commandPaletteController;
+
+    private final CreateProjectController createProjectController;
+
+    private final WorkspaceController workspaceController;
+
     public TuiApplication(
-            QuitController quitController,
             Terminal terminal,
             KeyReader keyReader,
-            MainScreen mainScreen,
             UiState uiState,
-            ConfirmationScreen confirmationScreen,
-            ProjectActionsScreen projectActionsScreen,
-            ProjectActionOutputScreen
-                    projectActionOutputScreen,
-            ProcessController processController,
-            ProjectActionController
-                    projectActionController,
-            CreateProjectScreen createProjectScreen,
-            CreateProjectController
-                    createProjectController,
             InputDispatcher inputDispatcher,
             GetProjectProcessUseCase
                     getProjectProcessUseCase,
             ProjectRefreshController
                     projectRefreshController,
-            CommandPaletteController
-                    commandPaletteController,
-            CommandPaletteScreen commandPaletteScreen,
             StartupController startupController,
-            WorkspaceController workspaceController,
-            WorkspaceScreen workspaceScreen,
-            QuitConfirmationScreen quitConfirmationScreen,
-            QuitInputHandler quitInputHandler, ConfigurableApplicationContext applicationContext) {
-
-        this.quitController =
-                quitController;
+            QuitInputHandler quitInputHandler,
+            ConfigurableApplicationContext
+                    applicationContext, QuitController quitController,
+            ScreenRenderer screenRenderer, CommandPaletteController commandPaletteController, CreateProjectController createProjectController, WorkspaceController workspaceController) {
 
         this.terminal =
                 terminal;
@@ -147,35 +103,13 @@ public class TuiApplication
         this.keyReader =
                 keyReader;
 
-        this.mainScreen =
-                mainScreen;
-
         this.uiState =
                 uiState;
 
-        this.confirmationScreen =
-                confirmationScreen;
-
-        this.projectActionsScreen =
-                projectActionsScreen;
-
-        this.projectActionOutputScreen =
-                projectActionOutputScreen;
 
         this.getProjectProcessUseCase =
                 getProjectProcessUseCase;
 
-        this.processController =
-                processController;
-
-        this.projectActionController =
-                projectActionController;
-
-        this.createProjectScreen =
-                createProjectScreen;
-
-        this.createProjectController =
-                createProjectController;
 
         this.inputDispatcher =
                 inputDispatcher;
@@ -183,23 +117,18 @@ public class TuiApplication
         this.startupController =
                 startupController;
 
-        this.commandPaletteController =
-                commandPaletteController;
-
-        this.commandPaletteScreen =
-                commandPaletteScreen;
 
         this.projectRefreshController =
                 projectRefreshController;
 
-        this.workspaceController =
-                workspaceController;
 
-        this.workspaceScreen =
-                workspaceScreen;
-        this.quitConfirmationScreen = quitConfirmationScreen;
         this.quitInputHandler = quitInputHandler;
         this.applicationContext = applicationContext;
+        this.quitController = quitController;
+        this.screenRenderer = screenRenderer;
+        this.commandPaletteController = commandPaletteController;
+        this.createProjectController = createProjectController;
+        this.workspaceController = workspaceController;
     }
 
     @Override
@@ -255,99 +184,7 @@ public class TuiApplication
 
     private void render() {
 
-        if (commandPaletteController.active()) {
-
-            mainScreen.render(
-                    uiState);
-
-            commandPaletteScreen.render(
-                    commandPaletteController.commands(),
-                    commandPaletteController
-                            .state()
-                            .selectedCommandIndex(),
-                    commandPaletteController
-                            .searchQuery());
-
-            return;
-        }
-
-        if (uiState
-                .dependencyConfirmationActive()) {
-
-            confirmationScreen.render(
-                    uiState);
-
-            return;
-        }
-
-        if (createProjectController
-                .state()
-                .active()) {
-
-            mainScreen.render(
-                    uiState);
-
-            createProjectScreen.render(
-                    createProjectController.state());
-
-            return;
-        }
-
-        if (workspaceController.isOpen()) {
-
-            mainScreen.render(
-                    uiState);
-
-            workspaceScreen.render();
-
-            return;
-        }
-
-        if (uiState.projectActionOutputActive()) {
-
-            SpringProject project =
-                    uiState.selectedProject();
-
-            if (project != null) {
-
-                processController.refreshLogs(
-                        project);
-            }
-
-            mainScreen.render(
-                    uiState);
-
-            projectActionOutputScreen.render(
-                    uiState);
-
-            return;
-        }
-
-        if (uiState.projectActionsActive()) {
-
-            mainScreen.render(
-                    uiState);
-
-            projectActionsScreen.render(
-                    uiState,
-                    projectActionController.actions(
-                            uiState.selectedProject()));
-
-            return;
-        }
-
-        if (quitController.active()) {
-
-            mainScreen.render(
-                    uiState);
-
-            quitConfirmationScreen.render(
-                    quitController.state());
-
-            return;
-        }
-
-        mainScreen.render(
+        screenRenderer.render(
                 uiState);
     }
 

@@ -18,5 +18,5 @@ public enum Screen {
 
     QUIT_CONFIRMATION,
 
-    EMPTY_WORKSPACE
+    WORKSPACE_WELCOME
 }

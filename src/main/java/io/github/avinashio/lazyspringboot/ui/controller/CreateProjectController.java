@@ -4,6 +4,7 @@ import io.github.avinashio.lazyspringboot.application.project.CreateSpringProjec
 import io.github.avinashio.lazyspringboot.domain.project.NewProjectRequest;
 import io.github.avinashio.lazyspringboot.service.WorkspaceService;
 import io.github.avinashio.lazyspringboot.ui.state.CreateProjectState;
+import io.github.avinashio.lazyspringboot.ui.state.Screen;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -118,6 +119,13 @@ public class CreateProjectController {
             uiState.setProjects(
                     projects);
 
+            selectCreatedProject(
+                    projects,
+                    destination);
+
+            uiState.showScreen(
+                    Screen.DASHBOARD);
+
             createProjectState.close();
 
             uiState.showSuccessMessage(
@@ -160,5 +168,33 @@ public class CreateProjectController {
         createProjectState.showDependencyStage();
 
         return true;
+    }
+
+    private void selectCreatedProject(
+            List<SpringProject> projects,
+            Path destination) {
+
+        for (int index = 0;
+             index < projects.size();
+             index++) {
+
+            SpringProject project =
+                    projects.get(index);
+
+            if (project.path()
+                    .equals(destination)) {
+
+                uiState.selectProject(
+                        index);
+
+                return;
+            }
+        }
+
+        if (!projects.isEmpty()) {
+
+            uiState.selectProject(
+                    0);
+        }
     }
 }

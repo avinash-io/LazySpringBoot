@@ -7,6 +7,7 @@ import io.github.avinashio.lazyspringboot.ui.project.ProjectNavigation;
 import io.github.avinashio.lazyspringboot.ui.service.DependencyItemsService;
 import io.github.avinashio.lazyspringboot.ui.service.DependencyUndoService;
 import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
+import io.github.avinashio.lazyspringboot.ui.state.Screen;
 import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import org.springframework.stereotype.Component;
@@ -228,13 +229,24 @@ public class NavigationController {
 
             dependencyItemsService.refresh();
 
+            if (uiState.projects().isEmpty()) {
+
+                uiState.showScreen(
+                        Screen.WORKSPACE_WELCOME);
+
+            } else {
+
+                uiState.showScreen(
+                        Screen.DASHBOARD);
+            }
+
             uiState.showSuccessMessage(
-                    "Projects refreshed");
+                    "Workspace refreshed");
 
         } catch (Exception exception) {
 
             uiState.showErrorMessage(
-                    "Failed to refresh projects: "
+                    "Failed to refresh workspace: "
                             + exception.getMessage());
         }
     }

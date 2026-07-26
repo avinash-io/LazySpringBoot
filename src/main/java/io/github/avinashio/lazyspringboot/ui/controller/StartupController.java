@@ -6,6 +6,7 @@ import io.github.avinashio.lazyspringboot.domain.initializr.InitializrConfigurat
 import io.github.avinashio.lazyspringboot.service.WorkspaceService;
 import io.github.avinashio.lazyspringboot.ui.service.DependencyItemsService;
 import io.github.avinashio.lazyspringboot.ui.state.CreateProjectState;
+import io.github.avinashio.lazyspringboot.ui.state.Screen;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import org.springframework.stereotype.Component;
 
@@ -55,11 +56,10 @@ public class StartupController {
             throws IOException,
             InterruptedException {
 
-        Path workspace =
-                workspaceService.workspace();
-
         uiState.setProjects(
                 discoverProjectsUseCase.discover());
+
+        initializeScreen();
 
         InitializrConfiguration configuration =
                 getInitializrConfigurationUseCase
@@ -84,5 +84,19 @@ public class StartupController {
                         .defaultSpringBootVersion());
 
         dependencyItemsService.refresh();
+    }
+
+    private void initializeScreen() {
+
+        if (uiState.projects().isEmpty()) {
+
+            uiState.showScreen(
+                    Screen.WORKSPACE_WELCOME);
+
+            return;
+        }
+
+        uiState.showScreen(
+                Screen.DASHBOARD);
     }
 }

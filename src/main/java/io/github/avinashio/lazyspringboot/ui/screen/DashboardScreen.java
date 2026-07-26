@@ -18,7 +18,7 @@ import org.jline.utils.InfoCmp;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MainScreen {
+public class DashboardScreen {
 
     private static final int MINIMUM_TERMINAL_WIDTH =
             80;
@@ -41,6 +41,7 @@ public class MainScreen {
 
     private final DependencyPanel dependencyPanel;
 
+
     private final ProjectFilterService
             projectFilterService;
 
@@ -50,7 +51,7 @@ public class MainScreen {
     private final ProjectSortState
             projectSortState;
 
-    public MainScreen(
+    public DashboardScreen(
             Terminal terminal,
             ProjectPanel projectPanel,
             DependencyPanel dependencyPanel,
@@ -59,7 +60,8 @@ public class MainScreen {
             TextFormatter textFormatter,
             ProjectFilterService projectFilterService,
             TextInputController textInputController,
-            ProjectSortState projectSortState) {
+            ProjectSortState projectSortState
+    ) {
 
         this.terminal =
                 terminal;
