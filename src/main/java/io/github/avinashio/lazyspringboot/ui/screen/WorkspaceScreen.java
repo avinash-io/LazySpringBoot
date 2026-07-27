@@ -16,8 +16,7 @@ public class WorkspaceScreen {
     private static final int POPUP_PADDING = 4;
 
     private static final String FOOTER =
-            " Enter Change Workspace"
-                    + "  Esc Close";
+            " C Copy Path   O Open Folder   Esc Close";
 
     private final ModalRenderer modalRenderer;
 
@@ -37,7 +36,7 @@ public class WorkspaceScreen {
     public void render() {
 
         modalRenderer.renderFixedWidth(
-                "Workspace",
+                "Current Workspace",
                 buildContent(),
                 FOOTER,
                 POPUP_WIDTH,
@@ -50,16 +49,16 @@ public class WorkspaceScreen {
         List<String> lines =
                 new ArrayList<>();
 
-        lines.add(" Workspace");
+        lines.add("Current Workspace");
         lines.add("");
+
         lines.add(
-                "> "
-                        + workspaceState.workspace()
-                        + "█");
+                workspaceState.workspace());
 
         if (workspaceState.hasErrorMessage()) {
 
             lines.add("");
+
             lines.add(
                     "Error: "
                             + workspaceState.errorMessage());

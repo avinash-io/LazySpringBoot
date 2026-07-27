@@ -1,46 +1,116 @@
 package io.github.avinashio.lazyspringboot.ui.service;
 
-import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
-
-import java.awt.*;
-import java.awt.datatransfer.StringSelection;
+import java.awt.Desktop;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DesktopIntegrationService {
 
-    public void copyProjectPath(
-            SpringProject project) {
-
-        copyText(
-                project.path()
-                        .toString());
-    }
-
-    public void copyText(
+    public boolean copyToClipboard(
             String text) {
 
-        Toolkit.getDefaultToolkit()
-                .getSystemClipboard()
-                .setContents(
-                        new StringSelection(text),
-                        null);
-    }
-
-    public boolean openFolder(
-            SpringProject project) {
+        String os =
+                System.getProperty("os.name")
+                        .toLowerCase();
 
         try {
 
-            Desktop.getDesktop()
-                    .open(
-                            project.path()
-                                    .toFile());
+            Process process;
 
-            return true;
+            if (os.contains("mac")) {
 
-        } catch (Exception exception) {
+                process =
+                        new ProcessBuilder(
+                                "pbcopy")
+                                .start();
+
+            } else if (os.contains("win")) {
+
+                process =
+                        new ProcessBuilder(
+                                "cmd",
+                                "/c",
+                                "clip")
+                                .start();
+
+            } else {
+
+                process =
+                        new ProcessBuilder(
+                                "xclip",
+                                "-selection",
+                                "clipboard")
+                                .start();
+            }
+
+            try (OutputStreamWriter writer =
+                         new OutputStreamWriter(
+                                 process.getOutputStream(),
+                                 StandardCharsets.UTF_8)) {
+
+                writer.write(text);
+            }
+
+            return process.waitFor() == 0;
+
+        } catch (IOException
+                 | InterruptedException exception) {
+
+            Thread.currentThread()
+                    .interrupt();
+
+            return false;
+        }
+    }
+
+    public boolean openFolder(
+            Path path) {
+
+        String os =
+                System.getProperty("os.name")
+                        .toLowerCase();
+
+        try {
+
+            Process process;
+
+            if (os.contains("mac")) {
+
+                process =
+                        new ProcessBuilder(
+                                "open",
+                                path.toString())
+                                .start();
+
+            } else if (os.contains("win")) {
+
+                process =
+                        new ProcessBuilder(
+                                "explorer",
+                                path.toString())
+                                .start();
+
+            } else {
+
+                process =
+                        new ProcessBuilder(
+                                "xdg-open",
+                                path.toString())
+                                .start();
+            }
+
+            return process.waitFor() == 0;
+
+        } catch (IOException
+                 | InterruptedException exception) {
+
+            if (exception instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
 
             return false;
         }

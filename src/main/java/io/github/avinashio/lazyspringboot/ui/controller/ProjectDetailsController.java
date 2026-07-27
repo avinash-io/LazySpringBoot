@@ -65,11 +65,18 @@ public class ProjectDetailsController {
             return;
         }
 
-        desktopIntegrationService.copyProjectPath(
-                project);
+        if (desktopIntegrationService.copyToClipboard(
+                project.path().toString())) {
 
-        uiState.showSuccessMessage(
-                "Project path copied.");
+            uiState.showSuccessMessage(
+                    "Copied path for "
+                            + project.name());
+
+        } else {
+
+            uiState.showErrorMessage(
+                    "Unable to copy project path.");
+        }
     }
 
     public void openProjectFolder() {
@@ -86,7 +93,7 @@ public class ProjectDetailsController {
         }
 
         if (desktopIntegrationService.openFolder(
-                project)) {
+                project.path())) {
 
             uiState.showSuccessMessage(
                     "Opened "

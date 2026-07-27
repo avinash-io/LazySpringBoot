@@ -1,7 +1,6 @@
 package io.github.avinashio.lazyspringboot.ui.input;
 
 import io.github.avinashio.lazyspringboot.ui.controller.WorkspaceController;
-import io.github.avinashio.lazyspringboot.ui.state.WorkspaceState;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -10,18 +9,11 @@ public class WorkspaceInputHandler {
     private final WorkspaceController
             workspaceController;
 
-    private final WorkspaceState
-            workspaceState;
-
     public WorkspaceInputHandler(
-            WorkspaceController workspaceController,
-            WorkspaceState workspaceState) {
+            WorkspaceController workspaceController) {
 
         this.workspaceController =
                 workspaceController;
-
-        this.workspaceState =
-                workspaceState;
     }
 
     public boolean handle(
@@ -35,35 +27,39 @@ public class WorkspaceInputHandler {
 
             case CHARACTER -> {
 
-                workspaceState.append(
-                        keyEvent.character());
+                if (!keyEvent.hasCharacter()) {
+                    return false;
+                }
 
-                return true;
-            }
+                switch (Character.toLowerCase(
+                        keyEvent.character())) {
 
-            case SEARCH -> {
+                    case 'c' -> {
 
-                workspaceState.append('/');
+                        workspaceController
+                                .copyWorkspacePath();
 
-                return true;
-            }
+                        return true;
+                    }
 
-            case BACKSPACE -> {
+                    case 'o' -> {
 
-                workspaceState.backspace();
+                        workspaceController
+                                .openWorkspace();
 
-                return true;
+                        return true;
+                    }
+
+                    default -> {
+                        return false;
+                    }
+                }
             }
 
             case ESCAPE -> {
 
                 workspaceController.close();
 
-                return true;
-            }
-
-            case ENTER -> {
-                workspaceController.changeWorkspace(workspaceState.workspace());
                 return true;
             }
 

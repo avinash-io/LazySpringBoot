@@ -1,13 +1,12 @@
 package io.github.avinashio.lazyspringboot.ui.controller;
 
-import io.github.avinashio.lazyspringboot.application.workspace.RefreshWorkspaceUseCase;
-import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+
 import io.github.avinashio.lazyspringboot.service.WorkspaceService;
-import io.github.avinashio.lazyspringboot.ui.service.ClipboardService;
+import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import io.github.avinashio.lazyspringboot.ui.state.WorkspaceState;
-import java.io.IOException;
 import java.nio.file.Path;
 import org.springframework.stereotype.Component;
+import io.github.avinashio.lazyspringboot.ui.service.DesktopIntegrationService;
 
 @Component
 public class WorkspaceController {
@@ -18,14 +17,18 @@ public class WorkspaceController {
     private final WorkspaceService
             workspaceService;
 
-    private final RefreshWorkspaceUseCase
-            refreshWorkspaceUseCase;
+    private final DesktopIntegrationService
+            desktopIntegrationService;
+
+    private final UiState
+            uiState;
 
     public WorkspaceController(
             WorkspaceState workspaceState,
             WorkspaceService workspaceService,
-            RefreshWorkspaceUseCase
-                    refreshWorkspaceUseCase) {
+            DesktopIntegrationService
+                    desktopIntegrationService,
+            UiState uiState) {
 
         this.workspaceState =
                 workspaceState;
@@ -33,8 +36,11 @@ public class WorkspaceController {
         this.workspaceService =
                 workspaceService;
 
-        this.refreshWorkspaceUseCase =
-                refreshWorkspaceUseCase;
+        this.desktopIntegrationService =
+                desktopIntegrationService;
+
+        this.uiState =
+                uiState;
     }
 
     public void open() {
@@ -43,7 +49,7 @@ public class WorkspaceController {
 
         workspaceState.clearErrorMessage();
 
-        workspaceState.startEditing(
+        workspaceState.setWorkspace(
                 workspaceService
                         .workspace()
                         .toString());
@@ -64,18 +70,33 @@ public class WorkspaceController {
         return workspaceService.workspace();
     }
 
-    public void changeWorkspace(
-            String workspace) {
+    public void copyWorkspacePath() {
 
-        try {
+        if (desktopIntegrationService.copyToClipboard(
+                workspace().toString())) {
 
-            refreshWorkspaceUseCase.changeWorkspace(
-                    workspace);
+            uiState.showSuccessMessage(
+                    "Workspace path copied.");
 
-        } catch (IOException exception) {
+        } else {
 
-            workspaceState.showErrorMessage(
-                    exception.getMessage());
+            uiState.showErrorMessage(
+                    "Unable to copy workspace path.");
+        }
+    }
+
+    public void openWorkspace() {
+
+        if (desktopIntegrationService.openFolder(
+                workspace())) {
+
+            uiState.showSuccessMessage(
+                    "Workspace opened.");
+
+        } else {
+
+            uiState.showErrorMessage(
+                    "Unable to open workspace.");
         }
     }
 }
