@@ -68,6 +68,14 @@ public class ProjectManagerInputHandler {
                         return true;
                     }
 
+                    case 'v' -> {
+
+                        projectDetailsController
+                                .openVSCode();
+
+                        return true;
+                    }
+
                     default -> {
                         return false;
                     }

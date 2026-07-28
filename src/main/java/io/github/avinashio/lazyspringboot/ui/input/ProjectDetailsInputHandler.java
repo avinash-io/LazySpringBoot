@@ -65,6 +65,14 @@ public class ProjectDetailsInputHandler {
                         return true;
                     }
 
+                    case 'v' -> {
+
+                        projectDetailsController
+                                .openVSCode();
+
+                        return true;
+                    }
+
                     default -> {
                         return false;
                     }

@@ -134,4 +134,32 @@ public class ProjectDetailsController {
                     "Unable to open IntelliJ.");
         }
     }
+
+    public void openVSCode() {
+
+        SpringProject project =
+                selectedProject();
+
+        if (project == null) {
+
+            uiState.showErrorMessage(
+                    "No project selected.");
+
+            return;
+        }
+
+        if (desktopIntegrationService.openVSCode(
+                project.path())) {
+
+            uiState.showSuccessMessage(
+                    "Opened "
+                            + project.name()
+                            + " in VS Code.");
+
+        } else {
+
+            uiState.showErrorMessage(
+                    "Unable to open VS Code.");
+        }
+    }
 }
