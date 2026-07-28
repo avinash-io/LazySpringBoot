@@ -18,7 +18,7 @@ public class ProjectDetailsScreen {
     private static final int PADDING = 4;
 
     private static final String FOOTER =
-            "O Open Folder   C Copy Path   Esc Back";
+            "O Open Folder   C Copy Path   I IntelliJ   Esc Back";
 
     private final ModalRenderer
             modalRenderer;

@@ -57,6 +57,14 @@ public class ProjectDetailsInputHandler {
                         return true;
                     }
 
+                    case 'i' -> {
+
+                        projectDetailsController
+                                .openIntelliJ();
+
+                        return true;
+                    }
+
                     default -> {
                         return false;
                     }

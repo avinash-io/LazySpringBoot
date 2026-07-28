@@ -106,4 +106,32 @@ public class ProjectDetailsController {
                             + project.name());
         }
     }
+
+    public void openIntelliJ() {
+
+        SpringProject project =
+                selectedProject();
+
+        if (project == null) {
+
+            uiState.showErrorMessage(
+                    "No project selected.");
+
+            return;
+        }
+
+        if (desktopIntegrationService.openIntelliJ(
+                project.path())) {
+
+            uiState.showSuccessMessage(
+                    "Opened "
+                            + project.name()
+                            + " in IntelliJ.");
+
+        } else {
+
+            uiState.showErrorMessage(
+                    "Unable to open IntelliJ.");
+        }
+    }
 }

@@ -16,11 +16,14 @@ public class ProjectManagerInputHandler {
     public ProjectManagerInputHandler(
             ProjectManagerController
                     projectManagerController,
-            ProjectDetailsController projectDetailsController) {
+            ProjectDetailsController
+                    projectDetailsController) {
 
         this.projectManagerController =
                 projectManagerController;
-        this.projectDetailsController = projectDetailsController;
+
+        this.projectDetailsController =
+                projectDetailsController;
     }
 
     public boolean handle(
@@ -31,6 +34,45 @@ public class ProjectManagerInputHandler {
         }
 
         switch (keyEvent.type()) {
+
+            case CHARACTER -> {
+
+                if (!keyEvent.hasCharacter()) {
+                    return false;
+                }
+
+                switch (Character.toLowerCase(
+                        keyEvent.character())) {
+
+                    case 'i' -> {
+
+                        projectDetailsController
+                                .openIntelliJ();
+
+                        return true;
+                    }
+
+                    case 'o' -> {
+
+                        projectDetailsController
+                                .openProjectFolder();
+
+                        return true;
+                    }
+
+                    case 'c' -> {
+
+                        projectDetailsController
+                                .copyProjectPath();
+
+                        return true;
+                    }
+
+                    default -> {
+                        return false;
+                    }
+                }
+            }
 
             case ENTER -> {
 

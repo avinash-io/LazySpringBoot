@@ -115,4 +115,55 @@ public class DesktopIntegrationService {
             return false;
         }
     }
+
+    public boolean openIntelliJ(
+            Path path) {
+
+        String os =
+                System.getProperty("os.name")
+                        .toLowerCase();
+
+        try {
+
+            Process process;
+
+            if (os.contains("mac")) {
+
+                process =
+                        new ProcessBuilder(
+                                "open",
+                                "-a",
+                                "IntelliJ IDEA",
+                                path.toString())
+                                .start();
+
+            } else if (os.contains("win")) {
+
+                process =
+                        new ProcessBuilder(
+                                "idea64.exe",
+                                path.toString())
+                                .start();
+
+            } else {
+
+                process =
+                        new ProcessBuilder(
+                                "idea",
+                                path.toString())
+                                .start();
+            }
+
+            return process.waitFor() == 0;
+
+        } catch (IOException
+                 | InterruptedException exception) {
+
+            if (exception instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+
+            return false;
+        }
+    }
 }
