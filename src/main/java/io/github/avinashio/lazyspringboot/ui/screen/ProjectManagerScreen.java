@@ -1,10 +1,14 @@
 package io.github.avinashio.lazyspringboot.ui.screen;
 
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+import io.github.avinashio.lazyspringboot.ui.action.ProjectAction;
+import io.github.avinashio.lazyspringboot.ui.action.ProjectActionProvider;
 import io.github.avinashio.lazyspringboot.ui.component.ModalRenderer;
 import io.github.avinashio.lazyspringboot.ui.controller.ProjectManagerController;
 import java.util.ArrayList;
 import java.util.List;
+
+import io.github.avinashio.lazyspringboot.ui.service.InstalledToolsService;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,25 +20,62 @@ public class ProjectManagerScreen {
 
     private static final int POPUP_PADDING = 4;
 
-    private static final String FOOTER =
-            " Enter Open  I IntelliJ  V VS Code"
-                    + "  C Copy Path  Esc Close";
-
     private final ModalRenderer
             modalRenderer;
 
     private final ProjectManagerController
             controller;
 
+    private final ProjectActionProvider
+            projectActionProvider;
+
     public ProjectManagerScreen(
             ModalRenderer modalRenderer,
-            ProjectManagerController controller) {
+            ProjectManagerController controller, ProjectActionProvider projectActionProvider) {
 
         this.modalRenderer =
                 modalRenderer;
 
         this.controller =
                 controller;
+
+        this.projectActionProvider =
+                projectActionProvider;
+
+    }
+
+    private String buildFooter() {
+
+        StringBuilder footer =
+                new StringBuilder();
+
+        footer.append("Enter Open   ");
+
+        for (ProjectAction action :
+                projectActionProvider
+                        .projectActions()) {
+
+            if (!action.enabled()) {
+                continue;
+            }
+
+            footer.append(
+                    Character.toUpperCase(
+                            action.type()
+                                    .shortcut()));
+
+            footer.append(' ');
+
+            footer.append(
+                    action.type()
+                            .displayName());
+
+            footer.append("   ");
+        }
+
+        footer.append("Esc Close");
+
+        return footer.toString();
     }
 
     public void render() {
@@ -42,7 +83,7 @@ public class ProjectManagerScreen {
         modalRenderer.renderFixedWidth(
                 "Project Manager",
                 buildContent(),
-                FOOTER,
+                buildFooter(),
                 POPUP_WIDTH,
                 MINIMUM_POPUP_WIDTH,
                 POPUP_PADDING);

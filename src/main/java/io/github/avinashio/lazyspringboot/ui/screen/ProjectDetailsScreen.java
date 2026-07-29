@@ -1,12 +1,15 @@
 package io.github.avinashio.lazyspringboot.ui.screen;
 
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+import io.github.avinashio.lazyspringboot.ui.action.ProjectAction;
+import io.github.avinashio.lazyspringboot.ui.action.ProjectActionProvider;
 import io.github.avinashio.lazyspringboot.ui.component.ModalRenderer;
 import io.github.avinashio.lazyspringboot.ui.controller.ProjectDetailsController;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
 import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
+import io.github.avinashio.lazyspringboot.ui.service.InstalledToolsService;
 
 @Component
 public class ProjectDetailsScreen {
@@ -17,24 +20,60 @@ public class ProjectDetailsScreen {
 
     private static final int PADDING = 4;
 
-    private static final String FOOTER =
-            "O Open Folder   C Copy Path   I IntelliJ   Esc Back";
-
     private final ModalRenderer
             modalRenderer;
 
     private final ProjectDetailsController
             controller;
 
+    private final ProjectActionProvider
+            projectActionProvider;
+
     public ProjectDetailsScreen(
             ModalRenderer modalRenderer,
-            ProjectDetailsController controller) {
+            ProjectDetailsController controller,
+            ProjectActionProvider projectActionProvider) {
 
         this.modalRenderer =
                 modalRenderer;
 
         this.controller =
                 controller;
+
+        this.projectActionProvider =
+                projectActionProvider;
+    }
+
+    private String buildFooter() {
+
+        StringBuilder footer =
+                new StringBuilder();
+
+        for (ProjectAction action :
+                projectActionProvider
+                        .projectActions()) {
+
+            if (!action.enabled()) {
+                continue;
+            }
+
+            footer.append(
+                    Character.toUpperCase(
+                            action.type()
+                                    .shortcut()));
+
+            footer.append(' ');
+
+            footer.append(
+                    action.type()
+                            .displayName());
+
+            footer.append("   ");
+        }
+
+        footer.append("Esc Back");
+
+        return footer.toString();
     }
 
     public void render() {
@@ -49,7 +88,7 @@ public class ProjectDetailsScreen {
         modalRenderer.renderFixedWidth(
                 "Project Details",
                 buildContent(project),
-                FOOTER,
+                buildFooter(),
                 WIDTH,
                 MINIMUM_WIDTH,
                 PADDING);

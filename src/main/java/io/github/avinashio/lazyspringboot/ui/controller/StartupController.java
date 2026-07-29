@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import io.github.avinashio.lazyspringboot.ui.service.InstalledToolsService;
 
 @Component
 public class StartupController {
@@ -30,6 +31,9 @@ public class StartupController {
     private final DependencyItemsService
             dependencyItemsService;
 
+    private final InstalledToolsService
+            installedToolsService;
+
     private final WorkspaceService workspaceService;
 
     public StartupController(
@@ -37,7 +41,7 @@ public class StartupController {
             DiscoverProjectsUseCase discoverProjectsUseCase,
             GetInitializrConfigurationUseCase getInitializrConfigurationUseCase,
             CreateProjectState createProjectState,
-            DependencyItemsService dependencyItemsService,
+            DependencyItemsService dependencyItemsService, InstalledToolsService installedToolsService,
             WorkspaceService workspaceService) {
 
         this.uiState = uiState;
@@ -49,6 +53,7 @@ public class StartupController {
                 getInitializrConfigurationUseCase;
         this.createProjectState =
                 createProjectState;
+        this.installedToolsService = installedToolsService;
         this.workspaceService = workspaceService;
     }
 
@@ -58,6 +63,8 @@ public class StartupController {
 
         uiState.setProjects(
                 discoverProjectsUseCase.discover());
+
+        installedToolsService.refresh();
 
         initializeScreen();
 
