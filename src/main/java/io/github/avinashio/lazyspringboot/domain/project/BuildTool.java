@@ -1,6 +1,12 @@
 package io.github.avinashio.lazyspringboot.domain.project;
 
 public enum BuildTool {
-    MAVEN,
-    GRADLE
+	
+	MAVEN,
+	
+	GRADLE,
+	
+	GRADLE_KOTLIN,
+	
+	UNKNOWN
 }

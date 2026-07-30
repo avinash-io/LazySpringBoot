@@ -1,9 +1,5 @@
 package io.github.avinashio.lazyspringboot.ui.project;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
 import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
@@ -12,242 +8,243 @@ import io.github.avinashio.lazyspringboot.ui.controller.TextInputController;
 import io.github.avinashio.lazyspringboot.ui.service.ProjectFilterService;
 import io.github.avinashio.lazyspringboot.ui.service.ProjectSortService;
 import io.github.avinashio.lazyspringboot.ui.service.VisibleProjectService;
-import io.github.avinashio.lazyspringboot.ui.state.ProjectSortMode;
-import io.github.avinashio.lazyspringboot.ui.state.ProjectSortState;
-import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
-import io.github.avinashio.lazyspringboot.ui.state.TextInputState;
-import io.github.avinashio.lazyspringboot.ui.state.UiState;
-import java.nio.file.Path;
-import java.util.List;
+import io.github.avinashio.lazyspringboot.ui.state.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Path;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 class ProjectNavigationTest {
 
-    private UiState uiState;
+private UiState uiState;
 
-    private TextInputController
-            textInputController;
+private TextInputController
+		textInputController;
 
-    private ProjectNavigation
-            projectNavigation;
+private ProjectNavigation
+		projectNavigation;
 
-    @BeforeEach
-    void setUp() {
+@BeforeEach
+void setUp() {
+	
+	uiState =
+			new UiState();
+	
+	uiState.setProjects(
+			List.of(
+					project(
+							"payment-service"),
+					project(
+							"demo"),
+					project(
+							"user-service"),
+					project(
+							"inventory")));
+	
+	TextInputState textInputState =
+			new TextInputState();
+	
+	textInputController =
+			new TextInputController(
+					textInputState);
+	
+	VisibleProjectService visibleProjectService =
+			new VisibleProjectService(
+					new ProjectFilterService(),
+					new ProjectSortService(),
+					projectSortState(),
+					textInputController);
+	
+	projectNavigation =
+			new ProjectNavigation(
+					uiState,
+					visibleProjectService);
+}
 
-        uiState =
-                new UiState();
+@Test
+void shouldSelectFirstVisibleProject() {
+	
+	startSearch(
+			"service");
+	
+	projectNavigation
+			.selectFirstVisible();
+	
+	assertThat(
+			uiState.selectedProject()
+					.name())
+			.isEqualTo(
+					"payment-service");
+}
 
-        uiState.setProjects(
-                List.of(
-                        project(
-                                "payment-service"),
-                        project(
-                                "demo"),
-                        project(
-                                "user-service"),
-                        project(
-                                "inventory")));
+@Test
+void shouldSelectNextVisibleProject() {
+	
+	startSearch(
+			"service");
+	
+	projectNavigation
+			.selectFirstVisible();
+	
+	projectNavigation
+			.selectNextVisible();
+	
+	assertThat(
+			uiState.selectedProject()
+					.name())
+			.isEqualTo(
+					"user-service");
+}
 
-        TextInputState textInputState =
-                new TextInputState();
+@Test
+void shouldSelectPreviousVisibleProject() {
+	
+	startSearch(
+			"service");
+	
+	projectNavigation
+			.selectFirstVisible();
+	
+	projectNavigation
+			.selectNextVisible();
+	
+	projectNavigation
+			.selectPreviousVisible();
+	
+	assertThat(
+			uiState.selectedProject()
+					.name())
+			.isEqualTo(
+					"payment-service");
+}
 
-        textInputController =
-                new TextInputController(
-                        textInputState);
+@Test
+void shouldNotMovePastLastVisibleProject() {
+	
+	startSearch(
+			"service");
+	
+	projectNavigation
+			.selectFirstVisible();
+	
+	projectNavigation
+			.selectNextVisible();
+	
+	projectNavigation
+			.selectNextVisible();
+	
+	assertThat(
+			uiState.selectedProject()
+					.name())
+			.isEqualTo(
+					"user-service");
+}
 
-        VisibleProjectService visibleProjectService =
-                new VisibleProjectService(
-                        new ProjectFilterService(),
-                        new ProjectSortService(),
-                        projectSortState(),
-                        textInputController);
+@Test
+void shouldNotMoveBeforeFirstVisibleProject() {
+	
+	startSearch(
+			"service");
+	
+	projectNavigation
+			.selectFirstVisible();
+	
+	projectNavigation
+			.selectPreviousVisible();
+	
+	assertThat(
+			uiState.selectedProject()
+					.name())
+			.isEqualTo(
+					"payment-service");
+}
 
-        projectNavigation =
-                new ProjectNavigation(
-                        uiState,
-                        visibleProjectService);
-    }
+@Test
+void shouldSelectFirstVisibleWhenCurrentProjectIsNotVisible() {
+	
+	uiState.selectProject(
+			1);
+	
+	startSearch(
+			"service");
+	
+	projectNavigation
+			.selectNextVisible();
+	
+	assertThat(
+			uiState.selectedProject()
+					.name())
+			.isEqualTo(
+					"payment-service");
+}
 
-    @Test
-    void shouldSelectFirstVisibleProject() {
+@Test
+void shouldKeepSelectionWhenNoProjectsMatch() {
+	
+	uiState.selectProject(
+			1);
+	
+	startSearch(
+			"does-not-exist");
+	
+	projectNavigation
+			.selectFirstVisible();
+	
+	assertThat(
+			uiState.selectedProject()
+					.name())
+			.isEqualTo(
+					"demo");
+}
 
-        startSearch(
-                "service");
+private void startSearch(
+		String query) {
+	
+	textInputController.start(
+			TextInputPurpose.PROJECT_SEARCH);
+	
+	for (char character :
+			query.toCharArray()) {
+		
+		textInputController.append(
+				character);
+	}
+}
 
-        projectNavigation
-                .selectFirstVisible();
+private ProjectSortState projectSortState() {
+	
+	WorkspaceService workspaceService =
+			mock(
+					WorkspaceService.class);
+	
+	when(
+			workspaceService.projectSortMode())
+			.thenReturn(
+					ProjectSortMode.NAME_ASC);
+	
+	return new ProjectSortState(
+			workspaceService);
+}
 
-        assertThat(
-                uiState.selectedProject()
-                        .name())
-                .isEqualTo(
-                        "payment-service");
-    }
-
-    @Test
-    void shouldSelectNextVisibleProject() {
-
-        startSearch(
-                "service");
-
-        projectNavigation
-                .selectFirstVisible();
-
-        projectNavigation
-                .selectNextVisible();
-
-        assertThat(
-                uiState.selectedProject()
-                        .name())
-                .isEqualTo(
-                        "user-service");
-    }
-
-    @Test
-    void shouldSelectPreviousVisibleProject() {
-
-        startSearch(
-                "service");
-
-        projectNavigation
-                .selectFirstVisible();
-
-        projectNavigation
-                .selectNextVisible();
-
-        projectNavigation
-                .selectPreviousVisible();
-
-        assertThat(
-                uiState.selectedProject()
-                        .name())
-                .isEqualTo(
-                        "payment-service");
-    }
-
-    @Test
-    void shouldNotMovePastLastVisibleProject() {
-
-        startSearch(
-                "service");
-
-        projectNavigation
-                .selectFirstVisible();
-
-        projectNavigation
-                .selectNextVisible();
-
-        projectNavigation
-                .selectNextVisible();
-
-        assertThat(
-                uiState.selectedProject()
-                        .name())
-                .isEqualTo(
-                        "user-service");
-    }
-
-    @Test
-    void shouldNotMoveBeforeFirstVisibleProject() {
-
-        startSearch(
-                "service");
-
-        projectNavigation
-                .selectFirstVisible();
-
-        projectNavigation
-                .selectPreviousVisible();
-
-        assertThat(
-                uiState.selectedProject()
-                        .name())
-                .isEqualTo(
-                        "payment-service");
-    }
-
-    @Test
-    void shouldSelectFirstVisibleWhenCurrentProjectIsNotVisible() {
-
-        uiState.selectProject(
-                1);
-
-        startSearch(
-                "service");
-
-        projectNavigation
-                .selectNextVisible();
-
-        assertThat(
-                uiState.selectedProject()
-                        .name())
-                .isEqualTo(
-                        "payment-service");
-    }
-
-    @Test
-    void shouldKeepSelectionWhenNoProjectsMatch() {
-
-        uiState.selectProject(
-                1);
-
-        startSearch(
-                "does-not-exist");
-
-        projectNavigation
-                .selectFirstVisible();
-
-        assertThat(
-                uiState.selectedProject()
-                        .name())
-                .isEqualTo(
-                        "demo");
-    }
-
-    private void startSearch(
-            String query) {
-
-        textInputController.start(
-                TextInputPurpose.PROJECT_SEARCH);
-
-        for (char character :
-                query.toCharArray()) {
-
-            textInputController.append(
-                    character);
-        }
-    }
-
-    private ProjectSortState projectSortState() {
-
-        WorkspaceService workspaceService =
-                mock(
-                        WorkspaceService.class);
-
-        when(
-                workspaceService.projectSortMode())
-                .thenReturn(
-                        ProjectSortMode.NAME_ASC);
-
-        return new ProjectSortState(
-                workspaceService);
-    }
-
-    private SpringProject project(
-            String name) {
-
-        return new SpringProject(
-                name,
-                Path.of(
-                        "/workspace/"
-                                + name),
-                new ProjectMetadata(
-                        "com.example",
-                        name,
-                        "4.1.0",
-                        "26",
-                        BuildTool.MAVEN,
-                        List.of()));
-    }
+private SpringProject project(
+		String name) {
+	
+	return new SpringProject(
+			name,
+			Path.of(
+					"/workspace/"
+							+ name),
+			BuildTool.MAVEN,
+			new ProjectMetadata(
+					"com.example",
+					name,
+					"4.1.0",
+					"26",
+					List.of()));
+}
 }
