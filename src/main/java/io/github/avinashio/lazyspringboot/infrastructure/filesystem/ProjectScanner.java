@@ -53,26 +53,18 @@ private Optional<SpringProject> inspectProject(
 	try {
 		
 		if (!mavenProjectInspector.isSpringBootProject(
-				pomFile)) {
+				directory)) {
 			
 			return Optional.empty();
 		}
 		
-		var metadata =
+		ProjectMetadata projectMetadata =
 				mavenProjectInspector.inspect(
-						pomFile);
+						directory);
 		
 		var buildTool =
 				buildToolDetector.detect(
 						directory);
-		
-		ProjectMetadata projectMetadata =
-				new ProjectMetadata(
-						metadata.groupId(),
-						metadata.artifactId(),
-						metadata.springBootVersion(),
-						metadata.javaVersion(),
-						metadata.dependencies());
 		
 		return Optional.of(
 				new SpringProject(
