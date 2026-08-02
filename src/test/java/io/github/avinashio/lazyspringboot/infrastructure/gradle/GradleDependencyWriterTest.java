@@ -1,6 +1,8 @@
 package io.github.avinashio.lazyspringboot.infrastructure.gradle;
 
 import io.github.avinashio.lazyspringboot.domain.dependency.DependencyCoordinate;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyDeclaration;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyScope;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -9,6 +11,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 
 class GradleDependencyWriterTest {
 
@@ -41,7 +44,7 @@ void shouldAddDependencyToGroovyBuild()
 	writer.addDependencies(
 			buildFile,
 			List.of(
-					new DependencyCoordinate(
+					declaration(
 							"org.postgresql",
 							"postgresql")));
 	
@@ -80,7 +83,7 @@ void shouldAddDependencyToKotlinBuild()
 	writer.addDependencies(
 			buildFile,
 			List.of(
-					new DependencyCoordinate(
+					declaration(
 							"org.postgresql",
 							"postgresql")));
 	
@@ -118,7 +121,7 @@ void shouldNotAddDuplicateDependency()
 	writer.addDependencies(
 			buildFile,
 			List.of(
-					new DependencyCoordinate(
+					declaration(
 							"org.postgresql",
 							"postgresql")));
 	
@@ -153,7 +156,7 @@ void shouldCreateBackupBeforeModification()
 	writer.addDependencies(
 			buildFile,
 			List.of(
-					new DependencyCoordinate(
+					declaration(
 							"org.postgresql",
 							"postgresql")));
 	
@@ -201,7 +204,7 @@ void shouldPreserveNestedBlocksWhenAddingDependency()
 	writer.addDependencies(
 			buildFile,
 			List.of(
-					new DependencyCoordinate(
+					declaration(
 							"org.postgresql",
 							"postgresql")));
 	
@@ -231,7 +234,6 @@ void shouldPreserveNestedBlocksWhenAddingDependency()
 private GradleDependencyWriter createWriter() {
 	
 	return new GradleDependencyWriter(
-			new GradleDependencyParser(),
 			new GradleBuildBackupRestorer());
 }
 
@@ -258,7 +260,7 @@ void shouldPreserveExistingSpaceIndentation()
 	writer.addDependencies(
 			buildFile,
 			List.of(
-					new DependencyCoordinate(
+					declaration(
 							"org.postgresql",
 							"postgresql")));
 	
@@ -296,7 +298,7 @@ void shouldPreserveExistingTabIndentation()
 	writer.addDependencies(
 			buildFile,
 			List.of(
-					new DependencyCoordinate(
+					declaration(
 							"org.postgresql",
 							"postgresql")));
 	
@@ -305,6 +307,95 @@ void shouldPreserveExistingTabIndentation()
 					buildFile))
 			.contains(
 					"\timplementation 'org.postgresql:postgresql'");
+}
+
+private DependencyDeclaration declaration(
+		String groupId,
+		String artifactId) {
+	
+	return new DependencyDeclaration(
+			new DependencyCoordinate(
+					groupId,
+					artifactId),
+			DependencyScope.COMPILE);
+}
+
+@Test
+void shouldWriteRuntimeDependency()
+		throws Exception {
+	
+	Path buildFile =
+			temporaryDirectory.resolve(
+					"build.gradle");
+	
+	Files.writeString(
+			buildFile,
+			"""
+					dependencies {
+					}
+					""");
+	
+	GradleDependencyWriter writer =
+			createWriter();
+	
+	writer.addDependencies(
+			buildFile,
+			List.of(
+					new DependencyDeclaration(
+							new DependencyCoordinate(
+									"org.postgresql",
+									"postgresql"),
+							DependencyScope.RUNTIME)));
+	
+	assertThat(
+			Files.readString(
+					buildFile))
+			.contains(
+					"runtimeOnly 'org.postgresql:postgresql'");
+}
+
+@Test
+void shouldWriteLombokWithDifferentConfigurations()
+		throws Exception {
+	
+	Path buildFile =
+			temporaryDirectory.resolve(
+					"build.gradle");
+	
+	Files.writeString(
+			buildFile,
+			"""
+					dependencies {
+					}
+					""");
+	
+	DependencyCoordinate lombok =
+			new DependencyCoordinate(
+					"org.projectlombok",
+					"lombok");
+	
+	GradleDependencyWriter writer =
+			createWriter();
+	
+	writer.addDependencies(
+			buildFile,
+			List.of(
+					new DependencyDeclaration(
+							lombok,
+							DependencyScope.COMPILE_ONLY),
+					new DependencyDeclaration(
+							lombok,
+							DependencyScope.ANNOTATION_PROCESSOR)));
+	
+	String content =
+			Files.readString(
+					buildFile);
+	
+	assertThat(content)
+			.contains(
+					"compileOnly 'org.projectlombok:lombok'")
+			.contains(
+					"annotationProcessor 'org.projectlombok:lombok'");
 }
 
 }

@@ -8,7 +8,6 @@ import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
 import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.infrastructure.gradle.GradleBuildBackupRestorer;
-import io.github.avinashio.lazyspringboot.infrastructure.gradle.GradleDependencyParser;
 import io.github.avinashio.lazyspringboot.infrastructure.gradle.GradleDependencyWriter;
 import io.github.avinashio.lazyspringboot.infrastructure.gradle.GradleProjectDependencyWriter;
 import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenDependencyParser;
@@ -47,10 +46,11 @@ void shouldApplySelectedDependenciesToPom()
 					""");
 	
 	ApplyDependenciesUseCase useCase =
-			createUseCase();
+			createMavenUseCase();
 	
 	useCase.apply(
-			project(),
+			project(
+					BuildTool.MAVEN),
 			List.of(
 					selectedDependency(
 							"postgresql"),
@@ -73,6 +73,60 @@ void shouldApplySelectedDependenciesToPom()
 								"org.springframework.boot",
 								"spring-boot-starter-data-jpa"));
 	}
+	
+	String content =
+			Files.readString(
+					pomPath);
+	
+	assertThat(content)
+			.contains(
+					"<scope>runtime</scope>");
+}
+
+@Test
+void shouldApplyLombokToPomAsOptionalDependency()
+		throws Exception {
+	
+	Path pomPath =
+			temporaryDirectory.resolve(
+					"pom.xml");
+	
+	Files.writeString(
+			pomPath,
+			"""
+					<project>
+					  <dependencies>
+					  </dependencies>
+					</project>
+					""");
+	
+	ApplyDependenciesUseCase useCase =
+			createMavenUseCase();
+	
+	useCase.apply(
+			project(
+					BuildTool.MAVEN),
+			List.of(
+					selectedDependency(
+							"lombok")));
+	
+	String content =
+			Files.readString(
+					pomPath);
+	
+	assertThat(content)
+			.contains(
+					"<groupId>org.projectlombok</groupId>")
+			.contains(
+					"<artifactId>lombok</artifactId>")
+			.contains(
+					"<optional>true</optional>");
+	
+	assertThat(
+			countOccurrences(
+					content,
+					"<artifactId>lombok</artifactId>"))
+			.isEqualTo(1);
 }
 
 @Test
@@ -100,10 +154,11 @@ void shouldIgnoreAlreadyPresentDependencyItems()
 			original);
 	
 	ApplyDependenciesUseCase useCase =
-			createUseCase();
+			createMavenUseCase();
 	
 	useCase.apply(
-			project(),
+			project(
+					BuildTool.MAVEN),
 			List.of(
 					new DependencyItem(
 							dependency(
@@ -137,10 +192,11 @@ void shouldIgnoreUnselectedAvailableDependencies()
 			original);
 	
 	ApplyDependenciesUseCase useCase =
-			createUseCase();
+			createMavenUseCase();
 	
 	useCase.apply(
-			project(),
+			project(
+					BuildTool.MAVEN),
 			List.of(
 					new DependencyItem(
 							dependency(
@@ -153,64 +209,6 @@ void shouldIgnoreUnselectedAvailableDependencies()
 					pomPath))
 			.isEqualTo(
 					original);
-}
-
-private ApplyDependenciesUseCase createUseCase() {
-	
-	MavenDependencyParser dependencyParser =
-			new MavenDependencyParser();
-	
-	MavenProjectDependencyWriter writer =
-			new MavenProjectDependencyWriter(
-					new MavenPomDependencyWriter(
-							dependencyParser),
-					new MavenPomBackupRestorer());
-	
-	return new ApplyDependenciesUseCase(
-			new DependencyCoordinateResolver(),
-			List.of(
-					writer));
-}
-
-private DependencyItem selectedDependency(
-		String id) {
-	
-	return new DependencyItem(
-			dependency(
-					id),
-			DependencyAvailability.AVAILABLE,
-			true);
-}
-
-private SpringDependency dependency(
-		String id) {
-	
-	return new SpringDependency(
-			id,
-			id,
-			"Test dependency",
-			"Test");
-}
-
-private SpringProject project() {
-	
-	return project(
-			BuildTool.MAVEN);
-}
-
-private SpringProject project(
-		BuildTool buildTool) {
-	
-	return new SpringProject(
-			"demo",
-			temporaryDirectory,
-			buildTool,
-			new ProjectMetadata(
-					"com.example",
-					"demo",
-					"4.1.0",
-					"26",
-					List.of()));
 }
 
 @Test
@@ -234,7 +232,7 @@ void shouldApplySelectedDependenciesToGradleBuild()
 					""");
 	
 	ApplyDependenciesUseCase useCase =
-			createUseCaseWithGradle();
+			createGradleUseCase();
 	
 	useCase.apply(
 			project(
@@ -251,7 +249,7 @@ void shouldApplySelectedDependenciesToGradleBuild()
 	
 	assertThat(content)
 			.contains(
-					"implementation 'org.postgresql:postgresql'")
+					"runtimeOnly 'org.postgresql:postgresql'")
 			.contains(
 					"implementation 'org.springframework.boot:spring-boot-starter-data-jpa'");
 }
@@ -277,7 +275,7 @@ void shouldApplySelectedDependenciesToGradleKotlinBuild()
 					""");
 	
 	ApplyDependenciesUseCase useCase =
-			createUseCaseWithGradle();
+			createGradleUseCase();
 	
 	useCase.apply(
 			project(
@@ -290,10 +288,68 @@ void shouldApplySelectedDependenciesToGradleKotlinBuild()
 			Files.readString(
 					buildFile))
 			.contains(
-					"implementation(\"org.postgresql:postgresql\")");
+					"runtimeOnly(\"org.postgresql:postgresql\")");
 }
 
-private ApplyDependenciesUseCase createUseCaseWithGradle() {
+@Test
+void shouldApplyLombokWithBothGradleConfigurations()
+		throws Exception {
+	
+	Path buildFile =
+			temporaryDirectory.resolve(
+					"build.gradle");
+	
+	Files.writeString(
+			buildFile,
+			"""
+					plugins {
+						id 'org.springframework.boot' version '4.1.0'
+					}
+					
+					dependencies {
+						implementation 'org.springframework.boot:spring-boot-starter-web'
+					}
+					""");
+	
+	ApplyDependenciesUseCase useCase =
+			createGradleUseCase();
+	
+	useCase.apply(
+			project(
+					BuildTool.GRADLE),
+			List.of(
+					selectedDependency(
+							"lombok")));
+	
+	String content =
+			Files.readString(
+					buildFile);
+	
+	assertThat(content)
+			.contains(
+					"compileOnly 'org.projectlombok:lombok'")
+			.contains(
+					"annotationProcessor 'org.projectlombok:lombok'");
+}
+
+private ApplyDependenciesUseCase createMavenUseCase() {
+	
+	MavenDependencyParser dependencyParser =
+			new MavenDependencyParser();
+	
+	MavenProjectDependencyWriter writer =
+			new MavenProjectDependencyWriter(
+					new MavenPomDependencyWriter(
+							dependencyParser),
+					new MavenPomBackupRestorer());
+	
+	return new ApplyDependenciesUseCase(
+			declarationResolver(),
+			List.of(
+					writer));
+}
+
+private ApplyDependenciesUseCase createGradleUseCase() {
 	
 	GradleBuildBackupRestorer backupRestorer =
 			new GradleBuildBackupRestorer();
@@ -301,13 +357,66 @@ private ApplyDependenciesUseCase createUseCaseWithGradle() {
 	GradleProjectDependencyWriter writer =
 			new GradleProjectDependencyWriter(
 					new GradleDependencyWriter(
-							new GradleDependencyParser(),
 							backupRestorer),
 					backupRestorer);
 	
 	return new ApplyDependenciesUseCase(
-			new DependencyCoordinateResolver(),
+			declarationResolver(),
 			List.of(
 					writer));
+}
+
+private DependencyDeclarationResolver declarationResolver() {
+	
+	return new DependencyDeclarationResolver(
+			new DependencyCoordinateResolver());
+}
+
+private DependencyItem selectedDependency(
+		String id) {
+	
+	return new DependencyItem(
+			dependency(
+					id),
+			DependencyAvailability.AVAILABLE,
+			true);
+}
+
+private SpringDependency dependency(
+		String id) {
+	
+	return new SpringDependency(
+			id,
+			id,
+			"Test dependency",
+			"Test");
+}
+
+private SpringProject project(
+		BuildTool buildTool) {
+	
+	return new SpringProject(
+			"demo",
+			temporaryDirectory,
+			buildTool,
+			new ProjectMetadata(
+					"com.example",
+					"demo",
+					"4.1.0",
+					"26",
+					List.of()));
+}
+
+private int countOccurrences(
+		String value,
+		String target) {
+	
+	return value
+				   .split(
+						   java.util.regex.Pattern.quote(
+								   target),
+						   -1)
+				   .length
+				   - 1;
 }
 }

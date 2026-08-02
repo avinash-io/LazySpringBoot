@@ -1,6 +1,6 @@
 package io.github.avinashio.lazyspringboot.application.dependency;
 
-import io.github.avinashio.lazyspringboot.domain.dependency.DependencyCoordinate;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyDeclaration;
 import io.github.avinashio.lazyspringboot.domain.dependency.DependencyItem;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import org.springframework.stereotype.Service;
@@ -11,18 +11,18 @@ import java.util.List;
 @Service
 public class ApplyDependenciesUseCase {
 
-private final DependencyCoordinateResolver
-		coordinateResolver;
+private final DependencyDeclarationResolver
+		declarationResolver;
 
 private final List<ProjectDependencyWriter>
 		dependencyWriters;
 
 public ApplyDependenciesUseCase(
-		DependencyCoordinateResolver coordinateResolver,
+		DependencyDeclarationResolver declarationResolver,
 		List<ProjectDependencyWriter> dependencyWriters) {
 	
-	this.coordinateResolver =
-			coordinateResolver;
+	this.declarationResolver =
+			declarationResolver;
 	
 	this.dependencyWriters =
 			dependencyWriters;
@@ -39,7 +39,7 @@ public void apply(
 		return;
 	}
 	
-	List<DependencyCoordinate> coordinates =
+	List<DependencyDeclaration> declarations =
 			dependencyItems.stream()
 					.filter(
 							DependencyItem::selectable)
@@ -47,12 +47,14 @@ public void apply(
 							DependencyItem::selected)
 					.map(
 							DependencyItem::dependency)
-					.map(
-							coordinateResolver::resolve)
+					.flatMap(dependency ->
+									 declarationResolver.resolve(
+													 dependency)
+											 .stream())
 					.distinct()
 					.toList();
 	
-	if (coordinates.isEmpty()) {
+	if (declarations.isEmpty()) {
 		return;
 	}
 	
@@ -62,7 +64,7 @@ public void apply(
 	
 	writer.addDependencies(
 			project,
-			coordinates);
+			declarations);
 }
 
 private ProjectDependencyWriter findWriter(

@@ -1,7 +1,7 @@
 package io.github.avinashio.lazyspringboot.infrastructure.maven;
 
 import io.github.avinashio.lazyspringboot.application.dependency.ProjectDependencyWriter;
-import io.github.avinashio.lazyspringboot.domain.dependency.DependencyCoordinate;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyDeclaration;
 import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import org.springframework.stereotype.Component;
@@ -45,7 +45,7 @@ public boolean supports(
 @Override
 public void addDependencies(
 		SpringProject project,
-		List<DependencyCoordinate> dependencies)
+		List<DependencyDeclaration> dependencies)
 		throws IOException {
 	
 	dependencyWriter.addDependencies(

@@ -1,6 +1,6 @@
 package io.github.avinashio.lazyspringboot.application.dependency;
 
-import io.github.avinashio.lazyspringboot.domain.dependency.DependencyCoordinate;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyDeclaration;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 
 import java.io.IOException;
@@ -13,7 +13,7 @@ boolean supports(
 
 void addDependencies(
 		SpringProject project,
-		List<DependencyCoordinate> dependencies)
+		List<DependencyDeclaration> dependencies)
 		throws IOException;
 
 boolean canUndo(

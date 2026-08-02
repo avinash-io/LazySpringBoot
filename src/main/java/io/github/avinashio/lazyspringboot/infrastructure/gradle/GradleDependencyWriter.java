@@ -1,6 +1,8 @@
 package io.github.avinashio.lazyspringboot.infrastructure.gradle;
 
 import io.github.avinashio.lazyspringboot.domain.dependency.DependencyCoordinate;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyDeclaration;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyScope;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -14,18 +16,11 @@ public class GradleDependencyWriter {
 private static final String DEFAULT_INDENTATION =
 		"    ";
 
-private final GradleDependencyParser
-		dependencyParser;
-
 private final GradleBuildBackupRestorer
 		backupRestorer;
 
 public GradleDependencyWriter(
-		GradleDependencyParser dependencyParser,
 		GradleBuildBackupRestorer backupRestorer) {
-	
-	this.dependencyParser =
-			dependencyParser;
 	
 	this.backupRestorer =
 			backupRestorer;
@@ -33,21 +28,22 @@ public GradleDependencyWriter(
 
 public void addDependencies(
 		Path buildFile,
-		List<DependencyCoordinate> dependencies)
+		List<DependencyDeclaration> dependencies)
 		throws IOException {
+	
+	if (dependencies.isEmpty()) {
+		return;
+	}
 	
 	String content =
 			Files.readString(
 					buildFile);
 	
-	List<DependencyCoordinate> existingDependencies =
-			dependencyParser.parse(
-					content);
-	
-	List<DependencyCoordinate> dependenciesToAdd =
+	List<DependencyDeclaration> dependenciesToAdd =
 			dependencies.stream()
 					.filter(dependency ->
-									!existingDependencies.contains(
+									!containsDeclaration(
+											content,
 											dependency))
 					.toList();
 	
@@ -86,7 +82,7 @@ public void addDependencies(
 	StringBuilder additions =
 			new StringBuilder();
 	
-	for (DependencyCoordinate dependency
+	for (DependencyDeclaration dependency
 			: dependenciesToAdd) {
 		
 		additions.append(
@@ -109,30 +105,82 @@ public void addDependencies(
 			updatedContent);
 }
 
+private boolean containsDeclaration(
+		String content,
+		DependencyDeclaration declaration) {
+	
+	DependencyCoordinate coordinate =
+			declaration.coordinate();
+	
+	String configuration =
+			configuration(
+					declaration.scope());
+	
+	String dependency =
+			coordinate.groupId()
+					+ ":"
+					+ coordinate.artifactId();
+	
+	return content.matches(
+			"(?s).*\\b"
+					+ java.util.regex.Pattern.quote(
+					configuration)
+					+ "\\s*\\(?\\s*['\"]"
+					+ java.util.regex.Pattern.quote(
+					dependency)
+					+ "(?::[^'\"]+)?['\"]\\s*\\)?.*");
+}
+
 private String formatDependency(
-		DependencyCoordinate dependency,
+		DependencyDeclaration declaration,
 		boolean kotlinDsl,
 		String indentation) {
 	
-	String coordinate =
-			dependency.groupId()
+	DependencyCoordinate coordinate =
+			declaration.coordinate();
+	
+	String dependency =
+			coordinate.groupId()
 					+ ":"
-					+ dependency.artifactId();
+					+ coordinate.artifactId();
+	
+	String configuration =
+			configuration(
+					declaration.scope());
 	
 	if (kotlinDsl) {
 		
 		return indentation
-					   + "implementation(\""
-					   + coordinate
+					   + configuration
+					   + "(\""
+					   + dependency
 					   + "\")"
 					   + System.lineSeparator();
 	}
 	
 	return indentation
-				   + "implementation '"
-				   + coordinate
+				   + configuration
+				   + " '"
+				   + dependency
 				   + "'"
 				   + System.lineSeparator();
+}
+
+private String configuration(
+		DependencyScope scope) {
+	
+	return switch (scope) {
+		
+		case COMPILE -> "implementation";
+		
+		case RUNTIME -> "runtimeOnly";
+		
+		case COMPILE_ONLY -> "compileOnly";
+		
+		case ANNOTATION_PROCESSOR -> "annotationProcessor";
+		
+		case TEST -> "testImplementation";
+	};
 }
 
 private String detectDependencyIndentation(
@@ -171,7 +219,6 @@ private String detectDependencyIndentation(
 		
 		if (nextLineStart < 0
 					|| nextLineStart >= closingBrace) {
-			
 			break;
 		}
 		
@@ -231,7 +278,6 @@ private String leadingWhitespace(
 		
 		if (character != ' '
 					&& character != '\t') {
-			
 			break;
 		}
 		

@@ -1,9 +1,13 @@
 package io.github.avinashio.lazyspringboot.infrastructure.gradle;
 
 import io.github.avinashio.lazyspringboot.domain.dependency.DependencyCoordinate;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyDeclaration;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyScope;
 import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
 import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenDependencyParser;
+import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenPomDependencyWriter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -40,7 +44,7 @@ void shouldWriteToGroovyBuildFile()
 			project(
 					BuildTool.GRADLE),
 			List.of(
-					new DependencyCoordinate(
+					declaration(
 							"org.postgresql",
 							"postgresql")));
 	
@@ -73,7 +77,7 @@ void shouldWriteToKotlinBuildFile()
 			project(
 					BuildTool.GRADLE_KOTLIN),
 			List.of(
-					new DependencyCoordinate(
+					declaration(
 							"org.postgresql",
 							"postgresql")));
 	
@@ -103,7 +107,7 @@ void shouldReportUndoAvailableForGradleProject()
 			project(
 					BuildTool.GRADLE),
 			List.of(
-					new DependencyCoordinate(
+					declaration(
 							"org.postgresql",
 							"postgresql")));
 	
@@ -142,7 +146,7 @@ void shouldUndoGradleDependencyChange()
 	writer.addDependencies(
 			project,
 			List.of(
-					new DependencyCoordinate(
+					declaration(
 							"org.postgresql",
 							"postgresql")));
 	
@@ -168,7 +172,6 @@ private GradleProjectDependencyWriter createWriter() {
 	
 	GradleDependencyWriter dependencyWriter =
 			new GradleDependencyWriter(
-					new GradleDependencyParser(),
 					backupRestorer);
 	
 	return new GradleProjectDependencyWriter(
@@ -190,4 +193,92 @@ private SpringProject project(
 					"26",
 					List.of()));
 }
+
+private DependencyDeclaration declaration(
+		String groupId,
+		String artifactId) {
+	
+	return new DependencyDeclaration(
+			new DependencyCoordinate(
+					groupId,
+					artifactId),
+			DependencyScope.COMPILE);
+}
+
+@Test
+void shouldWriteRuntimeScope()
+		throws Exception {
+	
+	Path pom =
+			temporaryDirectory.resolve(
+					"pom.xml");
+	
+	Files.writeString(
+			pom,
+			"""
+					<project>
+						<dependencies>
+						</dependencies>
+					</project>
+					""");
+	
+	MavenPomDependencyWriter writer =
+			new MavenPomDependencyWriter(
+					new MavenDependencyParser());
+	
+	writer.addDependencies(
+			pom,
+			List.of(
+					new DependencyDeclaration(
+							new DependencyCoordinate(
+									"org.postgresql",
+									"postgresql"),
+							DependencyScope.RUNTIME)));
+	
+	assertThat(
+			Files.readString(
+					pom))
+			.contains(
+					"<scope>runtime</scope>");
+}
+
+@Test
+void shouldWriteCompileOnlyAsOptional()
+		throws Exception {
+	
+	Path pom =
+			temporaryDirectory.resolve(
+					"pom.xml");
+	
+	Files.writeString(
+			pom,
+			"""
+					<project>
+						<dependencies>
+						</dependencies>
+					</project>
+					""");
+	
+	MavenPomDependencyWriter writer =
+			new MavenPomDependencyWriter(
+					new MavenDependencyParser());
+	
+	writer.addDependencies(
+			pom,
+			List.of(
+					new DependencyDeclaration(
+							new DependencyCoordinate(
+									"org.projectlombok",
+									"lombok"),
+							DependencyScope.COMPILE_ONLY)));
+	
+	assertThat(
+			Files.readString(
+					pom))
+			.contains(
+					"<artifactId>lombok</artifactId>")
+			.contains(
+					"<optional>true</optional>");
+}
+
 }
