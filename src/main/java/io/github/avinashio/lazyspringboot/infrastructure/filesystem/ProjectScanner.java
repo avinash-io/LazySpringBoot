@@ -1,8 +1,9 @@
 package io.github.avinashio.lazyspringboot.infrastructure.filesystem;
 
+import io.github.avinashio.lazyspringboot.application.project.ProjectInspector;
+import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
 import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
-import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenProjectInspector;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -14,15 +15,15 @@ import java.util.Optional;
 @Component
 public class ProjectScanner {
 
-private final MavenProjectInspector mavenProjectInspector;
+private final List<ProjectInspector>
+		projectInspectors;
 
 private final BuildToolDetector buildToolDetector;
 
 public ProjectScanner(
-		MavenProjectInspector mavenProjectInspector,
+		List<ProjectInspector> projectInspectors,
 		BuildToolDetector buildToolDetector) {
-	
-	this.mavenProjectInspector = mavenProjectInspector;
+	this.projectInspectors = projectInspectors;
 	this.buildToolDetector = buildToolDetector;
 }
 
@@ -42,33 +43,39 @@ public List<SpringProject> scan(
 private Optional<SpringProject> inspectProject(
 		Path directory) {
 	
-	Path pomFile =
-			directory.resolve("pom.xml");
-	
-	if (!Files.isRegularFile(pomFile)) {
-		
-		return Optional.empty();
-	}
-	
 	try {
 		
-		if (!mavenProjectInspector.isSpringBootProject(
+		ProjectInspector inspector =
+				projectInspectors.stream()
+						.filter(candidate ->
+										candidate.supports(
+												directory))
+						.findFirst()
+						.orElse(null);
+		
+		if (inspector == null) {
+			return Optional.empty();
+		}
+		
+		if (!inspector.isSpringBootProject(
 				directory)) {
 			
 			return Optional.empty();
 		}
 		
 		ProjectMetadata projectMetadata =
-				mavenProjectInspector.inspect(
+				inspector.inspect(
 						directory);
 		
-		var buildTool =
+		BuildTool buildTool =
 				buildToolDetector.detect(
 						directory);
 		
 		return Optional.of(
 				new SpringProject(
-						directory.getFileName().toString(),
+						directory
+								.getFileName()
+								.toString(),
 						directory.toAbsolutePath(),
 						buildTool,
 						projectMetadata));

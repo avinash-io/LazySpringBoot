@@ -1,6 +1,9 @@
 package io.github.avinashio.lazyspringboot.infrastructure.filesystem;
 
+import io.github.avinashio.lazyspringboot.application.project.ProjectInspector;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+import io.github.avinashio.lazyspringboot.infrastructure.gradle.GradleDependencyParser;
+import io.github.avinashio.lazyspringboot.infrastructure.gradle.GradleProjectInspector;
 import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenDependencyParser;
 import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenProjectInspector;
 import org.junit.jupiter.api.Test;
@@ -20,15 +23,28 @@ private final MavenProjectInspector
 		new MavenProjectInspector(
 				new MavenDependencyParser());
 
+
+private final GradleProjectInspector
+		gradleProjectInspector =
+		new GradleProjectInspector(
+				new GradleDependencyParser());
+
 private final BuildToolDetector
 		buildToolDetector =
 		new BuildToolDetector();
 
+private final List<ProjectInspector>
+		projectInspectors =
+		List.of(
+				mavenProjectInspector,
+				gradleProjectInspector);
+
 private final ProjectScanner
 		projectScanner =
 		new ProjectScanner(
-				mavenProjectInspector,
+				projectInspectors,
 				buildToolDetector);
+
 
 @TempDir
 Path temporaryDirectory;
@@ -115,4 +131,105 @@ private void createMavenProject(String name) throws IOException {
 	
 	Files.writeString(projectDirectory.resolve("pom.xml"), pom);
 }
+
+@Test
+void shouldDiscoverMixedSpringBootProjects()
+		throws IOException {
+	
+	Path mavenProject =
+			temporaryDirectory.resolve(
+					"maven-service");
+	
+	Files.createDirectory(
+			mavenProject);
+	
+	Files.writeString(
+			mavenProject.resolve(
+					"pom.xml"),
+			"""
+					<project>
+					  <parent>
+						<groupId>org.springframework.boot</groupId>
+						<artifactId>spring-boot-starter-parent</artifactId>
+						<version>4.1.0</version>
+					  </parent>
+					
+					  <groupId>com.example</groupId>
+					  <artifactId>maven-service</artifactId>
+					
+					  <properties>
+						<java.version>26</java.version>
+					  </properties>
+					</project>
+					""");
+	
+	Path gradleProject =
+			temporaryDirectory.resolve(
+					"gradle-service");
+	
+	Files.createDirectory(
+			gradleProject);
+	
+	Files.writeString(
+			gradleProject.resolve(
+					"build.gradle"),
+			"""
+					plugins {
+						id 'java'
+						id 'org.springframework.boot' version '4.1.0'
+					}
+					
+					group = 'com.example'
+					
+					java {
+						toolchain {
+							languageVersion =
+								JavaLanguageVersion.of(26)
+						}
+					}
+					
+					dependencies {
+						implementation 'org.springframework.boot:spring-boot-starter-web'
+					}
+					""");
+	
+	Path kotlinProject =
+			temporaryDirectory.resolve(
+					"kotlin-service");
+	
+	Files.createDirectory(
+			kotlinProject);
+	
+	Files.writeString(
+			kotlinProject.resolve(
+					"build.gradle.kts"),
+			"""
+					plugins {
+						java
+						id("org.springframework.boot") version "4.1.0"
+					}
+					
+					group = "com.example"
+					
+					java {
+						toolchain {
+							languageVersion =
+								JavaLanguageVersion.of(26)
+						}
+					}
+					""");
+	
+	List<SpringProject> projects =
+			projectScanner.scan(
+					temporaryDirectory);
+	
+	assertThat(projects)
+			.extracting(
+					SpringProject::name)
+			.containsExactlyInAnyOrder(
+					"maven-service",
+					"gradle-service",
+					"kotlin-service");
+}
+
 }
