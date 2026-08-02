@@ -1,50 +1,63 @@
 package io.github.avinashio.lazyspringboot.application.dependency;
 
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
-import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenPomBackupRestorer;
-import java.io.IOException;
-import java.nio.file.Path;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.List;
 
 @Service
 public class UndoDependenciesUseCase {
 
-    private static final String POM_FILE_NAME =
-            "pom.xml";
+private final List<ProjectDependencyWriter>
+		dependencyWriters;
 
-    private final MavenPomBackupRestorer
-            backupRestorer;
+public UndoDependenciesUseCase(
+		List<ProjectDependencyWriter> dependencyWriters) {
+	
+	this.dependencyWriters =
+			dependencyWriters;
+}
 
-    public UndoDependenciesUseCase(
-            MavenPomBackupRestorer backupRestorer) {
-        this.backupRestorer =
-                backupRestorer;
-    }
+public boolean canUndo(
+		SpringProject project) {
+	
+	if (project == null) {
+		return false;
+	}
+	
+	return findWriter(
+			project)
+				   .canUndo(
+						   project);
+}
 
-    public boolean canUndo(
-            SpringProject project) {
-        if (project == null) {
-            return false;
-        }
+public void undo(
+		SpringProject project)
+		throws IOException {
+	
+	if (project == null) {
+		return;
+	}
+	
+	findWriter(
+			project)
+			.undo(
+					project);
+}
 
-        return backupRestorer.backupExists(
-                pomPath(project));
-    }
-
-    public void undo(
-            SpringProject project)
-            throws IOException {
-        if (project == null) {
-            return;
-        }
-
-        backupRestorer.restore(
-                pomPath(project));
-    }
-
-    private Path pomPath(
-            SpringProject project) {
-        return project.path()
-                .resolve(POM_FILE_NAME);
-    }
+private ProjectDependencyWriter findWriter(
+		SpringProject project) {
+	
+	return dependencyWriters.stream()
+				   .filter(writer ->
+								   writer.supports(
+										   project))
+				   .findFirst()
+				   .orElseThrow(
+						   () ->
+								   new IllegalArgumentException(
+										   "Unsupported build tool: "
+												   + project.buildTool()));
+}
 }

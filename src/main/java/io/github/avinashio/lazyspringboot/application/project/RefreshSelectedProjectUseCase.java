@@ -2,29 +2,46 @@ package io.github.avinashio.lazyspringboot.application.project;
 
 import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
-import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenProjectInspector;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.List;
 
 @Service
 public class RefreshSelectedProjectUseCase {
 
-private final MavenProjectInspector mavenProjectInspector;
+private final List<ProjectInspector>
+		projectInspectors;
 
 public RefreshSelectedProjectUseCase(
-		MavenProjectInspector mavenProjectInspector) {
-	this.mavenProjectInspector = mavenProjectInspector;
+		List<ProjectInspector> projectInspectors) {
+	
+	this.projectInspectors =
+			projectInspectors;
 }
 
-public SpringProject refresh(SpringProject project)
+public SpringProject refresh(
+		SpringProject project)
 		throws IOException {
+	
 	if (project == null) {
 		return null;
 	}
 	
+	ProjectInspector inspector =
+			projectInspectors.stream()
+					.filter(candidate ->
+									candidate.supports(
+											project.path()))
+					.findFirst()
+					.orElseThrow(
+							() ->
+									new IllegalArgumentException(
+											"Unsupported project: "
+													+ project.path()));
+	
 	ProjectMetadata projectMetadata =
-			mavenProjectInspector.inspect(
+			inspector.inspect(
 					project.path());
 	
 	return new SpringProject(

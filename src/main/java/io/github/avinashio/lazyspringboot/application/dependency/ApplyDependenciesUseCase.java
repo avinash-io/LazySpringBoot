@@ -3,61 +3,80 @@ package io.github.avinashio.lazyspringboot.application.dependency;
 import io.github.avinashio.lazyspringboot.domain.dependency.DependencyCoordinate;
 import io.github.avinashio.lazyspringboot.domain.dependency.DependencyItem;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
-import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenPomDependencyWriter;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.List;
 
 @Service
 public class ApplyDependenciesUseCase {
 
-    private static final String POM_FILE_NAME =
-            "pom.xml";
+private final DependencyCoordinateResolver
+		coordinateResolver;
 
-    private final DependencyCoordinateResolver
-            coordinateResolver;
+private final List<ProjectDependencyWriter>
+		dependencyWriters;
 
-    private final MavenPomDependencyWriter
-            pomDependencyWriter;
+public ApplyDependenciesUseCase(
+		DependencyCoordinateResolver coordinateResolver,
+		List<ProjectDependencyWriter> dependencyWriters) {
+	
+	this.coordinateResolver =
+			coordinateResolver;
+	
+	this.dependencyWriters =
+			dependencyWriters;
+}
 
-    public ApplyDependenciesUseCase(
-            DependencyCoordinateResolver coordinateResolver,
-            MavenPomDependencyWriter pomDependencyWriter) {
-        this.coordinateResolver =
-                coordinateResolver;
-        this.pomDependencyWriter =
-                pomDependencyWriter;
-    }
+public void apply(
+		SpringProject project,
+		List<DependencyItem> dependencyItems)
+		throws IOException {
+	
+	if (project == null
+				|| dependencyItems.isEmpty()) {
+		
+		return;
+	}
+	
+	List<DependencyCoordinate> coordinates =
+			dependencyItems.stream()
+					.filter(
+							DependencyItem::selectable)
+					.filter(
+							DependencyItem::selected)
+					.map(
+							DependencyItem::dependency)
+					.map(
+							coordinateResolver::resolve)
+					.distinct()
+					.toList();
+	
+	if (coordinates.isEmpty()) {
+		return;
+	}
+	
+	ProjectDependencyWriter writer =
+			findWriter(
+					project);
+	
+	writer.addDependencies(
+			project,
+			coordinates);
+}
 
-    public void apply(
-            SpringProject project,
-            List<DependencyItem> dependencyItems)
-            throws IOException {
-        if (project == null
-                || dependencyItems.isEmpty()) {
-            return;
-        }
-
-        List<DependencyCoordinate> coordinates =
-                dependencyItems.stream()
-                        .filter(DependencyItem::selectable)
-                        .filter(DependencyItem::selected)
-                        .map(DependencyItem::dependency)
-                        .map(coordinateResolver::resolve)
-                        .distinct()
-                        .toList();
-
-        if (coordinates.isEmpty()) {
-            return;
-        }
-
-        Path pomPath =
-                project.path()
-                        .resolve(POM_FILE_NAME);
-
-        pomDependencyWriter.addDependencies(
-                pomPath,
-                coordinates);
-    }
+private ProjectDependencyWriter findWriter(
+		SpringProject project) {
+	
+	return dependencyWriters.stream()
+				   .filter(writer ->
+								   writer.supports(
+										   project))
+				   .findFirst()
+				   .orElseThrow(
+						   () ->
+								   new IllegalArgumentException(
+										   "Unsupported build tool: "
+												   + project.buildTool()));
+}
 }
