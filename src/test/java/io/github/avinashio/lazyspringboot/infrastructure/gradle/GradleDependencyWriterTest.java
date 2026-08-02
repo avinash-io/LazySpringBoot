@@ -234,4 +234,77 @@ private GradleDependencyWriter createWriter() {
 			new GradleDependencyParser(),
 			new GradleBuildBackupRestorer());
 }
+
+@Test
+void shouldPreserveExistingSpaceIndentation()
+		throws Exception {
+	
+	Path buildFile =
+			temporaryDirectory.resolve(
+					"build.gradle");
+	
+	String content =
+			"dependencies {\n"
+					+ "        implementation 'com.example:existing'\n"
+					+ "}\n";
+	
+	Files.writeString(
+			buildFile,
+			content);
+	
+	GradleDependencyWriter writer =
+			createWriter();
+	
+	writer.addDependencies(
+			buildFile,
+			List.of(
+					new DependencyCoordinate(
+							"org.postgresql",
+							"postgresql")));
+	
+	String updatedContent =
+			Files.readString(
+					buildFile);
+	
+	assertThat(updatedContent)
+			.contains(
+					"        implementation 'com.example:existing'")
+			.contains(
+					"        implementation 'org.postgresql:postgresql'");
+}
+
+@Test
+void shouldPreserveExistingTabIndentation()
+		throws Exception {
+	
+	Path buildFile =
+			temporaryDirectory.resolve(
+					"build.gradle");
+	
+	String content =
+			"dependencies {\n"
+					+ "\timplementation 'com.example:existing'\n"
+					+ "}\n";
+	
+	Files.writeString(
+			buildFile,
+			content);
+	
+	GradleDependencyWriter writer =
+			createWriter();
+	
+	writer.addDependencies(
+			buildFile,
+			List.of(
+					new DependencyCoordinate(
+							"org.postgresql",
+							"postgresql")));
+	
+	assertThat(
+			Files.readString(
+					buildFile))
+			.contains(
+					"\timplementation 'org.postgresql:postgresql'");
+}
+
 }
