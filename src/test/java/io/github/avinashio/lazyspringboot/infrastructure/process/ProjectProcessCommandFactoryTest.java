@@ -1,7 +1,6 @@
 package io.github.avinashio.lazyspringboot.infrastructure.process;
 
 import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
-import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,14 +26,15 @@ Path temporaryDirectory;
 @Test
 void shouldUseMavenWrapperWhenAvailable()
 		throws IOException {
-	Files.createFile(
-			temporaryDirectory.resolve("mvnw"));
 	
-	SpringProject project =
-			mockProject();
+	Files.createFile(
+			temporaryDirectory.resolve(
+					"mvnw"));
 	
 	List<String> command =
-			commandFactory.create(project);
+			commandFactory.create(
+					mockProject(
+							BuildTool.MAVEN));
 	
 	assertThat(command)
 			.containsExactly(
@@ -45,11 +45,11 @@ void shouldUseMavenWrapperWhenAvailable()
 
 @Test
 void shouldUseSystemMavenWhenWrapperIsMissing() {
-	SpringProject project =
-			mockProject();
 	
 	List<String> command =
-			commandFactory.create(project);
+			commandFactory.create(
+					mockProject(
+							BuildTool.MAVEN));
 	
 	assertThat(command)
 			.containsExactly(
@@ -57,22 +57,86 @@ void shouldUseSystemMavenWhenWrapperIsMissing() {
 					"spring-boot:run");
 }
 
-private SpringProject mockProject() {
+@Test
+void shouldUseGradleWrapperWhenAvailable()
+		throws IOException {
+	
+	Files.createFile(
+			temporaryDirectory.resolve(
+					"gradlew"));
+	
+	List<String> command =
+			commandFactory.create(
+					mockProject(
+							BuildTool.GRADLE));
+	
+	assertThat(command)
+			.containsExactly(
+					"sh",
+					"./gradlew",
+					"bootRun");
+}
+
+@Test
+void shouldUseSystemGradleWhenWrapperIsMissing() {
+	
+	List<String> command =
+			commandFactory.create(
+					mockProject(
+							BuildTool.GRADLE));
+	
+	assertThat(command)
+			.containsExactly(
+					"gradle",
+					"bootRun");
+}
+
+@Test
+void shouldUseGradleWrapperForKotlinDsl()
+		throws IOException {
+	
+	Files.createFile(
+			temporaryDirectory.resolve(
+					"gradlew"));
+	
+	List<String> command =
+			commandFactory.create(
+					mockProject(
+							BuildTool.GRADLE_KOTLIN));
+	
+	assertThat(command)
+			.containsExactly(
+					"sh",
+					"./gradlew",
+					"bootRun");
+}
+
+@Test
+void shouldUseSystemGradleForKotlinDslWhenWrapperIsMissing() {
+	
+	List<String> command =
+			commandFactory.create(
+					mockProject(
+							BuildTool.GRADLE_KOTLIN));
+	
+	assertThat(command)
+			.containsExactly(
+					"gradle",
+					"bootRun");
+}
+
+private SpringProject mockProject(
+		BuildTool buildTool) {
 	
 	SpringProject project =
 			mock(SpringProject.class);
 	
-	ProjectMetadata metadata =
-			mock(ProjectMetadata.class);
-	
-	when(project.metadata())
-			.thenReturn(metadata);
-	
 	when(project.buildTool())
-			.thenReturn(BuildTool.MAVEN);
+			.thenReturn(buildTool);
 	
 	when(project.path())
-			.thenReturn(temporaryDirectory);
+			.thenReturn(
+					temporaryDirectory);
 	
 	return project;
 }

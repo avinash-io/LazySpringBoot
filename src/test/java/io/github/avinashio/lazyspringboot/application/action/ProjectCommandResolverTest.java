@@ -146,10 +146,17 @@ void shouldFallbackToInstalledMaven()
 
 private SpringProject project() {
 	
+	return project(
+			BuildTool.MAVEN);
+}
+
+private SpringProject project(
+		BuildTool buildTool) {
+	
 	return new SpringProject(
 			"demo",
 			temporaryDirectory,
-			BuildTool.MAVEN,
+			buildTool,
 			new ProjectMetadata(
 					"com.example",
 					"demo",
@@ -157,4 +164,111 @@ private SpringProject project() {
 					"26",
 					List.of()));
 }
+
+@Test
+void shouldResolveGradleBuildCommand()
+		throws Exception {
+	
+	Files.createFile(
+			temporaryDirectory.resolve(
+					"gradlew"));
+	
+	ProjectCommand command =
+			resolver.resolve(
+					project(
+							BuildTool.GRADLE),
+					ProjectAction.BUILD);
+	
+	assertThat(command.arguments())
+			.containsExactly(
+					"sh",
+					"./gradlew",
+					"clean",
+					"build");
+	
+	assertThat(command.workingDirectory())
+			.isEqualTo(
+					temporaryDirectory);
+}
+
+@Test
+void shouldResolveGradleTestCommand()
+		throws Exception {
+	
+	Files.createFile(
+			temporaryDirectory.resolve(
+					"gradlew"));
+	
+	ProjectCommand command =
+			resolver.resolve(
+					project(
+							BuildTool.GRADLE),
+					ProjectAction.TEST);
+	
+	assertThat(command.arguments())
+			.containsExactly(
+					"sh",
+					"./gradlew",
+					"test");
+}
+
+@Test
+void shouldResolveGradleInstallAsBuild()
+		throws Exception {
+	
+	Files.createFile(
+			temporaryDirectory.resolve(
+					"gradlew"));
+	
+	ProjectCommand command =
+			resolver.resolve(
+					project(
+							BuildTool.GRADLE),
+					ProjectAction.INSTALL);
+	
+	assertThat(command.arguments())
+			.containsExactly(
+					"sh",
+					"./gradlew",
+					"build");
+}
+
+@Test
+void shouldFallbackToInstalledGradle() {
+	
+	ProjectCommand command =
+			resolver.resolve(
+					project(
+							BuildTool.GRADLE),
+					ProjectAction.TEST);
+	
+	assertThat(command.arguments())
+			.containsExactly(
+					"gradle",
+					"test");
+}
+
+@Test
+void shouldResolveGradleKotlinBuildCommand()
+		throws Exception {
+	
+	Files.createFile(
+			temporaryDirectory.resolve(
+					"gradlew"));
+	
+	ProjectCommand command =
+			resolver.resolve(
+					project(
+							BuildTool.GRADLE_KOTLIN),
+					ProjectAction.BUILD);
+	
+	assertThat(command.arguments())
+			.containsExactly(
+					"sh",
+					"./gradlew",
+					"clean",
+					"build");
+}
+
+
 }
