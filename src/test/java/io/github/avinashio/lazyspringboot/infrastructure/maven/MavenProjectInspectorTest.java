@@ -106,7 +106,7 @@ void shouldIgnoreSpringBootGroupIdInsideComment()
 }
 
 @Test
-void shouldExtractMavenProjectMetadata() throws IOException {
+void shouldExtractProjectMetadataFromMavenProject() throws IOException {
 	Path pomFile = temporaryDirectory.resolve("pom.xml");
 	
 	Files.writeString(
