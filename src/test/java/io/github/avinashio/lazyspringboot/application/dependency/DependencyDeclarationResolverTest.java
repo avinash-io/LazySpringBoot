@@ -1,19 +1,56 @@
 package io.github.avinashio.lazyspringboot.application.dependency;
 
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyCoordinate;
 import io.github.avinashio.lazyspringboot.domain.dependency.DependencyDeclaration;
 import io.github.avinashio.lazyspringboot.domain.dependency.DependencyScope;
 import io.github.avinashio.lazyspringboot.domain.dependency.SpringDependency;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class DependencyDeclarationResolverTest {
 
+
+private final DependencyDeclarationProvider provider =
+		dependency ->
+				Optional.of(
+						switch (dependency.id()) {
+							
+							case "postgresql" -> List.of(
+									new DependencyDeclaration(
+											new DependencyCoordinate(
+													"org.postgresql",
+													"postgresql"),
+											DependencyScope.RUNTIME));
+							
+							case "lombok" -> List.of(
+									new DependencyDeclaration(
+											new DependencyCoordinate(
+													"org.projectlombok",
+													"lombok"),
+											DependencyScope.COMPILE_ONLY),
+									new DependencyDeclaration(
+											new DependencyCoordinate(
+													"org.projectlombok",
+													"lombok"),
+											DependencyScope.ANNOTATION_PROCESSOR));
+							
+							default -> List.of(
+									new DependencyDeclaration(
+											new DependencyCoordinate(
+													"org.springframework.boot",
+													"spring-boot-starter-"
+															+ dependency.id()),
+											DependencyScope.COMPILE));
+						});
+
 private final DependencyDeclarationResolver resolver =
 		new DependencyDeclarationResolver(
-				new DependencyCoordinateResolver());
+				new DependencyCoordinateResolver(),
+				provider);
 
 @Test
 void shouldUseCompileScopeByDefault() {
@@ -91,5 +128,72 @@ private SpringDependency dependency(
 			id,
 			"",
 			"");
+}
+
+@Test
+void shouldFallbackToCompileWhenProviderCannotResolve() {
+	
+	DependencyDeclarationProvider provider =
+			dependency ->
+					Optional.empty();
+	
+	DependencyDeclarationResolver resolver =
+			new DependencyDeclarationResolver(
+					new DependencyCoordinateResolver(),
+					provider);
+	
+	List<DependencyDeclaration> declarations =
+			resolver.resolve(
+					dependency(
+							"data-jpa"));
+	
+	assertThat(declarations)
+			.hasSize(1);
+	
+	assertThat(
+			declarations.getFirst()
+					.scope())
+			.isEqualTo(
+					DependencyScope.COMPILE);
+}
+
+private DependencyDeclarationResolver declarationResolver() {
+	
+	DependencyDeclarationProvider provider =
+			dependency ->
+					Optional.of(
+							switch (dependency.id()) {
+								
+								case "postgresql" -> List.of(
+										new DependencyDeclaration(
+												new DependencyCoordinate(
+														"org.postgresql",
+														"postgresql"),
+												DependencyScope.RUNTIME));
+								
+								case "lombok" -> List.of(
+										new DependencyDeclaration(
+												new DependencyCoordinate(
+														"org.projectlombok",
+														"lombok"),
+												DependencyScope.COMPILE_ONLY),
+										new DependencyDeclaration(
+												new DependencyCoordinate(
+														"org.projectlombok",
+														"lombok"),
+												DependencyScope.ANNOTATION_PROCESSOR));
+								
+								default -> List.of(
+										new DependencyDeclaration(
+												new DependencyCoordinate(
+														"org.springframework.boot",
+														"spring-boot-starter-"
+																+ dependency.id()),
+												DependencyScope.COMPILE));
+							});
+	
+	return new DependencyDeclarationResolver(
+			new DependencyCoordinateResolver(),
+			provider);
 }
 }

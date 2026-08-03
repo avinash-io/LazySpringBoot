@@ -14,39 +14,45 @@ public class DependencyDeclarationResolver {
 private final DependencyCoordinateResolver
 		coordinateResolver;
 
+private final DependencyDeclarationProvider
+		declarationProvider;
+
 public DependencyDeclarationResolver(
-		DependencyCoordinateResolver coordinateResolver) {
+		DependencyCoordinateResolver coordinateResolver,
+		DependencyDeclarationProvider declarationProvider) {
 	
 	this.coordinateResolver =
 			coordinateResolver;
+	
+	this.declarationProvider =
+			declarationProvider;
 }
 
 public List<DependencyDeclaration> resolve(
+		SpringDependency dependency) {
+	
+	return declarationProvider
+				   .resolve(
+						   dependency)
+				   .filter(
+						   declarations ->
+								   !declarations.isEmpty())
+				   .orElseGet(
+						   () ->
+								   fallback(
+										   dependency));
+}
+
+private List<DependencyDeclaration> fallback(
 		SpringDependency dependency) {
 	
 	DependencyCoordinate coordinate =
 			coordinateResolver.resolve(
 					dependency);
 	
-	return switch (dependency.id()) {
-		
-		case "postgresql" -> List.of(
-				new DependencyDeclaration(
-						coordinate,
-						DependencyScope.RUNTIME));
-		
-		case "lombok" -> List.of(
-				new DependencyDeclaration(
-						coordinate,
-						DependencyScope.COMPILE_ONLY),
-				new DependencyDeclaration(
-						coordinate,
-						DependencyScope.ANNOTATION_PROCESSOR));
-		
-		default -> List.of(
-				new DependencyDeclaration(
-						coordinate,
-						DependencyScope.COMPILE));
-	};
+	return List.of(
+			new DependencyDeclaration(
+					coordinate,
+					DependencyScope.COMPILE));
 }
 }

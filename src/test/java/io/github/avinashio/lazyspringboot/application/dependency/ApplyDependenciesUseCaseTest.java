@@ -1,9 +1,6 @@
 package io.github.avinashio.lazyspringboot.application.dependency;
 
-import io.github.avinashio.lazyspringboot.domain.dependency.DependencyAvailability;
-import io.github.avinashio.lazyspringboot.domain.dependency.DependencyCoordinate;
-import io.github.avinashio.lazyspringboot.domain.dependency.DependencyItem;
-import io.github.avinashio.lazyspringboot.domain.dependency.SpringDependency;
+import io.github.avinashio.lazyspringboot.domain.dependency.*;
 import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
 import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
@@ -20,6 +17,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -368,8 +366,42 @@ private ApplyDependenciesUseCase createGradleUseCase() {
 
 private DependencyDeclarationResolver declarationResolver() {
 	
+	DependencyDeclarationProvider provider =
+			dependency ->
+					Optional.of(
+							switch (dependency.id()) {
+								
+								case "postgresql" -> List.of(
+										new DependencyDeclaration(
+												new DependencyCoordinate(
+														"org.postgresql",
+														"postgresql"),
+												DependencyScope.RUNTIME));
+								
+								case "lombok" -> List.of(
+										new DependencyDeclaration(
+												new DependencyCoordinate(
+														"org.projectlombok",
+														"lombok"),
+												DependencyScope.COMPILE_ONLY),
+										new DependencyDeclaration(
+												new DependencyCoordinate(
+														"org.projectlombok",
+														"lombok"),
+												DependencyScope.ANNOTATION_PROCESSOR));
+								
+								default -> List.of(
+										new DependencyDeclaration(
+												new DependencyCoordinate(
+														"org.springframework.boot",
+														"spring-boot-starter-"
+																+ dependency.id()),
+												DependencyScope.COMPILE));
+							});
+	
 	return new DependencyDeclarationResolver(
-			new DependencyCoordinateResolver());
+			new DependencyCoordinateResolver(),
+			provider);
 }
 
 private DependencyItem selectedDependency(

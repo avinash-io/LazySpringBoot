@@ -1,6 +1,8 @@
 package io.github.avinashio.lazyspringboot.infrastructure.gradle;
 
 import io.github.avinashio.lazyspringboot.domain.dependency.DependencyCoordinate;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyDeclaration;
+import io.github.avinashio.lazyspringboot.domain.dependency.DependencyScope;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -11,11 +13,11 @@ import java.util.regex.Pattern;
 @Component
 public class GradleDependencyParser {
 
-private static final Pattern
-		DEPENDENCY_PATTERN =
+private static final Pattern DEPENDENCY_PATTERN =
 		Pattern.compile(
-				"(?:implementation|api|compileOnly|runtimeOnly|"
-						+ "testImplementation|testCompileOnly|testRuntimeOnly)"
+				"(implementation|api|compileOnly|annotationProcessor|"
+						+ "runtimeOnly|testImplementation|testCompileOnly|"
+						+ "testRuntimeOnly|testAnnotationProcessor)"
 						+ "\\s*\\(?\\s*['\"]"
 						+ "([^:'\"]+):([^:'\"]+)"
 						+ "(?::[^'\"]+)?['\"]\\s*\\)?");
@@ -23,7 +25,19 @@ private static final Pattern
 public List<DependencyCoordinate> parse(
 		String content) {
 	
-	List<DependencyCoordinate> dependencies =
+	return parseDeclarations(
+			content)
+				   .stream()
+				   .map(
+						   DependencyDeclaration::coordinate)
+				   .distinct()
+				   .toList();
+}
+
+public List<DependencyDeclaration> parseDeclarations(
+		String content) {
+	
+	List<DependencyDeclaration> declarations =
 			new ArrayList<>();
 	
 	Matcher matcher =
@@ -32,13 +46,46 @@ public List<DependencyCoordinate> parse(
 	
 	while (matcher.find()) {
 		
-		dependencies.add(
-				new DependencyCoordinate(
-						matcher.group(1),
-						matcher.group(2)));
+		DependencyScope scope =
+				scopeFor(
+						matcher.group(1));
+		
+		if (scope == null) {
+			continue;
+		}
+		
+		declarations.add(
+				new DependencyDeclaration(
+						new DependencyCoordinate(
+								matcher.group(2),
+								matcher.group(3)),
+						scope));
 	}
 	
 	return List.copyOf(
-			dependencies);
+			declarations);
+}
+
+private DependencyScope scopeFor(
+		String configuration) {
+	
+	return switch (configuration) {
+		
+		case "implementation",
+			 "api" -> DependencyScope.COMPILE;
+		
+		case "runtimeOnly" -> DependencyScope.RUNTIME;
+		
+		case "compileOnly" -> DependencyScope.COMPILE_ONLY;
+		
+		case "annotationProcessor" -> DependencyScope.ANNOTATION_PROCESSOR;
+		
+		case "testImplementation",
+			 "testCompileOnly",
+			 "testRuntimeOnly",
+			 "testAnnotationProcessor" -> DependencyScope.TEST;
+		
+		default -> null;
+	};
 }
 }
