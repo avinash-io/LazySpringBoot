@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 class ProjectDetailsPanelTest {
 
 @Test
-void shouldUseEndTimeForStoppedProcessUptime() {
+void shouldShowRuntimeDetailsForRunningProcess() {
 	
 	GetProjectProcessUseCase getProjectProcessUseCase =
 			mock(
@@ -33,23 +33,95 @@ void shouldUseEndTimeForStoppedProcessUptime() {
 	SpringProject project =
 			project();
 	
-	Instant startedAt =
-			Instant.parse(
-					"2026-07-20T10:00:00Z");
+	ProjectProcess process =
+			new ProjectProcess(
+					"test-app",
+					ProjectProcessStatus.RUNNING,
+					List.of(),
+					null,
+					12345L,
+					Instant.now()
+							.minusSeconds(30),
+					null);
 	
-	Instant endedAt =
-			Instant.parse(
-					"2026-07-20T10:15:30Z");
+	when(getProjectProcessUseCase.get(
+			project))
+			.thenReturn(
+					Optional.of(
+							process));
+	
+	when(statusFormatter.format(
+			ProjectProcessStatus.RUNNING))
+			.thenReturn(
+					"[✓] RUNNING");
+	
+	ProjectDetailsPanel panel =
+			createPanel(
+					statusFormatter,
+					getProjectProcessUseCase);
+	
+	List<String> lines =
+			panel.render(
+					project);
+	
+	assertThat(lines)
+			.anySatisfy(line ->
+								assertThat(line)
+										.contains(
+												"Status",
+												"[✓] RUNNING"));
+	
+	assertThat(lines)
+			.anySatisfy(line ->
+								assertThat(line)
+										.contains(
+												"PID",
+												"12345"));
+	
+	assertThat(lines)
+			.anySatisfy(line ->
+								assertThat(line)
+										.contains(
+												"Started"));
+	
+	assertThat(lines)
+			.anySatisfy(line ->
+								assertThat(line)
+										.contains(
+												"Uptime"));
+	
+	assertThat(lines)
+			.noneSatisfy(line ->
+								 assertThat(line)
+										 .contains(
+												 "Exit Code"));
+}
+
+@Test
+void shouldHideRuntimeDetailsForStoppedProcess() {
+	
+	GetProjectProcessUseCase getProjectProcessUseCase =
+			mock(
+					GetProjectProcessUseCase.class);
+	
+	StatusFormatter statusFormatter =
+			mock(
+					StatusFormatter.class);
+	
+	SpringProject project =
+			project();
 	
 	ProjectProcess process =
 			new ProjectProcess(
 					"test-app",
 					ProjectProcessStatus.STOPPED,
 					List.of(),
-					0,
+					143,
 					12345L,
-					startedAt,
-					endedAt);
+					Instant.parse(
+							"2026-07-20T10:00:00Z"),
+					Instant.parse(
+							"2026-07-20T10:15:30Z"));
 	
 	when(getProjectProcessUseCase.get(
 			project))
@@ -79,29 +151,33 @@ void shouldUseEndTimeForStoppedProcessUptime() {
 												"[ ] STOPPED"));
 	
 	assertThat(lines)
-			.anySatisfy(line ->
-								assertThat(line)
-										.contains(
-												"PID",
-												"12345"));
+			.noneSatisfy(line ->
+								 assertThat(line)
+										 .contains(
+												 "PID"));
 	
 	assertThat(lines)
-			.anySatisfy(line ->
-								assertThat(line)
-										.contains(
-												"Uptime",
-												"00:15:30"));
+			.noneSatisfy(line ->
+								 assertThat(line)
+										 .contains(
+												 "Started"));
+	
+	assertThat(lines)
+			.noneSatisfy(line ->
+								 assertThat(line)
+										 .contains(
+												 "Uptime"));
 	
 	assertThat(lines)
 			.anySatisfy(line ->
 								assertThat(line)
 										.contains(
 												"Exit Code",
-												"0"));
+												"143"));
 }
 
 @Test
-void shouldUseEndTimeForFailedProcessUptime() {
+void shouldHideRuntimeDetailsForFailedProcess() {
 	
 	GetProjectProcessUseCase getProjectProcessUseCase =
 			mock(
@@ -114,14 +190,6 @@ void shouldUseEndTimeForFailedProcessUptime() {
 	SpringProject project =
 			project();
 	
-	Instant startedAt =
-			Instant.parse(
-					"2026-07-20T10:00:00Z");
-	
-	Instant endedAt =
-			Instant.parse(
-					"2026-07-20T10:02:05Z");
-	
 	ProjectProcess process =
 			new ProjectProcess(
 					"test-app",
@@ -129,8 +197,10 @@ void shouldUseEndTimeForFailedProcessUptime() {
 					List.of(),
 					1,
 					12345L,
-					startedAt,
-					endedAt);
+					Instant.parse(
+							"2026-07-20T10:00:00Z"),
+					Instant.parse(
+							"2026-07-20T10:02:05Z"));
 	
 	when(getProjectProcessUseCase.get(
 			project))
@@ -160,18 +230,22 @@ void shouldUseEndTimeForFailedProcessUptime() {
 												"[✗] FAILED"));
 	
 	assertThat(lines)
-			.anySatisfy(line ->
-								assertThat(line)
-										.contains(
-												"PID",
-												"12345"));
+			.noneSatisfy(line ->
+								 assertThat(line)
+										 .contains(
+												 "PID"));
 	
 	assertThat(lines)
-			.anySatisfy(line ->
-								assertThat(line)
-										.contains(
-												"Uptime",
-												"00:02:05"));
+			.noneSatisfy(line ->
+								 assertThat(line)
+										 .contains(
+												 "Started"));
+	
+	assertThat(lines)
+			.noneSatisfy(line ->
+								 assertThat(line)
+										 .contains(
+												 "Uptime"));
 	
 	assertThat(lines)
 			.anySatisfy(line ->
@@ -184,7 +258,8 @@ void shouldUseEndTimeForFailedProcessUptime() {
 private SpringProject project() {
 	
 	SpringProject project =
-			mock(SpringProject.class);
+			mock(
+					SpringProject.class);
 	
 	ProjectMetadata metadata =
 			new ProjectMetadata(
@@ -195,14 +270,17 @@ private SpringProject project() {
 					List.of());
 	
 	when(project.metadata())
-			.thenReturn(metadata);
+			.thenReturn(
+					metadata);
 	
 	when(project.buildTool())
-			.thenReturn(BuildTool.MAVEN);
+			.thenReturn(
+					BuildTool.MAVEN);
 	
 	when(project.path())
 			.thenReturn(
-					Path.of("/tmp/test-app"));
+					Path.of(
+							"/tmp/test-app"));
 	
 	return project;
 }

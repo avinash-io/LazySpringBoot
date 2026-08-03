@@ -38,10 +38,15 @@ public ProjectDetailsPanel(
 		DurationFormatter durationFormatter,
 		GetProjectProcessUseCase getProjectProcessUseCase) {
 	
-	this.textFormatter = textFormatter;
-	this.statusFormatter = statusFormatter;
+	this.textFormatter =
+			textFormatter;
+	
+	this.statusFormatter =
+			statusFormatter;
+	
 	this.durationFormatter =
 			durationFormatter;
+	
 	this.getProjectProcessUseCase =
 			getProjectProcessUseCase;
 }
@@ -59,29 +64,37 @@ public List<String> render(
 	List<String> lines =
 			new ArrayList<>();
 	
-	lines.add(detail(
-			"Artifact",
-			metadata.artifactId()));
+	lines.add(
+			detail(
+					"Artifact",
+					metadata.artifactId()));
 	
-	lines.add(detail(
-			"Group",
-			metadata.groupId()));
+	lines.add(
+			detail(
+					"Group",
+					metadata.groupId()));
 	
-	lines.add(detail(
-			"Spring Boot",
-			metadata.springBootVersion()));
+	lines.add(
+			detail(
+					"Spring Boot",
+					metadata.springBootVersion()));
 	
-	lines.add(detail(
-			"Java",
-			metadata.javaVersion()));
+	lines.add(
+			detail(
+					"Java",
+					metadata.javaVersion()));
 	
-	lines.add(detail(
-			"Build",
-			project.buildTool().name()));
+	lines.add(
+			detail(
+					"Build",
+					project.buildTool()
+							.name()));
 	
-	lines.add(detail(
-			"Path",
-			project.path().toString()));
+	lines.add(
+			detail(
+					"Path",
+					project.path()
+							.toString()));
 	
 	lines.add("");
 	
@@ -89,7 +102,8 @@ public List<String> render(
 			lines,
 			project);
 	
-	return List.copyOf(lines);
+	return List.copyOf(
+			lines);
 }
 
 private void addProcessDetails(
@@ -102,9 +116,10 @@ private void addProcessDetails(
 	
 	if (process.isEmpty()) {
 		
-		lines.add(detail(
-				"Status",
-				statusFormatter.stopped()));
+		lines.add(
+				detail(
+						"Status",
+						statusFormatter.stopped()));
 		
 		return;
 	}
@@ -112,50 +127,62 @@ private void addProcessDetails(
 	ProjectProcess projectProcess =
 			process.get();
 	
-	lines.add(detail(
-			"Status",
-			statusFormatter.format(
-					projectProcess.status())));
+	lines.add(
+			detail(
+					"Status",
+					statusFormatter.format(
+							projectProcess.status())));
 	
-	if (projectProcess.hasProcessId()) {
-		
-		lines.add(detail(
-				"PID",
-				Long.toString(
-						projectProcess.pid())));
-	}
-	
-	if (projectProcess.hasStartTime()) {
-		
-		Instant startedAt =
-				projectProcess.startedAt();
-		
-		lines.add(detail(
-				"Started",
-				TIME_FORMATTER.format(
-						startedAt.atZone(
-								ZoneId.systemDefault()))));
-		
-		Instant uptimeEnd =
-				projectProcess.hasEndTime()
-						? projectProcess.endedAt()
-						: Instant.now();
-		
-		lines.add(detail(
-				"Uptime",
-				durationFormatter.format(
-						Duration.between(
-								startedAt,
-								uptimeEnd))));
+	if (projectProcess.running()) {
+		addActiveProcessDetails(
+				lines,
+				projectProcess);
 	}
 	
 	if (projectProcess.exitCode() != null) {
 		
-		lines.add(detail(
-				"Exit Code",
-				projectProcess.exitCode()
-						.toString()));
+		lines.add(
+				detail(
+						"Exit Code",
+						projectProcess.exitCode()
+								.toString()));
 	}
+}
+
+private void addActiveProcessDetails(
+		List<String> lines,
+		ProjectProcess projectProcess) {
+	
+	if (projectProcess.hasProcessId()) {
+		
+		lines.add(
+				detail(
+						"PID",
+						Long.toString(
+								projectProcess.pid())));
+	}
+	
+	if (!projectProcess.hasStartTime()) {
+		return;
+	}
+	
+	Instant startedAt =
+			projectProcess.startedAt();
+	
+	lines.add(
+			detail(
+					"Started",
+					TIME_FORMATTER.format(
+							startedAt.atZone(
+									ZoneId.systemDefault()))));
+	
+	lines.add(
+			detail(
+					"Uptime",
+					durationFormatter.format(
+							Duration.between(
+									startedAt,
+									Instant.now()))));
 }
 
 private String detail(
@@ -166,7 +193,8 @@ private String detail(
 				   + textFormatter.fit(
 			label,
 			LABEL_WIDTH)
-				   + displayValue(value);
+				   + displayValue(
+			value);
 }
 
 private String displayValue(

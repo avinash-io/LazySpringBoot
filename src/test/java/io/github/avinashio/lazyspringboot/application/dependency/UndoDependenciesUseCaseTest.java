@@ -3,6 +3,9 @@ package io.github.avinashio.lazyspringboot.application.dependency;
 import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
 import io.github.avinashio.lazyspringboot.domain.project.ProjectMetadata;
 import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
+import io.github.avinashio.lazyspringboot.infrastructure.gradle.GradleBuildBackupRestorer;
+import io.github.avinashio.lazyspringboot.infrastructure.gradle.GradleDependencyWriter;
+import io.github.avinashio.lazyspringboot.infrastructure.gradle.GradleProjectDependencyWriter;
 import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenDependencyParser;
 import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenPomBackupRestorer;
 import io.github.avinashio.lazyspringboot.infrastructure.maven.MavenPomDependencyWriter;
@@ -39,11 +42,12 @@ void shouldReportUndoAvailableWhenBackupExists()
 			"<project>original</project>");
 	
 	UndoDependenciesUseCase useCase =
-			createUseCase();
+			createMavenUseCase();
 	
 	assertThat(
 			useCase.canUndo(
-					project()))
+					project(
+							BuildTool.MAVEN)))
 			.isTrue();
 }
 
@@ -65,10 +69,11 @@ void shouldRestoreProjectPom()
 			"<project>original</project>");
 	
 	UndoDependenciesUseCase useCase =
-			createUseCase();
+			createMavenUseCase();
 	
 	useCase.undo(
-			project());
+			project(
+					BuildTool.MAVEN));
 	
 	assertThat(
 			Files.readString(
@@ -77,7 +82,103 @@ void shouldRestoreProjectPom()
 					"<project>original</project>");
 }
 
-private UndoDependenciesUseCase createUseCase() {
+@Test
+void shouldRestoreGradleBuildFile()
+		throws Exception {
+	
+	Path buildFile =
+			temporaryDirectory.resolve(
+					"build.gradle");
+	
+	Files.writeString(
+			buildFile,
+			"dependencies {\n"
+					+ "    implementation 'com.example:updated'\n"
+					+ "}\n");
+	
+	Files.writeString(
+			temporaryDirectory.resolve(
+					"build.gradle.lazyspringboot.bak"),
+			"dependencies {\n"
+					+ "}\n");
+	
+	UndoDependenciesUseCase useCase =
+			createGradleUseCase();
+	
+	SpringProject project =
+			project(
+					BuildTool.GRADLE);
+	
+	assertThat(
+			useCase.canUndo(
+					project))
+			.isTrue();
+	
+	useCase.undo(
+			project);
+	
+	assertThat(
+			Files.readString(
+					buildFile))
+			.isEqualTo(
+					"dependencies {\n"
+							+ "}\n");
+	
+	assertThat(
+			useCase.canUndo(
+					project))
+			.isFalse();
+}
+
+@Test
+void shouldRestoreGradleKotlinBuildFile()
+		throws Exception {
+	
+	Path buildFile =
+			temporaryDirectory.resolve(
+					"build.gradle.kts");
+	
+	Files.writeString(
+			buildFile,
+			"dependencies {\n"
+					+ "    implementation(\"com.example:updated\")\n"
+					+ "}\n");
+	
+	Files.writeString(
+			temporaryDirectory.resolve(
+					"build.gradle.kts.lazyspringboot.bak"),
+			"dependencies {\n"
+					+ "}\n");
+	
+	UndoDependenciesUseCase useCase =
+			createGradleUseCase();
+	
+	SpringProject project =
+			project(
+					BuildTool.GRADLE_KOTLIN);
+	
+	assertThat(
+			useCase.canUndo(
+					project))
+			.isTrue();
+	
+	useCase.undo(
+			project);
+	
+	assertThat(
+			Files.readString(
+					buildFile))
+			.isEqualTo(
+					"dependencies {\n"
+							+ "}\n");
+	
+	assertThat(
+			useCase.canUndo(
+					project))
+			.isFalse();
+}
+
+private UndoDependenciesUseCase createMavenUseCase() {
 	
 	MavenProjectDependencyWriter writer =
 			new MavenProjectDependencyWriter(
@@ -90,12 +191,29 @@ private UndoDependenciesUseCase createUseCase() {
 					writer));
 }
 
-private SpringProject project() {
+private UndoDependenciesUseCase createGradleUseCase() {
+	
+	GradleBuildBackupRestorer backupRestorer =
+			new GradleBuildBackupRestorer();
+	
+	GradleProjectDependencyWriter writer =
+			new GradleProjectDependencyWriter(
+					new GradleDependencyWriter(
+							backupRestorer),
+					backupRestorer);
+	
+	return new UndoDependenciesUseCase(
+			List.of(
+					writer));
+}
+
+private SpringProject project(
+		BuildTool buildTool) {
 	
 	return new SpringProject(
 			"demo",
 			temporaryDirectory,
-			BuildTool.MAVEN,
+			buildTool,
 			new ProjectMetadata(
 					"com.example",
 					"demo",
