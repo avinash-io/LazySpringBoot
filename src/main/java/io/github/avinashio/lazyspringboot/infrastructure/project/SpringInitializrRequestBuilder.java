@@ -57,7 +57,27 @@ public URI build(
 			"bootVersion",
 			request.springBootVersion());
 	
-	if (!request.dependencies().isEmpty()) {
+	if (request.packaging() != null) {
+		
+		add(
+				parameters,
+				"packaging",
+				request.packaging()
+						.initializrId());
+	}
+	
+	if (request.configurationFileFormat()
+				!= null) {
+		
+		add(
+				parameters,
+				"configurationFileFormat",
+				request.configurationFileFormat()
+						.initializrId());
+	}
+	
+	if (!request.dependencies()
+				 .isEmpty()) {
 		
 		add(
 				parameters,
@@ -101,6 +121,7 @@ private void add(
 	
 	if (value == null
 				|| value.isBlank()) {
+		
 		return;
 	}
 	

@@ -2,56 +2,122 @@ package io.github.avinashio.lazyspringboot.ui.state;
 
 import io.github.avinashio.lazyspringboot.domain.dependency.SpringDependency;
 import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
+import io.github.avinashio.lazyspringboot.domain.project.ConfigurationFileFormat;
+import io.github.avinashio.lazyspringboot.domain.project.ProjectPackaging;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-
 @Component
 public class CreateProjectState {
 
-private static final List<BuildTool>
-		AVAILABLE_BUILD_TOOLS =
+private static final int BUILD_TOOL_FIELD = 0;
+
+private static final int SPRING_BOOT_FIELD = 1;
+
+private static final int GROUP_FIELD = 2;
+
+private static final int ARTIFACT_FIELD = 3;
+
+private static final int NAME_FIELD = 4;
+
+private static final int PACKAGE_FIELD = 5;
+
+private static final int PACKAGING_FIELD = 6;
+
+private static final int CONFIG_FIELD = 7;
+
+private static final int JAVA_FIELD = 8;
+
+private static final int DEPENDENCIES_FIELD = 9;
+
+private static final int GENERATE_FIELD = 10;
+
+private static final List<BuildTool> AVAILABLE_BUILD_TOOLS =
 		List.of(
 				BuildTool.MAVEN,
 				BuildTool.GRADLE,
 				BuildTool.GRADLE_KOTLIN);
+
+private static final List<ProjectPackaging> AVAILABLE_PACKAGING =
+		List.of(
+				ProjectPackaging.JAR,
+				ProjectPackaging.WAR);
+
+private static final List<ConfigurationFileFormat>
+		AVAILABLE_CONFIGURATION_FILE_FORMATS =
+		List.of(
+				ConfigurationFileFormat.PROPERTIES,
+				ConfigurationFileFormat.YAML);
+
 private final StringBuilder inputBuffer =
 		new StringBuilder();
-private final Set<String>
-		selectedDependencies =
+
+private final Set<String> selectedDependencies =
 		new LinkedHashSet<>();
+
+private CreateProjectPane activePane =
+		CreateProjectPane.FORM;
+
 private BuildTool buildTool =
 		BuildTool.MAVEN;
+
+private ProjectPackaging packaging =
+		ProjectPackaging.JAR;
+
+private ConfigurationFileFormat configurationFileFormat =
+		ConfigurationFileFormat.YAML;
+
 private boolean active;
+
 private CreateProjectStage stage =
 		CreateProjectStage.METADATA;
+
 private int selectedField;
+
 private String name = "";
+
 private String groupId = "com.example";
+
 private String artifactId = "";
+
 private String packageName = "";
+
 private String javaVersion = "21";
+
 private String springBootVersion = "4.1.0";
+
 private boolean editing;
+
 private List<SpringDependency> dependencies =
 		List.of();
+
 private int selectedDependencyIndex;
-private String dependencySearchQuery =
-		"";
+
+private String dependencySearchQuery = "";
+
 private boolean dependencySearchActive;
+
 private String errorMessage = "";
+
 private List<String> availableJavaVersions =
 		List.of();
+
 private List<String> availableSpringBootVersions =
 		List.of();
+
 private boolean versionSelecting;
+
 private int selectedVersionIndex;
+
 private boolean artifactManuallyEdited;
+
 private boolean packageManuallyEdited;
+
 private boolean buildToolSelecting;
+
 private int selectedBuildToolIndex;
 
 public String errorMessage() {
@@ -84,7 +150,8 @@ public void open() {
 	stage =
 			CreateProjectStage.METADATA;
 	
-	selectedField = 0;
+	selectedField =
+			BUILD_TOOL_FIELD;
 	
 	name = "";
 	
@@ -118,6 +185,48 @@ public void open() {
 	buildToolSelecting = false;
 	
 	selectedBuildToolIndex = 0;
+	
+	packaging =
+			ProjectPackaging.JAR;
+	
+	configurationFileFormat =
+			ConfigurationFileFormat.YAML;
+	
+	activePane =
+			CreateProjectPane.FORM;
+}
+
+public CreateProjectPane activePane() {
+	
+	return activePane;
+}
+
+public boolean formPaneActive() {
+	
+	return activePane
+				   == CreateProjectPane.FORM;
+}
+
+public boolean dependenciesPaneActive() {
+	
+	return activePane
+				   == CreateProjectPane.DEPENDENCIES;
+}
+
+public void activateFormPane() {
+	
+	activePane =
+			CreateProjectPane.FORM;
+	
+	dependencySearchActive = false;
+}
+
+public void activateDependenciesPane() {
+	
+	activePane =
+			CreateProjectPane.DEPENDENCIES;
+	
+	editing = false;
 }
 
 public void close() {
@@ -175,16 +284,41 @@ public int selectedField() {
 
 public void nextField() {
 	
-	if (selectedField < 6) {
+	if (selectedField
+				< DEPENDENCIES_FIELD) {
+		
 		selectedField++;
+		return;
+	}
+	
+	if (selectedField
+				== DEPENDENCIES_FIELD
+				&& readyToGenerate()) {
+		
+		selectedField =
+				GENERATE_FIELD;
 	}
 }
 
 public void previousField() {
 	
 	if (selectedField > 0) {
+		
 		selectedField--;
 	}
+}
+
+public boolean readyToGenerate() {
+	
+	return buildTool != null
+				   && buildTool != BuildTool.UNKNOWN
+				   && packaging != null
+				   && configurationFileFormat != null
+				   && !groupId.isBlank()
+				   && !artifactId.isBlank()
+				   && !packageName.isBlank()
+				   && !javaVersion.isBlank()
+				   && !springBootVersion.isBlank();
 }
 
 public String name() {
@@ -246,6 +380,105 @@ public void setSpringBootVersion(
 	
 	this.springBootVersion =
 			springBootVersion;
+}
+
+public ProjectPackaging packaging() {
+	return packaging;
+}
+
+public void setPackaging(
+		ProjectPackaging packaging) {
+	
+	this.packaging = packaging;
+}
+
+public List<ProjectPackaging> availablePackaging() {
+	
+	return AVAILABLE_PACKAGING;
+}
+
+public void selectNextPackagingInline() {
+	
+	int currentIndex =
+			AVAILABLE_PACKAGING.indexOf(
+					packaging);
+	
+	if (currentIndex < 0
+				|| currentIndex
+						   >= AVAILABLE_PACKAGING.size() - 1) {
+		
+		return;
+	}
+	
+	packaging =
+			AVAILABLE_PACKAGING.get(
+					currentIndex + 1);
+}
+
+public void selectPreviousPackagingInline() {
+	
+	int currentIndex =
+			AVAILABLE_PACKAGING.indexOf(
+					packaging);
+	
+	if (currentIndex <= 0) {
+		return;
+	}
+	
+	packaging =
+			AVAILABLE_PACKAGING.get(
+					currentIndex - 1);
+}
+
+public ConfigurationFileFormat configurationFileFormat() {
+	
+	return configurationFileFormat;
+}
+
+public void setConfigurationFileFormat(
+		ConfigurationFileFormat configurationFileFormat) {
+	
+	this.configurationFileFormat =
+			configurationFileFormat;
+}
+
+public List<ConfigurationFileFormat>
+availableConfigurationFileFormats() {
+	
+	return AVAILABLE_CONFIGURATION_FILE_FORMATS;
+}
+
+public void selectNextConfigurationFileFormatInline() {
+	
+	int currentIndex =
+			AVAILABLE_CONFIGURATION_FILE_FORMATS.indexOf(
+					configurationFileFormat);
+	
+	if (currentIndex < 0
+				|| currentIndex
+						   >= AVAILABLE_CONFIGURATION_FILE_FORMATS.size() - 1) {
+		
+		return;
+	}
+	
+	configurationFileFormat =
+			AVAILABLE_CONFIGURATION_FILE_FORMATS.get(
+					currentIndex + 1);
+}
+
+public void selectPreviousConfigurationFileFormatInline() {
+	
+	int currentIndex =
+			AVAILABLE_CONFIGURATION_FILE_FORMATS.indexOf(
+					configurationFileFormat);
+	
+	if (currentIndex <= 0) {
+		return;
+	}
+	
+	configurationFileFormat =
+			AVAILABLE_CONFIGURATION_FILE_FORMATS.get(
+					currentIndex - 1);
 }
 
 public boolean editing() {
@@ -391,6 +624,7 @@ public void selectDependency(
 	
 	if (dependencyId == null
 				|| dependencyId.isBlank()) {
+		
 		return;
 	}
 	
@@ -485,8 +719,7 @@ public void backspaceDependencySearch() {
 	dependencySearchQuery =
 			dependencySearchQuery.substring(
 					0,
-					dependencySearchQuery.length()
-							- 1);
+					dependencySearchQuery.length() - 1);
 	
 	selectedDependencyIndex = 0;
 }
@@ -523,17 +756,13 @@ private String currentValue() {
 	
 	return switch (selectedField) {
 		
-		case 0 -> name;
+		case GROUP_FIELD -> groupId;
 		
-		case 1 -> groupId;
+		case ARTIFACT_FIELD -> artifactId;
 		
-		case 2 -> artifactId;
+		case NAME_FIELD -> name;
 		
-		case 3 -> packageName;
-		
-		case 4 -> javaVersion;
-		
-		case 5 -> springBootVersion;
+		case PACKAGE_FIELD -> packageName;
 		
 		default -> "";
 	};
@@ -546,9 +775,37 @@ private void updateCurrentField() {
 	
 	switch (selectedField) {
 		
-		case 0 -> {
+		case GROUP_FIELD -> {
 			
-			name = value;
+			groupId =
+					value;
+			
+			if (!packageManuallyEdited) {
+				
+				packageName =
+						buildPackageName();
+			}
+		}
+		
+		case ARTIFACT_FIELD -> {
+			
+			artifactId =
+					value;
+			
+			artifactManuallyEdited =
+					true;
+			
+			if (!packageManuallyEdited) {
+				
+				packageName =
+						buildPackageName();
+			}
+		}
+		
+		case NAME_FIELD -> {
+			
+			name =
+					value;
 			
 			if (!artifactManuallyEdited) {
 				
@@ -564,34 +821,14 @@ private void updateCurrentField() {
 			}
 		}
 		
-		case 1 -> {
+		case PACKAGE_FIELD -> {
 			
-			groupId = value;
+			packageName =
+					value;
 			
-			if (!packageManuallyEdited) {
-				
-				packageName =
-						buildPackageName();
-			}
+			packageManuallyEdited =
+					true;
 		}
-		
-		case 2 -> {
-			
-			artifactId = value;
-			
-			artifactManuallyEdited = true;
-		}
-		
-		case 3 -> {
-			
-			packageName = value;
-			
-			packageManuallyEdited = true;
-		}
-		
-		case 4 -> javaVersion = value;
-		
-		case 5 -> springBootVersion = value;
 		
 		default -> {
 			// No action.
@@ -670,13 +907,14 @@ public boolean versionSelecting() {
 
 public void startVersionSelection() {
 	
-	versionSelecting = true;
+	versionSelecting =
+			true;
 	
 	List<String> versions =
 			currentVersionOptions();
 	
 	String currentVersion =
-			selectedField == 4
+			selectedField == JAVA_FIELD
 					? javaVersion
 					: springBootVersion;
 	
@@ -692,7 +930,8 @@ public void startVersionSelection() {
 
 public void stopVersionSelection() {
 	
-	versionSelecting = false;
+	versionSelecting =
+			false;
 }
 
 public int selectedVersionIndex() {
@@ -702,11 +941,15 @@ public int selectedVersionIndex() {
 
 public List<String> currentVersionOptions() {
 	
-	if (selectedField == 4) {
+	if (selectedField
+				== JAVA_FIELD) {
+		
 		return availableJavaVersions;
 	}
 	
-	if (selectedField == 5) {
+	if (selectedField
+				== SPRING_BOOT_FIELD) {
+		
 		return availableSpringBootVersions;
 	}
 	
@@ -728,6 +971,7 @@ public void selectNextVersion() {
 public void selectPreviousVersion() {
 	
 	if (selectedVersionIndex > 0) {
+		
 		selectedVersionIndex--;
 	}
 }
@@ -738,7 +982,10 @@ public void confirmVersionSelection() {
 			currentVersionOptions();
 	
 	if (versions.isEmpty()) {
-		versionSelecting = false;
+		
+		versionSelecting =
+				false;
+		
 		return;
 	}
 	
@@ -746,18 +993,21 @@ public void confirmVersionSelection() {
 			versions.get(
 					selectedVersionIndex);
 	
-	if (selectedField == 4) {
+	if (selectedField
+				== JAVA_FIELD) {
 		
 		javaVersion =
 				selectedVersion;
 		
-	} else if (selectedField == 5) {
+	} else if (selectedField
+					   == SPRING_BOOT_FIELD) {
 		
 		springBootVersion =
 				selectedVersion;
 	}
 	
-	versionSelecting = false;
+	versionSelecting =
+			false;
 }
 
 public BuildTool buildTool() {
@@ -770,7 +1020,8 @@ public boolean buildToolSelecting() {
 
 public void startBuildToolSelection() {
 	
-	buildToolSelecting = true;
+	buildToolSelecting =
+			true;
 	
 	int currentIndex =
 			AVAILABLE_BUILD_TOOLS.indexOf(
@@ -784,7 +1035,8 @@ public void startBuildToolSelection() {
 
 public void stopBuildToolSelection() {
 	
-	buildToolSelecting = false;
+	buildToolSelecting =
+			false;
 }
 
 public int selectedBuildToolIndex() {
@@ -820,7 +1072,136 @@ public void confirmBuildToolSelection() {
 			AVAILABLE_BUILD_TOOLS.get(
 					selectedBuildToolIndex);
 	
-	buildToolSelecting = false;
+	buildToolSelecting =
+			false;
 }
 
+public void selectNextBuildToolInline() {
+	
+	int currentIndex =
+			AVAILABLE_BUILD_TOOLS.indexOf(
+					buildTool);
+	
+	if (currentIndex < 0
+				|| currentIndex
+						   >= AVAILABLE_BUILD_TOOLS.size() - 1) {
+		
+		return;
+	}
+	
+	buildTool =
+			AVAILABLE_BUILD_TOOLS.get(
+					currentIndex + 1);
+}
+
+public void selectPreviousBuildToolInline() {
+	
+	int currentIndex =
+			AVAILABLE_BUILD_TOOLS.indexOf(
+					buildTool);
+	
+	if (currentIndex <= 0) {
+		return;
+	}
+	
+	buildTool =
+			AVAILABLE_BUILD_TOOLS.get(
+					currentIndex - 1);
+}
+
+public void selectNextVersionInline() {
+	
+	List<String> versions =
+			currentInlineVersionOptions();
+	
+	String currentVersion =
+			currentInlineVersion();
+	
+	int currentIndex =
+			versions.indexOf(
+					currentVersion);
+	
+	if (currentIndex < 0
+				|| currentIndex
+						   >= versions.size() - 1) {
+		
+		return;
+	}
+	
+	setCurrentInlineVersion(
+			versions.get(
+					currentIndex + 1));
+}
+
+public void selectPreviousVersionInline() {
+	
+	List<String> versions =
+			currentInlineVersionOptions();
+	
+	String currentVersion =
+			currentInlineVersion();
+	
+	int currentIndex =
+			versions.indexOf(
+					currentVersion);
+	
+	if (currentIndex <= 0) {
+		return;
+	}
+	
+	setCurrentInlineVersion(
+			versions.get(
+					currentIndex - 1));
+}
+
+private List<String> currentInlineVersionOptions() {
+	
+	if (selectedField
+				== SPRING_BOOT_FIELD) {
+		
+		return availableSpringBootVersions;
+	}
+	
+	if (selectedField
+				== JAVA_FIELD) {
+		
+		return availableJavaVersions;
+	}
+	
+	return List.of();
+}
+
+private String currentInlineVersion() {
+	
+	if (selectedField
+				== SPRING_BOOT_FIELD) {
+		
+		return springBootVersion;
+	}
+	
+	if (selectedField
+				== JAVA_FIELD) {
+		
+		return javaVersion;
+	}
+	
+	return "";
+}
+
+private void setCurrentInlineVersion(
+		String version) {
+	
+	if (selectedField
+				== SPRING_BOOT_FIELD) {
+		
+		springBootVersion =
+				version;
+		
+	} else if (selectedField
+					   == JAVA_FIELD) {
+		
+		javaVersion =
+				version;
+	}
+}
 }

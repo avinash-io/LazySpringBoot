@@ -18,6 +18,8 @@ public NewProjectRequest map(
 			state.javaVersion(),
 			state.springBootVersion(),
 			state.buildTool(),
+			state.packaging(),
+			state.configurationFileFormat(),
 			state.selectedDependencies());
 }
 }

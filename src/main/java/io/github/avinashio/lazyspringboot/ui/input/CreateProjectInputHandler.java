@@ -10,6 +10,24 @@ import java.nio.file.Path;
 public class CreateProjectInputHandler
 		implements InputHandler {
 
+private static final int BUILD_TOOL_FIELD = 0;
+
+private static final int SPRING_BOOT_FIELD = 1;
+
+private static final int FIRST_TEXT_FIELD = 2;
+
+private static final int LAST_TEXT_FIELD = 5;
+
+private static final int PACKAGING_FIELD = 6;
+
+private static final int CONFIG_FIELD = 7;
+
+private static final int JAVA_FIELD = 8;
+
+private static final int DEPENDENCIES_FIELD = 9;
+
+private static final int GENERATE_FIELD = 10;
+
 private final CreateProjectController
 		createProjectController;
 
@@ -31,43 +49,25 @@ public boolean handle(
 		return false;
 	}
 	
-	if (state.metadataStage()) {
+	if (state.dependenciesPaneActive()) {
 		
-		handleMetadataStage(
+		handleDependenciesPane(
 				state,
 				keyEvent);
 		
 		return true;
 	}
 	
-	handleDependencyStage(
+	handleFormPane(
 			state,
 			keyEvent);
 	
 	return true;
 }
 
-private void handleMetadataStage(
+private void handleFormPane(
 		CreateProjectState state,
 		KeyEvent keyEvent) {
-	
-	if (state.buildToolSelecting()) {
-		
-		handleBuildToolSelection(
-				state,
-				keyEvent);
-		
-		return;
-	}
-	
-	if (state.versionSelecting()) {
-		
-		handleVersionSelection(
-				state,
-				keyEvent);
-		
-		return;
-	}
 	
 	if (state.editing()) {
 		
@@ -86,25 +86,25 @@ private void handleMetadataStage(
 		
 		case UP -> state.previousField();
 		
-		case ENTER -> {
+		case LEFT -> selectPreviousOption(
+				state);
+		
+		case RIGHT -> {
 			
-			if (state.selectedField() == 4
-						|| state.selectedField() == 5) {
+			if (state.selectedField()
+						== DEPENDENCIES_FIELD) {
 				
-				state.startVersionSelection();
-				
-			} else if (state.selectedField() == 6) {
-				
-				state.startBuildToolSelection();
+				state.activateDependenciesPane();
 				
 			} else {
 				
-				state.startEditing();
+				selectNextOption(
+						state);
 			}
 		}
 		
-		case TAB -> createProjectController
-							.continueToDependencies();
+		case ENTER -> activateSelectedField(
+				state);
 		
 		default -> {
 			// No action.
@@ -112,43 +112,75 @@ private void handleMetadataStage(
 	}
 }
 
-private void handleBuildToolSelection(
-		CreateProjectState state,
-		KeyEvent keyEvent) {
+private void selectPreviousOption(
+		CreateProjectState state) {
 	
-	switch (keyEvent.type()) {
+	switch (state.selectedField()) {
 		
-		case UP -> state.selectPreviousBuildTool();
+		case BUILD_TOOL_FIELD -> state.selectPreviousBuildToolInline();
 		
-		case DOWN -> state.selectNextBuildTool();
+		case SPRING_BOOT_FIELD,
+			 JAVA_FIELD -> state.selectPreviousVersionInline();
 		
-		case ENTER -> state.confirmBuildToolSelection();
+		case PACKAGING_FIELD -> state.selectPreviousPackagingInline();
 		
-		case ESCAPE -> state.stopBuildToolSelection();
+		case CONFIG_FIELD -> state.selectPreviousConfigurationFileFormatInline();
 		
 		default -> {
-			// No action.
+			// Current row has no inline options.
 		}
 	}
 }
 
-private void handleVersionSelection(
-		CreateProjectState state,
-		KeyEvent keyEvent) {
+private void selectNextOption(
+		CreateProjectState state) {
 	
-	switch (keyEvent.type()) {
+	switch (state.selectedField()) {
 		
-		case UP -> state.selectPreviousVersion();
+		case BUILD_TOOL_FIELD -> state.selectNextBuildToolInline();
 		
-		case DOWN -> state.selectNextVersion();
+		case SPRING_BOOT_FIELD,
+			 JAVA_FIELD -> state.selectNextVersionInline();
 		
-		case ENTER -> state.confirmVersionSelection();
+		case PACKAGING_FIELD -> state.selectNextPackagingInline();
 		
-		case ESCAPE -> state.stopVersionSelection();
+		case CONFIG_FIELD -> state.selectNextConfigurationFileFormatInline();
 		
 		default -> {
-			// No action.
+			// Current row has no inline options.
 		}
+	}
+}
+
+private void activateSelectedField(
+		CreateProjectState state) {
+	
+	int selectedField =
+			state.selectedField();
+	
+	if (selectedField >= FIRST_TEXT_FIELD
+				&& selectedField <= LAST_TEXT_FIELD) {
+		
+		state.startEditing();
+		
+		return;
+	}
+	
+	if (selectedField
+				== DEPENDENCIES_FIELD) {
+		
+		state.activateDependenciesPane();
+		
+		return;
+	}
+	
+	if (selectedField
+				== GENERATE_FIELD
+				&& state.readyToGenerate()) {
+		
+		createProjectController.generate(
+				Path.of("")
+						.toAbsolutePath());
 	}
 }
 
@@ -179,7 +211,7 @@ private void handleMetadataEditing(
 	}
 }
 
-private void handleDependencyStage(
+private void handleDependenciesPane(
 		CreateProjectState state,
 		KeyEvent keyEvent) {
 	
@@ -198,15 +230,13 @@ private void handleDependencyStage(
 		
 		case DOWN -> state.selectNextDependency();
 		
-		case SPACE -> state.toggleSelectedDependency();
+		case SPACE,
+			 ENTER -> state.toggleSelectedDependency();
 		
 		case SEARCH -> state.startDependencySearch();
 		
-		case ENTER -> createProjectController.generate(
-				Path.of("")
-						.toAbsolutePath());
-		
-		case ESCAPE -> state.showMetadataStage();
+		case LEFT,
+			 ESCAPE -> state.activateFormPane();
 		
 		default -> {
 			// No action.
@@ -224,9 +254,8 @@ private void handleDependencySearch(
 		
 		case DOWN -> state.selectNextDependency();
 		
-		case SPACE -> state.toggleSelectedDependency();
-		
-		case ENTER -> state.toggleSelectedDependency();
+		case SPACE,
+			 ENTER -> state.toggleSelectedDependency();
 		
 		case BACKSPACE -> state.backspaceDependencySearch();
 		
@@ -238,7 +267,8 @@ private void handleDependencySearch(
 				break;
 			}
 			
-			if (keyEvent.character() == ' ') {
+			if (keyEvent.character()
+						== ' ') {
 				
 				state.toggleSelectedDependency();
 				

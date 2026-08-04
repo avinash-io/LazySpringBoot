@@ -27,10 +27,11 @@ import static org.mockito.Mockito.when;
 
 class ProjectPanelTest {
 
+private static final int PANEL_WIDTH = 80;
+
 private UiState uiState;
 
-private TextInputController
-		textInputController;
+private TextInputController textInputController;
 
 private ProjectPanel projectPanel;
 
@@ -54,14 +55,14 @@ void setUp() {
 					projectSortState(),
 					textInputController);
 	
-	ProjectRuntimeInfoFactory
-			projectRuntimeInfoFactory =
+	ProjectRuntimeInfoFactory projectRuntimeInfoFactory =
 			new ProjectRuntimeInfoFactory(
 					mock(
 							GetProjectProcessUseCase.class),
 					new StatusProvider(),
 					new UptimeProvider(),
-					new PortProvider(new SpringBootLogParser()));
+					new PortProvider(
+							new SpringBootLogParser()));
 	
 	projectPanel =
 			new ProjectPanel(
@@ -84,7 +85,8 @@ void shouldRenderProjects() {
 	List<String> lines =
 			projectPanel.render(
 					uiState,
-					10);
+					10,
+					PANEL_WIDTH);
 	
 	assertThat(lines)
 			.hasSize(7);
@@ -109,6 +111,26 @@ void shouldRenderProjects() {
 }
 
 @Test
+void shouldRenderSeparatorUsingAvailablePanelWidth() {
+	
+	uiState.setProjects(
+			projects());
+	
+	int panelWidth = 100;
+	
+	List<String> lines =
+			projectPanel.render(
+					uiState,
+					10,
+					panelWidth);
+	
+	assertThat(lines.get(1))
+			.isEqualTo(
+					"─".repeat(
+							panelWidth - 1));
+}
+
+@Test
 void shouldRenderSelectedProject() {
 	
 	uiState.setProjects(
@@ -120,7 +142,8 @@ void shouldRenderSelectedProject() {
 	List<String> lines =
 			projectPanel.render(
 					uiState,
-					10);
+					10,
+					PANEL_WIDTH);
 	
 	assertThat(lines)
 			.anyMatch(
@@ -142,7 +165,8 @@ void shouldRenderCompactProjectStatus() {
 	List<String> lines =
 			projectPanel.render(
 					uiState,
-					10);
+					10,
+					PANEL_WIDTH);
 	
 	assertThat(lines)
 			.hasSize(3);
@@ -158,7 +182,8 @@ void shouldRenderMessageWhenNoProjectsExist() {
 	List<String> lines =
 			projectPanel.render(
 					uiState,
-					10);
+					10,
+					PANEL_WIDTH);
 	
 	assertThat(lines)
 			.containsExactly(
@@ -177,7 +202,8 @@ void shouldFilterProjectsDuringProjectSearch() {
 	List<String> lines =
 			projectPanel.render(
 					uiState,
-					10);
+					10,
+					PANEL_WIDTH);
 	
 	assertThat(lines)
 			.hasSize(3);
@@ -202,7 +228,8 @@ void shouldNotFilterProjectsDuringDependencySearch() {
 	List<String> lines =
 			projectPanel.render(
 					uiState,
-					10);
+					10,
+					PANEL_WIDTH);
 	
 	assertThat(lines)
 			.hasSize(7);
@@ -220,7 +247,8 @@ void shouldRenderMessageWhenProjectSearchHasNoMatches() {
 	List<String> lines =
 			projectPanel.render(
 					uiState,
-					10);
+					10,
+					PANEL_WIDTH);
 	
 	assertThat(lines)
 			.containsExactly(
@@ -236,7 +264,8 @@ void shouldRenderOnlyProjectsInsideViewport() {
 	List<String> lines =
 			projectPanel.render(
 					uiState,
-					3);
+					3,
+					PANEL_WIDTH);
 	
 	assertThat(lines)
 			.hasSize(5);
@@ -284,7 +313,8 @@ void shouldScrollViewportToKeepSelectedProjectVisible() {
 	List<String> lines =
 			projectPanel.render(
 					uiState,
-					3);
+					3,
+					PANEL_WIDTH);
 	
 	assertThat(lines)
 			.hasSize(5);
@@ -321,7 +351,8 @@ void shouldScrollViewportBackWhenSelectionMovesUp() {
 	
 	projectPanel.render(
 			uiState,
-			3);
+			3,
+			PANEL_WIDTH);
 	
 	uiState.selectProject(
 			4);
@@ -329,7 +360,8 @@ void shouldScrollViewportBackWhenSelectionMovesUp() {
 	List<String> lines =
 			projectPanel.render(
 					uiState,
-					3);
+					3,
+					PANEL_WIDTH);
 	
 	assertThat(lines)
 			.hasSize(5);
@@ -386,7 +418,8 @@ void shouldApplyViewportToFilteredProjects() {
 	List<String> lines =
 			projectPanel.render(
 					uiState,
-					2);
+					2,
+					PANEL_WIDTH);
 	
 	assertThat(lines)
 			.hasSize(4);

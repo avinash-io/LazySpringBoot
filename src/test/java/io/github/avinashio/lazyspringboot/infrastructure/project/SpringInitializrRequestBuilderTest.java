@@ -1,7 +1,9 @@
 package io.github.avinashio.lazyspringboot.infrastructure.project;
 
 import io.github.avinashio.lazyspringboot.domain.project.BuildTool;
+import io.github.avinashio.lazyspringboot.domain.project.ConfigurationFileFormat;
 import io.github.avinashio.lazyspringboot.domain.project.NewProjectRequest;
+import io.github.avinashio.lazyspringboot.domain.project.ProjectPackaging;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -25,6 +27,8 @@ void shouldBuildStarterUrl() {
 	assertThat(uri.toString())
 			.contains("groupId=com.example")
 			.contains("artifactId=demo")
+			.contains("packaging=jar")
+			.contains("configurationFileFormat=yaml")
 			.contains("dependencies=web%2Cdata-jpa");
 }
 
@@ -80,8 +84,79 @@ void shouldDefaultToMavenWhenBuildToolIsNull() {
 					"type=maven-project");
 }
 
+@Test
+void shouldUseJarPackaging() {
+	
+	URI uri =
+			builder.build(
+					request(
+							BuildTool.MAVEN,
+							ProjectPackaging.JAR,
+							ConfigurationFileFormat.YAML));
+	
+	assertThat(uri.toString())
+			.contains(
+					"packaging=jar");
+}
+
+@Test
+void shouldUseWarPackaging() {
+	
+	URI uri =
+			builder.build(
+					request(
+							BuildTool.MAVEN,
+							ProjectPackaging.WAR,
+							ConfigurationFileFormat.YAML));
+	
+	assertThat(uri.toString())
+			.contains(
+					"packaging=war");
+}
+
+@Test
+void shouldUseYamlConfigurationFileFormat() {
+	
+	URI uri =
+			builder.build(
+					request(
+							BuildTool.MAVEN,
+							ProjectPackaging.JAR,
+							ConfigurationFileFormat.YAML));
+	
+	assertThat(uri.toString())
+			.contains(
+					"configurationFileFormat=yaml");
+}
+
+@Test
+void shouldUsePropertiesConfigurationFileFormat() {
+	
+	URI uri =
+			builder.build(
+					request(
+							BuildTool.MAVEN,
+							ProjectPackaging.JAR,
+							ConfigurationFileFormat.PROPERTIES));
+	
+	assertThat(uri.toString())
+			.contains(
+					"configurationFileFormat=properties");
+}
+
 private NewProjectRequest request(
 		BuildTool buildTool) {
+	
+	return request(
+			buildTool,
+			ProjectPackaging.JAR,
+			ConfigurationFileFormat.YAML);
+}
+
+private NewProjectRequest request(
+		BuildTool buildTool,
+		ProjectPackaging packaging,
+		ConfigurationFileFormat configurationFileFormat) {
 	
 	return new NewProjectRequest(
 			"com.example",
@@ -91,6 +166,8 @@ private NewProjectRequest request(
 			"21",
 			"4.1.0",
 			buildTool,
+			packaging,
+			configurationFileFormat,
 			List.of(
 					"web",
 					"data-jpa"));

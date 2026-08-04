@@ -17,14 +17,17 @@ import java.util.List;
 @Component
 public class DashboardScreen {
 
-private static final int MINIMUM_TERMINAL_WIDTH =
-		80;
+private static final int MINIMUM_TERMINAL_WIDTH = 80;
 
-private static final int PROJECT_PANEL_PERCENTAGE =
-		25;
+private static final int PROJECT_PANEL_PERCENTAGE = 55;
 
-private static final int DEPENDENCY_PANEL_PERCENTAGE =
-		35;
+private static final int DETAILS_PANEL_PERCENTAGE = 40;
+
+private static final int CONTEXT_LEFT_PADDING = 2;
+
+private static final int DEPENDENCY_TOP_PADDING = 1;
+
+private static final int DETAILS_TOP_PADDING = 2;
 
 private final Terminal terminal;
 
@@ -38,15 +41,11 @@ private final TextFormatter textFormatter;
 
 private final DependencyPanel dependencyPanel;
 
+private final ProjectFilterService projectFilterService;
 
-private final ProjectFilterService
-		projectFilterService;
+private final TextInputController textInputController;
 
-private final TextInputController
-		textInputController;
-
-private final ProjectSortState
-		projectSortState;
+private final ProjectSortState projectSortState;
 
 public DashboardScreen(
 		Terminal terminal,
@@ -57,53 +56,31 @@ public DashboardScreen(
 		TextFormatter textFormatter,
 		ProjectFilterService projectFilterService,
 		TextInputController textInputController,
-		ProjectSortState projectSortState
-) {
+		ProjectSortState projectSortState) {
 	
-	this.terminal =
-			terminal;
-	
-	this.projectPanel =
-			projectPanel;
-	
-	this.dependencyPanel =
-			dependencyPanel;
-	
-	this.projectDetailsPanel =
-			projectDetailsPanel;
-	
-	this.statusBar =
-			statusBar;
-	
-	this.textFormatter =
-			textFormatter;
-	
-	this.projectFilterService =
-			projectFilterService;
-	
-	this.textInputController =
-			textInputController;
-	
-	this.projectSortState =
-			projectSortState;
+	this.terminal = terminal;
+	this.projectPanel = projectPanel;
+	this.dependencyPanel = dependencyPanel;
+	this.projectDetailsPanel = projectDetailsPanel;
+	this.statusBar = statusBar;
+	this.textFormatter = textFormatter;
+	this.projectFilterService = projectFilterService;
+	this.textInputController = textInputController;
+	this.projectSortState = projectSortState;
 }
 
-public void render(
-		UiState state) {
+public void render(UiState state) {
 	
-	PrintWriter writer =
-			terminal.writer();
+	PrintWriter writer = terminal.writer();
 	
-	terminal.puts(
-			InfoCmp.Capability.clear_screen);
+	terminal.puts(InfoCmp.Capability.clear_screen);
 	
 	terminal.puts(
 			InfoCmp.Capability.cursor_address,
 			0,
 			0);
 	
-	int width =
-			terminal.getWidth();
+	int width = terminal.getWidth();
 	
 	if (width < MINIMUM_TERMINAL_WIDTH) {
 		
@@ -116,39 +93,53 @@ public void render(
 		return;
 	}
 	
-	int projectPanelWidth =
-			width
-					* PROJECT_PANEL_PERCENTAGE
-					/ 100;
-	
-	int dependencyPanelWidth =
-			width
-					* DEPENDENCY_PANEL_PERCENTAGE
-					/ 100;
-	
-	int detailPanelWidth =
-			width
-					- projectPanelWidth
-					- dependencyPanelWidth
-					- 1;
-	
-	int height =
-			terminal.getHeight();
+	int height = terminal.getHeight();
 	
 	int contentHeight =
 			Math.max(
 					1,
 					height - 4);
 	
+	int projectPanelWidth =
+			width
+					* PROJECT_PANEL_PERCENTAGE
+					/ 100;
+	
+	int contextPanelWidth =
+			width
+					- projectPanelWidth
+					- 1;
+	
+	int detailsHeight =
+			Math.max(
+					1,
+					contentHeight
+							* DETAILS_PANEL_PERCENTAGE
+							/ 100);
+	
+	int dependenciesHeight =
+			Math.max(
+					1,
+					contentHeight
+							- detailsHeight
+							- 1);
+	
+	int dependencyContentHeight =
+			Math.max(
+					1,
+					dependenciesHeight
+							- DEPENDENCY_TOP_PADDING);
+	
 	List<String> projectLines =
 			projectPanel.render(
 					state,
-					contentHeight);
+					contentHeight,
+					projectPanelWidth);
 	
 	List<String> dependencyLines =
 			dependencyPanel.render(
 					state,
-					contentHeight);
+					dependencyContentHeight);
 	
 	List<String> detailLines =
 			projectDetailsPanel.render(
@@ -158,18 +149,18 @@ public void render(
 			writer,
 			state,
 			projectPanelWidth,
-			dependencyPanelWidth,
-			detailPanelWidth);
+			contextPanelWidth);
 	
 	renderPanels(
 			writer,
+			state,
 			projectLines,
 			dependencyLines,
 			detailLines,
 			projectPanelWidth,
-			dependencyPanelWidth,
-			detailPanelWidth,
-			contentHeight);
+			contextPanelWidth,
+			contentHeight,
+			dependenciesHeight);
 	
 	renderFooter(
 			writer,
@@ -183,18 +174,15 @@ private void renderHeader(
 		PrintWriter writer,
 		UiState state,
 		int projectPanelWidth,
-		int dependencyPanelWidth,
-		int detailPanelWidth) {
+		int contextPanelWidth) {
 	
 	PanelFocus panelFocus =
 			state.panelFocus();
 	
 	String projectsTitle =
-			projectTitle(
-					state);
+			projectTitle(state);
 	
-	if (panelFocus
-				== PanelFocus.PROJECTS) {
+	if (panelFocus == PanelFocus.PROJECTS) {
 		
 		projectsTitle =
 				"["
@@ -208,12 +196,6 @@ private void renderHeader(
 					? "[Dependencies]"
 					: "Dependencies";
 	
-	String detailsTitle =
-			panelFocus
-					== PanelFocus.PROJECT_DETAILS
-					? "[Project Details]"
-					: "Project Details";
-	
 	writer.print(
 			panelHeader(
 					"┌",
@@ -224,16 +206,9 @@ private void renderHeader(
 			panelHeader(
 					"┬",
 					dependenciesTitle,
-					dependencyPanelWidth));
+					contextPanelWidth));
 	
-	writer.print(
-			panelHeader(
-					"┬",
-					detailsTitle,
-					detailPanelWidth));
-	
-	writer.print(
-			"┐");
+	writer.println("┐");
 }
 
 private String projectTitle(
@@ -294,22 +269,20 @@ private String panelHeader(
 
 private void renderPanels(
 		PrintWriter writer,
+		UiState state,
 		List<String> projectLines,
 		List<String> dependencyLines,
 		List<String> detailLines,
 		int projectPanelWidth,
-		int dependencyPanelWidth,
-		int detailPanelWidth,
-		int contentHeight) {
+		int contextPanelWidth,
+		int contentHeight,
+		int dependenciesHeight) {
 	
 	for (int row = 0;
 		 row < contentHeight;
 		 row++) {
 		
-		writer.println();
-		
-		writer.print(
-				"│");
+		writer.print("│");
 		
 		writer.print(
 				textFormatter.fit(
@@ -318,41 +291,90 @@ private void renderPanels(
 								row),
 						projectPanelWidth - 1));
 		
-		writer.print(
-				"│");
+		if (row == dependenciesHeight) {
+			
+			String detailsTitle =
+					state.panelFocus()
+							== PanelFocus.PROJECT_DETAILS
+							? "[Project Details]"
+							: "Project Details";
+			
+			writer.print(
+					panelHeader(
+							"├",
+							detailsTitle,
+							contextPanelWidth));
+			
+			writer.println("┤");
+			
+			continue;
+		}
 		
-		writer.print(
-				textFormatter.fit(
-						lineAt(
-								dependencyLines,
-								row),
-						dependencyPanelWidth - 1));
+		writer.print("│");
 		
-		writer.print(
-				"│");
+		if (row < dependenciesHeight) {
+			
+			int dependencyRow =
+					row
+							- DEPENDENCY_TOP_PADDING;
+			
+			renderContextLine(
+					writer,
+					dependencyRow < 0
+							? ""
+							: lineAt(
+							dependencyLines,
+							dependencyRow),
+					contextPanelWidth);
+			
+		} else {
+			
+			int detailRow =
+					row
+							- dependenciesHeight
+							- 1
+							- DETAILS_TOP_PADDING;
+			
+			renderContextLine(
+					writer,
+					detailRow < 0
+							? ""
+							: lineAt(
+							detailLines,
+							detailRow),
+					contextPanelWidth);
+		}
 		
-		writer.print(
-				textFormatter.fit(
-						lineAt(
-								detailLines,
-								row),
-						detailPanelWidth - 1));
-		
-		writer.print(
-				"│");
+		writer.println("│");
 	}
+}
+
+private void renderContextLine(
+		PrintWriter writer,
+		String line,
+		int contextPanelWidth) {
+	
+	String padding =
+			" ".repeat(
+					CONTEXT_LEFT_PADDING);
+	
+	writer.print(
+			textFormatter.fit(
+					padding + line,
+					contextPanelWidth - 1));
 }
 
 private String lineAt(
 		List<String> lines,
 		int index) {
 	
-	if (index >= lines.size()) {
+	if (index < 0
+				|| index >= lines.size()) {
+		
 		return "";
 	}
 	
-	return lines.get(
-			index);
+	return lines.get(index);
 }
 
 private void renderFooter(
@@ -360,22 +382,17 @@ private void renderFooter(
 		UiState state,
 		int width) {
 	
-	writer.println();
-	
-	writer.print(
-			"├");
+	writer.print("├");
 	
 	writer.print(
 			"─".repeat(
 					width - 2));
 	
-	writer.print(
-			"┤");
+	writer.print("┤");
 	
 	writer.println();
 	
-	writer.print(
-			"│");
+	writer.print("│");
 	
 	writer.print(
 			textFormatter.fit(
@@ -383,28 +400,24 @@ private void renderFooter(
 							state),
 					width - 2));
 	
-	writer.print(
-			"│");
+	writer.print("│");
 	
 	writer.println();
 	
-	writer.print(
-			"└");
+	writer.print("└");
 	
 	writer.print(
 			"─".repeat(
 					width - 2));
 	
-	writer.print(
-			"┘");
+	writer.print("┘");
 }
 
 private void renderTerminalTooSmall(
 		PrintWriter writer,
 		int width) {
 	
-	writer.println(
-			"LazySpringBoot");
+	writer.println("LazySpringBoot");
 	
 	writer.println();
 	
