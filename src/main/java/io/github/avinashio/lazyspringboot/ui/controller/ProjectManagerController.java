@@ -4,52 +4,227 @@ import io.github.avinashio.lazyspringboot.domain.project.SpringProject;
 import io.github.avinashio.lazyspringboot.ui.service.DesktopIntegrationService;
 import io.github.avinashio.lazyspringboot.ui.state.ProjectManagerState;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
-import java.util.List;
 import org.springframework.stereotype.Component;
-import java.io.IOException;
+
+import java.util.List;
 
 @Component
 public class ProjectManagerController {
 
-    private final ProjectManagerState
-            state;
+private final ProjectManagerState
+		state;
 
-    private final UiState
-            uiState;
+private final UiState
+		uiState;
 
-    public ProjectManagerController(
-            ProjectManagerState state,
-            UiState uiState) {
+private final DesktopIntegrationService
+		desktopIntegrationService;
 
-        this.state =
-                state;
+public ProjectManagerController(
+		ProjectManagerState state,
+		UiState uiState,
+		DesktopIntegrationService desktopIntegrationService) {
+	
+	this.state =
+			state;
+	
+	this.uiState =
+			uiState;
+	
+	this.desktopIntegrationService =
+			desktopIntegrationService;
+}
 
-        this.uiState =
-                uiState;
-    }
+public void open() {
+	
+	List<SpringProject> projects =
+			projects();
+	
+	SpringProject dashboardSelection =
+			uiState.selectedProject();
+	
+	int initialIndex =
+			dashboardSelection == null
+					? 0
+					: projects.indexOf(
+					dashboardSelection);
+	
+	state.open(
+			Math.max(
+					0,
+					initialIndex));
+}
 
-    public void open() {
+public void close() {
+	
+	state.close();
+}
 
-        state.open();
-    }
+public boolean isOpen() {
+	
+	return state.isOpen();
+}
 
-    public void close() {
+public List<SpringProject> projects() {
+	
+	return uiState.projects();
+}
 
-        state.close();
-    }
+public SpringProject selectedProject() {
+	
+	List<SpringProject> projects =
+			projects();
+	
+	if (projects.isEmpty()) {
+		return null;
+	}
+	
+	int index =
+			Math.min(
+					state.selectedIndex(),
+					projects.size() - 1);
+	
+	return projects.get(
+			index);
+}
 
-    public boolean isOpen() {
+public int selectedIndex() {
+	
+	return state.selectedIndex();
+}
 
-        return state.isOpen();
-    }
+public void selectPrevious() {
+	
+	state.selectPrevious(
+			projects().size());
+}
 
-    public List<SpringProject> projects() {
+public void selectNext() {
+	
+	state.selectNext(
+			projects().size());
+}
 
-        return uiState.projects();
-    }
+public void copyProjectPath() {
+	
+	SpringProject project =
+			selectedProject();
+	
+	if (project == null) {
+		
+		uiState.showErrorMessage(
+				"No project selected.");
+		
+		return;
+	}
+	
+	if (desktopIntegrationService.copyToClipboard(
+			project.path().toString())) {
+		
+		uiState.showSuccessMessage(
+				"Copied path for "
+						+ project.name());
+		
+	} else {
+		
+		uiState.showErrorMessage(
+				"Unable to copy project path.");
+	}
+}
 
-    public SpringProject selectedProject() {
+public void openProjectFolder() {
+	
+	SpringProject project =
+			selectedProject();
+	
+	if (project == null) {
+		
+		uiState.showErrorMessage(
+				"No project selected.");
+		
+		return;
+	}
+	
+	if (desktopIntegrationService.openFolder(
+			project.path())) {
+		
+		uiState.showSuccessMessage(
+				"Opened "
+						+ project.name());
+		
+	} else {
+		
+		uiState.showErrorMessage(
+				"Unable to open "
+						+ project.name());
+	}
+}
 
-        return uiState.selectedProject();
-    }
+public void openIntelliJ() {
+	
+	SpringProject project =
+			selectedProject();
+	
+	if (project == null) {
+		
+		uiState.showErrorMessage(
+				"No project selected.");
+		
+		return;
+	}
+	
+	if (desktopIntegrationService.openIntelliJ(
+			project.path())) {
+		
+		uiState.showSuccessMessage(
+				"Opened "
+						+ project.name()
+						+ " in IntelliJ.");
+		
+	} else {
+		
+		uiState.showErrorMessage(
+				"Unable to open IntelliJ.");
+	}
+}
+
+public void openVSCode() {
+	
+	SpringProject project =
+			selectedProject();
+	
+	if (project == null) {
+		
+		uiState.showErrorMessage(
+				"No project selected.");
+		
+		return;
+	}
+	
+	if (desktopIntegrationService.openVSCode(
+			project.path())) {
+		
+		uiState.showSuccessMessage(
+				"Opened "
+						+ project.name()
+						+ " in VS Code.");
+		
+	} else {
+		
+		uiState.showErrorMessage(
+				"Unable to open VS Code.");
+	}
+}
+
+public boolean selectCurrentProject() {
+	
+	if (projects().isEmpty()) {
+		return false;
+	}
+	
+	uiState.selectProject(
+			state.selectedIndex());
+	
+	return true;
+}
 }

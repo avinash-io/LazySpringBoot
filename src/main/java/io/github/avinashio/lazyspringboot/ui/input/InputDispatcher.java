@@ -56,9 +56,18 @@ public InputDispatcher(
 				dependencySearchInputHandler,
 		ProjectSearchInputHandler
 				projectSearchInputHandler,
-		CommandPaletteController commandPaletteController,
-		NavigationController navigationController,
-		WorkspaceInputHandler workspaceInputHandler, ProjectManagerInputHandler projectManagerInputHandler, ProjectDetailsInputHandler projectDetailsInputHandler, EnvironmentInputHandler environmentInputHandler) {
+		CommandPaletteController
+				commandPaletteController,
+		NavigationController
+				navigationController,
+		WorkspaceInputHandler
+				workspaceInputHandler,
+		ProjectManagerInputHandler
+				projectManagerInputHandler,
+		ProjectDetailsInputHandler
+				projectDetailsInputHandler,
+		EnvironmentInputHandler
+				environmentInputHandler) {
 	
 	this.dependencyConfirmationInputHandler =
 			dependencyConfirmationInputHandler;
@@ -86,9 +95,15 @@ public InputDispatcher(
 	
 	this.workspaceInputHandler =
 			workspaceInputHandler;
-	this.projectManagerInputHandler = projectManagerInputHandler;
-	this.projectDetailsInputHandler = projectDetailsInputHandler;
-	this.environmentInputHandler = environmentInputHandler;
+	
+	this.projectManagerInputHandler =
+			projectManagerInputHandler;
+	
+	this.projectDetailsInputHandler =
+			projectDetailsInputHandler;
+	
+	this.environmentInputHandler =
+			environmentInputHandler;
 }
 
 public void handle(
@@ -110,16 +125,19 @@ public void handle(
 	
 	if (dependencyConfirmationInputHandler.handle(
 			keyEvent)) {
+		
 		return;
 	}
 	
 	if (createProjectInputHandler.handle(
 			keyEvent)) {
+		
 		return;
 	}
 	
 	if (workspaceInputHandler.handle(
 			keyEvent)) {
+		
 		return;
 	}
 	
@@ -131,26 +149,31 @@ public void handle(
 	
 	if (projectDetailsInputHandler.handle(
 			keyEvent)) {
+		
 		return;
 	}
 	
 	if (projectActionOutputInputHandler.handle(
 			keyEvent)) {
+		
 		return;
 	}
 	
 	if (projectActionsInputHandler.handle(
 			keyEvent)) {
+		
 		return;
 	}
 	
 	if (dependencySearchInputHandler.handle(
 			keyEvent)) {
+		
 		return;
 	}
 	
 	if (projectSearchInputHandler.handle(
 			keyEvent)) {
+		
 		return;
 	}
 	

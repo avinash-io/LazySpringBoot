@@ -9,173 +9,167 @@ import io.github.avinashio.lazyspringboot.ui.service.DependencyUndoService;
 import io.github.avinashio.lazyspringboot.ui.state.PanelFocus;
 import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
-import java.io.IOException;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
 
 @Component
 public class CommandPaletteExecutor {
 
-    private final CreateProjectController
-            createProjectController;
+private final CreateProjectController
+		createProjectController;
 
-    private final ProjectRefreshService
-            projectRefreshService;
+private final ProjectRefreshService
+		projectRefreshService;
 
-    private final ProcessController
-            processController;
+private final ProcessController
+		processController;
 
-    private final DependencyUndoService
-            dependencyUndoService;
+private final DependencyUndoService
+		dependencyUndoService;
 
-    private final TextInputController
-            textInputController;
+private final TextInputController
+		textInputController;
 
-    private final UiState
-            uiState;
+private final UiState
+		uiState;
 
-    public CommandPaletteExecutor(
-            CreateProjectController createProjectController,
-            ProjectRefreshService projectRefreshService,
-            ProcessController processController,
-            DependencyUndoService dependencyUndoService,
-            TextInputController textInputController,
-            UiState uiState) {
+public CommandPaletteExecutor(
+		CreateProjectController createProjectController,
+		ProjectRefreshService projectRefreshService,
+		ProcessController processController,
+		DependencyUndoService dependencyUndoService,
+		TextInputController textInputController,
+		UiState uiState) {
+	
+	this.createProjectController =
+			createProjectController;
+	
+	this.projectRefreshService =
+			projectRefreshService;
+	
+	this.processController =
+			processController;
+	
+	this.dependencyUndoService =
+			dependencyUndoService;
+	
+	this.textInputController =
+			textInputController;
+	
+	this.uiState =
+			uiState;
+}
 
-        this.createProjectController =
-                createProjectController;
+public void execute(
+		Command command) {
+	
+	switch (command.id()) {
+		
+		case "create-project" -> createProjectController.open();
+		
+		case "refresh-project" -> refreshSelectedProject();
+		
+		case "start-project" -> startSelectedProject();
+		
+		case "stop-project" -> stopSelectedProject();
+		
+		case "view-logs" -> showSelectedProjectLogs();
+		
+		case "add-dependencies" -> openDependencySearch();
+		
+		case "undo-dependencies" -> dependencyUndoService.undo();
+		
+		default -> {
+			// No action.
+		}
+	}
+}
 
-        this.projectRefreshService =
-                projectRefreshService;
+private void refreshSelectedProject() {
+	
+	if (!hasSelectedProject()) {
+		return;
+	}
+	
+	try {
+		
+		projectRefreshService
+				.refreshEverything();
+		
+	} catch (IOException exception) {
+		
+		uiState.showErrorMessage(
+				"Failed to refresh selected project");
+	}
+}
 
-        this.processController =
-                processController;
+private void startSelectedProject() {
+	
+	SpringProject project =
+			selectedProject();
+	
+	if (project == null) {
+		return;
+	}
+	
+	processController.start(
+			project);
+}
 
-        this.dependencyUndoService =
-                dependencyUndoService;
+private void stopSelectedProject() {
+	
+	SpringProject project =
+			selectedProject();
+	
+	if (project == null) {
+		return;
+	}
+	
+	processController.stop(
+			project);
+}
 
-        this.textInputController =
-                textInputController;
+private void showSelectedProjectLogs() {
+	
+	SpringProject project =
+			selectedProject();
+	
+	if (project == null) {
+		return;
+	}
+	
+	processController.showLogs(
+			project);
+}
 
-        this.uiState =
-                uiState;
-    }
+private void openDependencySearch() {
+	
+	if (!hasSelectedProject()) {
+		return;
+	}
+	
+	uiState.focusPanel(
+			PanelFocus.DEPENDENCIES);
+	
+	textInputController.start(
+			TextInputPurpose.DEPENDENCY_SEARCH);
+}
 
-    public void execute(
-            Command command) {
+private boolean hasSelectedProject() {
+	
+	if (selectedProject() != null) {
+		return true;
+	}
+	
+	uiState.showErrorMessage(
+			"No project selected");
+	
+	return false;
+}
 
-        switch (command.id()) {
-
-            case "create-project" ->
-                    createProjectController.open();
-
-            case "refresh-projects" ->
-                    refreshSelectedProject();
-
-            case "start-project" ->
-                    startSelectedProject();
-
-            case "stop-project" ->
-                    stopSelectedProject();
-
-            case "view-logs" ->
-                    showSelectedProjectLogs();
-
-            case "add-dependencies" ->
-                    openDependencySearch();
-
-            case "undo-dependencies" ->
-                    dependencyUndoService.undo();
-
-            default -> {
-                // No action.
-            }
-        }
-    }
-
-    private void refreshSelectedProject() {
-
-        if (!hasSelectedProject()) {
-            return;
-        }
-
-        try {
-
-            projectRefreshService
-                    .refreshEverything();
-
-        } catch (IOException exception) {
-
-            uiState.showErrorMessage(
-                    "Failed to refresh selected project");
-        }
-    }
-
-    private void startSelectedProject() {
-
-        SpringProject project =
-                selectedProject();
-
-        if (project == null) {
-            return;
-        }
-
-        processController.start(
-                project);
-    }
-
-    private void stopSelectedProject() {
-
-        SpringProject project =
-                selectedProject();
-
-        if (project == null) {
-            return;
-        }
-
-        processController.stop(
-                project);
-    }
-
-    private void showSelectedProjectLogs() {
-
-        SpringProject project =
-                selectedProject();
-
-        if (project == null) {
-            return;
-        }
-
-        processController.showLogs(
-                project);
-    }
-
-    private void openDependencySearch() {
-
-        if (!hasSelectedProject()) {
-            return;
-        }
-
-        uiState.focusPanel(
-                PanelFocus.DEPENDENCIES);
-
-        textInputController.start(
-                TextInputPurpose.DEPENDENCY_SEARCH);
-    }
-
-    private boolean hasSelectedProject() {
-
-        if (selectedProject() != null) {
-            return true;
-        }
-
-        uiState.showErrorMessage(
-                "No project selected");
-
-        return false;
-    }
-
-    private SpringProject selectedProject() {
-
-        return uiState.selectedProject();
-    }
+private SpringProject selectedProject() {
+	
+	return uiState.selectedProject();
+}
 }

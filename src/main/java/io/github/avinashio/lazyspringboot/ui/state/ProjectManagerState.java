@@ -5,20 +5,61 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProjectManagerState {
 
-    private boolean open;
+private boolean open;
 
-    public boolean isOpen() {
+private int selectedIndex;
 
-        return open;
-    }
+public boolean isOpen() {
+	
+	return open;
+}
 
-    public void open() {
+public void open(
+		int selectedIndex) {
+	
+	open = true;
+	
+	this.selectedIndex =
+			Math.max(
+					0,
+					selectedIndex);
+}
 
-        open = true;
-    }
+public void close() {
+	
+	open = false;
+}
 
-    public void close() {
+public int selectedIndex() {
+	
+	return selectedIndex;
+}
 
-        open = false;
-    }
+public void selectPrevious(
+		int projectCount) {
+	
+	if (projectCount <= 0) {
+		selectedIndex = 0;
+		return;
+	}
+	
+	selectedIndex =
+			Math.max(
+					0,
+					selectedIndex - 1);
+}
+
+public void selectNext(
+		int projectCount) {
+	
+	if (projectCount <= 0) {
+		selectedIndex = 0;
+		return;
+	}
+	
+	selectedIndex =
+			Math.min(
+					projectCount - 1,
+					selectedIndex + 1);
+}
 }
