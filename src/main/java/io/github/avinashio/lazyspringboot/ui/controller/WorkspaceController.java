@@ -1,102 +1,218 @@
 package io.github.avinashio.lazyspringboot.ui.controller;
 
-
+import io.github.avinashio.lazyspringboot.application.project.DiscoverProjectsUseCase;
 import io.github.avinashio.lazyspringboot.service.WorkspaceService;
+import io.github.avinashio.lazyspringboot.ui.service.DesktopIntegrationService;
+import io.github.avinashio.lazyspringboot.ui.state.TextInputPurpose;
 import io.github.avinashio.lazyspringboot.ui.state.UiState;
 import io.github.avinashio.lazyspringboot.ui.state.WorkspaceState;
-import java.nio.file.Path;
 import org.springframework.stereotype.Component;
-import io.github.avinashio.lazyspringboot.ui.service.DesktopIntegrationService;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Component
 public class WorkspaceController {
 
-    private final WorkspaceState
-            workspaceState;
+private final WorkspaceState workspaceState;
 
-    private final WorkspaceService
-            workspaceService;
+private final WorkspaceService workspaceService;
 
-    private final DesktopIntegrationService
-            desktopIntegrationService;
+private final DesktopIntegrationService
+		desktopIntegrationService;
 
-    private final UiState
-            uiState;
+private final UiState uiState;
 
-    public WorkspaceController(
-            WorkspaceState workspaceState,
-            WorkspaceService workspaceService,
-            DesktopIntegrationService
-                    desktopIntegrationService,
-            UiState uiState) {
+private final TextInputController
+		textInputController;
 
-        this.workspaceState =
-                workspaceState;
+private final DiscoverProjectsUseCase
+		discoverProjectsUseCase;
 
-        this.workspaceService =
-                workspaceService;
+public WorkspaceController(
+		WorkspaceState workspaceState,
+		WorkspaceService workspaceService,
+		DesktopIntegrationService
+				desktopIntegrationService,
+		UiState uiState,
+		TextInputController textInputController,
+		DiscoverProjectsUseCase
+				discoverProjectsUseCase) {
+	
+	this.workspaceState =
+			workspaceState;
+	
+	this.workspaceService =
+			workspaceService;
+	
+	this.desktopIntegrationService =
+			desktopIntegrationService;
+	
+	this.uiState =
+			uiState;
+	
+	this.textInputController =
+			textInputController;
+	
+	this.discoverProjectsUseCase =
+			discoverProjectsUseCase;
+}
 
-        this.desktopIntegrationService =
-                desktopIntegrationService;
+public void open() {
+	
+	workspaceState.open();
+	
+	workspaceState.clearErrorMessage();
+	
+	workspaceState.setWorkspace(
+			workspaceService
+					.workspace()
+					.toString());
+}
 
-        this.uiState =
-                uiState;
-    }
+public void close() {
+	
+	cancelWorkspaceChange();
+	
+	workspaceState.close();
+}
 
-    public void open() {
+public boolean isOpen() {
+	
+	return workspaceState.isOpen();
+}
 
-        workspaceState.open();
+public Path workspace() {
+	
+	return workspaceService.workspace();
+}
 
-        workspaceState.clearErrorMessage();
+public void startWorkspaceChange() {
+	
+	workspaceState.clearErrorMessage();
+	
+	textInputController.start(
+			TextInputPurpose.WORKSPACE_PATH);
+}
 
-        workspaceState.setWorkspace(
-                workspaceService
-                        .workspace()
-                        .toString());
-    }
+public boolean changingWorkspace() {
+	
+	return textInputController.active(
+			TextInputPurpose.WORKSPACE_PATH);
+}
 
-    public void close() {
+public String workspaceInput() {
+	
+	return textInputController.value();
+}
 
-        workspaceState.close();
-    }
+public void appendWorkspaceCharacter(
+		char character) {
+	
+	textInputController.append(
+			character);
+}
 
-    public boolean isOpen() {
+public void backspaceWorkspaceInput() {
+	
+	textInputController.backspace();
+}
 
-        return workspaceState.isOpen();
-    }
+public void cancelWorkspaceChange() {
+	
+	if (!changingWorkspace()) {
+		return;
+	}
+	
+	textInputController.stop();
+	
+	workspaceState.clearErrorMessage();
+}
 
-    public Path workspace() {
+public void submitWorkspaceChange() {
+	
+	if (!changingWorkspace()) {
+		return;
+	}
+	
+	String value =
+			workspaceInput().trim();
+	
+	if (value.isBlank()) {
+		
+		workspaceState.showErrorMessage(
+				"Workspace path cannot be empty.");
+		
+		return;
+	}
+	
+	Path workspace =
+			Path.of(value)
+					.toAbsolutePath()
+					.normalize();
+	
+	if (!Files.isDirectory(workspace)) {
+		
+		workspaceState.showErrorMessage(
+				"Workspace directory does not exist.");
+		
+		return;
+	}
+	
+	try {
+		
+		workspaceService.changeWorkspace(
+				workspace);
+		
+		uiState.setProjects(
+				discoverProjectsUseCase
+						.discover());
+		
+		workspaceState.setWorkspace(
+				workspace.toString());
+		
+		workspaceState.clearErrorMessage();
+		
+		textInputController.stop();
+		
+		uiState.showSuccessMessage(
+				"Workspace changed.");
+		
+	} catch (IOException exception) {
+		
+		workspaceState.showErrorMessage(
+				"Unable to change workspace.");
+	}
+}
 
-        return workspaceService.workspace();
-    }
+public void copyWorkspacePath() {
+	
+	if (desktopIntegrationService.copyToClipboard(
+			workspace().toString())) {
+		
+		uiState.showSuccessMessage(
+				"Workspace path copied.");
+		
+	} else {
+		
+		uiState.showErrorMessage(
+				"Unable to copy workspace path.");
+	}
+}
 
-    public void copyWorkspacePath() {
-
-        if (desktopIntegrationService.copyToClipboard(
-                workspace().toString())) {
-
-            uiState.showSuccessMessage(
-                    "Workspace path copied.");
-
-        } else {
-
-            uiState.showErrorMessage(
-                    "Unable to copy workspace path.");
-        }
-    }
-
-    public void openWorkspace() {
-
-        if (desktopIntegrationService.openFolder(
-                workspace())) {
-
-            uiState.showSuccessMessage(
-                    "Workspace opened.");
-
-        } else {
-
-            uiState.showErrorMessage(
-                    "Unable to open workspace.");
-        }
-    }
+public void openWorkspace() {
+	
+	if (desktopIntegrationService.openFolder(
+			workspace())) {
+		
+		uiState.showSuccessMessage(
+				"Workspace opened.");
+		
+	} else {
+		
+		uiState.showErrorMessage(
+				"Unable to open workspace.");
+	}
+}
 }

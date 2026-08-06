@@ -6,66 +6,113 @@ import org.springframework.stereotype.Component;
 @Component
 public class WorkspaceInputHandler {
 
-    private final WorkspaceController
-            workspaceController;
+private final WorkspaceController
+		workspaceController;
 
-    public WorkspaceInputHandler(
-            WorkspaceController workspaceController) {
+public WorkspaceInputHandler(
+		WorkspaceController workspaceController) {
+	
+	this.workspaceController =
+			workspaceController;
+}
 
-        this.workspaceController =
-                workspaceController;
-    }
+public boolean handle(
+		KeyEvent keyEvent) {
+	
+	if (!workspaceController.isOpen()) {
+		return false;
+	}
+	
+	if (workspaceController.changingWorkspace()) {
+		
+		handleWorkspaceInput(
+				keyEvent);
+		
+		return true;
+	}
+	
+	switch (keyEvent.type()) {
+		
+		case CHARACTER -> handleCharacter(
+				keyEvent);
+		
+		case ESCAPE -> workspaceController.close();
+		
+		default -> {
+			// Ignore unsupported keys.
+		}
+	}
+	
+	return true;
+}
 
-    public boolean handle(
-            KeyEvent keyEvent) {
+private void handleWorkspaceInput(
+		KeyEvent keyEvent) {
+	
+	switch (keyEvent.type()) {
+		
+		case ENTER -> workspaceController
+							  .submitWorkspaceChange();
+		
+		case ESCAPE -> workspaceController
+							   .cancelWorkspaceChange();
+		
+		case BACKSPACE -> workspaceController
+								  .backspaceWorkspaceInput();
+		
+		case SEARCH -> workspaceController
+							   .appendWorkspaceCharacter(
+									   '/');
+		
+		case CHARACTER -> appendWorkspaceCharacter(
+				keyEvent);
+		
+		default -> {
+			// Ignore unsupported keys while editing.
+		}
+	}
+}
 
-        if (!workspaceController.isOpen()) {
-            return false;
-        }
+private void handleCharacter(
+		KeyEvent keyEvent) {
+	
+	Character character =
+			keyEvent.character();
+	
+	if (character == null) {
+		return;
+	}
+	
+	switch (Character.toLowerCase(
+			character)) {
+		
+		case 'c' -> workspaceController
+							.copyWorkspacePath();
+		
+		case 'o' -> workspaceController
+							.openWorkspace();
+		
+		case 'e' -> workspaceController
+							.startWorkspaceChange();
+		
+		default -> {
+			// Ignore unsupported shortcuts.
+		}
+	}
+}
 
-        switch (keyEvent.type()) {
-
-            case CHARACTER -> {
-
-                if (!keyEvent.hasCharacter()) {
-                    return false;
-                }
-
-                switch (Character.toLowerCase(
-                        keyEvent.character())) {
-
-                    case 'c' -> {
-
-                        workspaceController
-                                .copyWorkspacePath();
-
-                        return true;
-                    }
-
-                    case 'o' -> {
-
-                        workspaceController
-                                .openWorkspace();
-
-                        return true;
-                    }
-
-                    default -> {
-                        return false;
-                    }
-                }
-            }
-
-            case ESCAPE -> {
-
-                workspaceController.close();
-
-                return true;
-            }
-
-            default -> {
-                return false;
-            }
-        }
-    }
+private void appendWorkspaceCharacter(
+		KeyEvent keyEvent) {
+	
+	Character character =
+			keyEvent.character();
+	
+	if (character == null) {
+		return;
+	}
+	
+	workspaceController
+			.appendWorkspaceCharacter(
+					character);
+}
 }
